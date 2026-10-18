@@ -1,0 +1,33 @@
+node_modules/
+dist/
+coverage/
+cdk.out/
+.cdk.staging/
+.aws-sam/
+.generated/
+.tmp/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.log
+/agents.md
+/AGENTS.md
+/agents.es.md
+/roadmap.md
+/roadmap.es.md
+/CLAUDE.md
+.DS_Store
+
+# Python validation tooling
+__pycache__/
+*.py[cod]
+
+# Instrucciones y planes locales: nunca publicar
+[aA][gG][eE][nN][tT][sS]*.md
+[aA][gG][eE][nN][dD][sS]*.md
+[rR][oO][aA][dD][mM][aA][pP]*
+[mM][eE][nN][tT][oO][rR]*
