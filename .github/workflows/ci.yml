@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      application: ${{ steps.scope.outputs.application }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate documentation
+        run: python3 scripts/check_docs.py
+      - name: Detect application readiness
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f package.json ]]; then
+            test -f package-lock.json
+            test -f cdk.json
+            echo "application=true" >> "$GITHUB_OUTPUT"
+          else
+            test ! -f package-lock.json
+            test ! -f cdk.json
+            echo "application=false" >> "$GITHUB_OUTPUT"
+            echo "Aplicación todavía inexistente: no se ejecutaron tests/build/synth." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  application:
+    needs: documentation
+    if: needs.documentation.outputs.application == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: test
+      AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: 'true'
+      CDK_DEFAULT_ACCOUNT: '650387442642'
+      CDK_DEFAULT_REGION: us-east-1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test -- --ci --runInBand
+      - run: npm run test:e2e
+      - run: npm run build
+      - name: Synthesize test stack without AWS lookups
+        run: npm run cdk -- synth --no-lookups --context stage=test
+
+  verify:
+    name: verify
+    if: always()
+    needs: [documentation, application]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      DOC_RESULT: ${{ needs.documentation.result }}
+      APP_RESULT: ${{ needs.application.result }}
+      APP_PRESENT: ${{ needs.documentation.outputs.application }}
+    steps:
+      - name: Report required check accurately
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DOC_RESULT" == success ]]
+          if [[ "$APP_PRESENT" == true ]]; then
+            [[ "$APP_RESULT" == success ]]
+            echo "Documentación, aplicación y synth verificados." >> "$GITHUB_STEP_SUMMARY"
+          else
+            [[ "$APP_PRESENT" == false && "$APP_RESULT" == skipped ]]
+            echo "Solo documentación verificada; no existe aplicación ni stack." >> "$GITHUB_STEP_SUMMARY"
+          fi
