@@ -4,7 +4,7 @@
 
 ## Evidence and limitations
 
-The three original repositories were clean and remained untouched. None contained `graphify-out/graph.json`; no graph was generated. Pre-existing changes in the parent workspace were preserved.
+The audit pins the inspected commits to preserve traceability of contracts and dependencies.
 
 | Repository | Inspected local HEAD | Local branch | Live GitHub main |
 | --- | --- | --- | --- |
@@ -14,9 +14,9 @@ The three original repositories were clean and remained untouched. None containe
 
 Local origin/main refs were stale. GitHub main was queried without fetching. The remote comparison from local HEAD to main contained only workflows for API/frontend, and workflows/READMEs/template for cloud. References below pin the inspected commits. The EC2 deployed image SHA was not verified.
 
-**Live AWS:** the Observer CLI session had expired. Chrome access portal then provided Observer in personal account `650387442642`; identity was verified as `AWSReservedSSO_Observer_b3caac6c63d98e74`, region `us-east-1`, before inspecting resources. One t3.micro was running with 3/3 checks, Amazon Linux 2023, required IMDSv2, stop/termination protection, EC2SystemsManagerRole and an unencrypted 8 GiB root EBS volume. CloudFormation listed portfolio-cloud-prod in UPDATE_COMPLETE (updated 2026-10-11 19:40:43 AR, drift NOT_CHECKED, PortfolioCloudCloudFormationExecutionRole). Its 16 resources include six functions, six roles, HTTP API/stage and two invocation permissions. There was no CDKToolkit in that region's active-stack listing. This is not proof of no bootstrap globally. The cost widget denied access; permissions were not elevated.
+**Observed infrastructure:** in the personal account, us-east-1, one running t3.micro with 3/3 checks, Amazon Linux 2023, required IMDSv2 and stop/termination protection. Its root EBS volume is 8 GiB and unencrypted. CloudFormation shows portfolio-cloud-prod in UPDATE_COMPLETE, updated 2026-10-11 19:40:43 AR, with drift NOT_CHECKED. Its 16 resources include six functions, six roles, HTTP API/stage and two invocation permissions. CDKToolkit was absent from the queried active-stack listing; this observation is limited to that region. Actual billing belongs to the private record; the [public model](costs.md) uses hypothetical scenarios.
 
-**Unverified:** actual bill, per-route traffic, latency, CPU/credits, EBS class, running image digest, effective application configuration, current Cloudflare rules, SSM state and effective IAM permissions. No `.env`, secret values, sensitive parameters or subscriber records were opened. The workspace AWS access report dated 2026-10-11 was treated as historical context.
+**Unverified:** per-route traffic, latency, CPU/credits, EBS class, running image digest, effective application configuration, current Cloudflare rules, SSM state and effective IAM permissions. No `.env`, secret values, sensitive parameters or subscriber records were opened. The workspace AWS access report dated 2026-10-11 was treated as historical context.
 
 ## Modules and contracts
 
@@ -67,7 +67,7 @@ The R2 timeout wraps SDK send with a promise timeout but does not abort it, and 
 
 ## Repository boundaries and consumers
 
-[Frontend ApiService](https://github.com/matigaleanodev/portfolio/blob/c1eac3492a54933f5c99540a3b4f61d0e70938cd/src/app/services/api.service.ts) calls the five business routes through Angular HttpClient. `src/environments/environment.ts:2` fixes the production base URL. Chat persists messages in localStorage; chat-history.ts limits history to six turns and keeps JSON under 15 KiB. No SSE/WebSocket consumer exists. A URL change needs a frontend build/deploy or an approved domain cutover.
+[Frontend ApiService](https://github.com/matigaleanodev/portfolio/blob/c1eac3492a54933f5c99540a3b4f61d0e70938cd/src/app/services/api.service.ts) calls the five business routes through Angular HttpClient. `src/environments/environment.ts:2` fixes the production base URL. Chat persists messages in localStorage; chat-history.ts limits history to six turns and keeps JSON under 15 KiB. No SSE/WebSocket consumer exists. A URL change needs a frontend build/deploy or a domain cutover.
 
 [Cloud SAM template](https://github.com/matigaleanodev/portfolio-cloud/blob/4c0b1735dde0759a9dbef5625aae7788386e9210/template.yaml) declares subscribe, unsubscribe, generate-og, notify-post, process-release and publish-chat-knowledge. Subscribe/unsubscribe use HTTP API; process-release invokes OG/notify. There is no declared EventBridge schedule in that template. The frontend workflow runs daily at 12:17 UTC and invokes release/knowledge publication. Do not duplicate it here.
 
@@ -104,7 +104,7 @@ Inspected tests cover config/DTOs, mocked Resend contact, mocked subscription fe
 | High | real email/subscription tests duplicate side effects | mock defaults, isolated test data, no automatic POST retries or shadow writes |
 | High | partial R2/contact/chat time bounds | total deadline below ingress limit, real cancellation, bounded body/retries and ambiguous-result tests |
 | High | missing cold fallback during R2 outage | packaged versioned artifact, checksum/date checks and explicit maximum staleness |
-| Medium | new IAM/bootstrap not approved; existing roles project-specific | scoped pipeline/execution/runtime roles and boundaries; no SAM/SSM role reuse or admin defaults |
+| Medium | new IAM/bootstrap design incomplete; existing roles project-specific | scoped pipeline/execution/runtime roles and boundaries; no SAM/SSM role reuse or admin defaults |
 | Medium | fragmented cache changes provider cost/cold latency | measure hits, billed duration and tokens before adding shared cache |
 | Medium | shallow health/missing per-route metrics | body-free logging, latency/errors/timeouts/429/fallback/cost and test thresholds |
 | Medium | recovery depends on preserved images/config/shared EC2 | pin image and verify restore plan; do not stop EC2 after Portfolio alone |

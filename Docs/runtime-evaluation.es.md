@@ -1,8 +1,8 @@
 # Decidir el runtime con evidencia
 
-[English](runtime-evaluation.md) · 24/10/2026. Esta nota incorpora la aclaración del usuario: acepta quitar Nest si es la mejor opción, sin priorizar su opinión ni conservarlo por inercia.
+[English](runtime-evaluation.md) · 24/10/2026. La elección compara compatibilidad, latencia, costos y mantenimiento; conservar el framework actual no es un requisito.
 
-**CDK no reemplaza NestJS.** CDK define/despliega infraestructura. Nest o handlers Node.js ejecutan HTTP/negocio. La recomendación CDK puede mantenerse con cualquiera de los runtimes.
+**Infraestructura y runtime son decisiones separadas.** CDK define/despliega infraestructura. Nest o handlers Node.js ejecutan HTTP/negocio. La recomendación CDK puede mantenerse con cualquiera de los runtimes.
 
 ## Evidencia del proyecto
 
@@ -26,8 +26,8 @@ No agregar otro framework HTTP, librería de validación o una arquitectura de p
 
 Primera etapa futura local: misma versión Node para A/B, lockfiles reproducibles, mismo artifact, memoria, contratos y respuestas mock deterministas. Medir tamaño ZIP/dependencias, tiempo de import/inicialización en procesos nuevos y p50/p95, luego invocación caliente. Al menos 30 arranques alternados por candidata para exploración; reportar dispersión y advertir que no equivale a Lambda.
 
-En test AWS autorizado: mismas región/arquitectura/memoria (512 y 1024 MiB), red, secretos/cache y protección; comprobar frío mediante INIT/telemetría, no asumir que cada request lo es. Medir rutas rápidas y chat separadas, p50/p95/p99 cuando haya muestra suficiente, errores/fallback, billed duration y costo. Mantener proveedores simulados para aislar framework; una muestra real con presupuesto autorizado valida la experiencia final. No usar carga ni llamadas pagas en producción.
+En un entorno AWS de prueba: mismas región/arquitectura/memoria (512 y 1024 MiB), red, secretos/cache y protección; comprobar frío mediante INIT/telemetría, no asumir que cada request lo es. Medir rutas rápidas y chat separadas, p50/p95/p99 cuando haya muestra suficiente, errores/fallback, billed duration y costo. Mantener proveedores simulados para aislar framework; una muestra real con presupuesto definido valida la experiencia final. No usar carga ni llamadas pagas en producción.
 
 Elegir B si conserva todos los contratos/protecciones, cumple objetivos medidos y reduce de manera material la inicialización/costo o simplifica operación sin crear más complejidad de mantenimiento. Elegir A si cumple objetivos y la diferencia medida de B no justifica adaptar validación/errores/tests. Si ambas fallan, revisar entradas/deadlines y C/contenedor. No comprar provisioned concurrency antes de comparar alternativas.
 
-**Estado:** CDK recomendado; runtime pendiente de evidencia. Handlers livianos son una candidata fuerte para este tamaño, no un ganador demostrado. No se implementaron prototipos ni benchmarks y la autorización condicional del usuario no se trata como aprobación incondicional de una reescritura.
+**Estado:** CDK recomendado; runtime pendiente de evidencia. Handlers livianos son una candidata fuerte para este tamaño, no un ganador demostrado. No se implementaron prototipos ni benchmarks.

@@ -1,6 +1,6 @@
 # Arquitectura propuesta y elección de herramienta
 
-[English](architecture.md) · Propuesta al 24/10/2026. Fuentes oficiales: [registro](sources.es.md). No es autorización de implementación ni despliegue.
+[English](architecture.md) · Propuesta al 24/10/2026. Fuentes oficiales: [registro](sources.es.md).
 
 ## Recomendación
 
@@ -16,7 +16,7 @@ API Gateway conserva rutas `/api/*`, códigos, body DELETE y errores. CORS en un
 - Rate/burst por ruta de API Gateway y concurrencia reservada conservadora (propuesta 5 para test, a medir) limitan presión global. No reemplazan el límite por IP ni son un tope monetario. Presupuesto/alertas tampoco cortan el gasto automáticamente. Proponer una cuota diaria global de llamadas IA y corte operativo; acordar el umbral antes de habilitar público.
 - Deadline total propuesto ≤25 s, Lambda ≤28 s, integración HTTP ≤30 s. OpenAI ya corta a 15 s y upstream a 8 s; falta cancelación real R2/body/retries y timeout Resend. El presupuesto incluye cold start, carga de secretos y knowledge. Si no alcanza con margen, revisar entrada/arquitectura, no esconder timeouts.
 - Cachear cliente SDK/Resend/config en el entorno; ninguna corrección funcional puede depender de que siga caliente. Empaquetar fallback de knowledge inmutable y con trazabilidad; acordar edad máxima stale. Mantener historial en la request y navegador.
-- Config no secreta por stage. Proponer un secreto JSON por ambiente en Secrets Manager, recuperado por rol runtime y cacheado con refresh acotado; nunca en Git, synth, outputs ni payloads de CI. Crear/poblar secretos requiere etapa autorizada posterior. R2 usa credencial propia de lectura del artifact, no permisos AWS S3 sobre ese proveedor externo.
+- Config no secreta por stage. Proponer un secreto JSON por ambiente en Secrets Manager, recuperado por rol runtime y cacheado con refresh acotado; nunca en Git, synth, outputs ni payloads de CI. La creación y carga de secretos forma parte de la configuración de cada ambiente. R2 usa credencial propia de lectura del artifact, no permisos AWS S3 sobre ese proveedor externo.
 - Logs CloudWatch de 14 días en test, métricas nativas, correlación por requestId y eventos chat ya acotados. Alarmas de errores, duración, throttling y consumo. No registrar cuerpos, emails ni prompts. Sin exporter/Loki nuevo para Lambda.
 
 ## Comparación de ejecución y entrada
@@ -44,7 +44,7 @@ No hay DB privada ni servicio interno que justifique VPC. La salida pública nec
 
 | Aspecto | CDK TypeScript | SAM | Serverless Framework v4 | SST actual |
 | --- | --- | --- | --- | --- |
-| Infra/estado | TypeScript→CloudFormation; sin state file propio del usuario | YAML transformado→CloudFormation | serverless.yml→CloudFormation | TypeScript con motor/proveedores Pulumi; estado en bucket propio |
+| Infra/estado | TypeScript→CloudFormation; sin archivo de estado separado | YAML transformado→CloudFormation | serverless.yml→CloudFormation | TypeScript con motor/proveedores Pulumi; estado en bucket propio |
 | NestJS | empaqueta/adapta runtime; no cambia Nest | mismo runtime y pruebas | mismo runtime; revisar plugins y versión | soporte de servidor; no elimina validación |
 | Local | tests + synth sin lookups; SAM local cuando template/artifacts sean compatibles | sam build/local integrados; Docker | invoke local/plugins/offline, sin paridad total | live dev útil, pero puede usar recursos cloud reales |
 | CI/OIDC | GitHub OIDC; roles bootstrap/publicación/ejecución/runtime explícitos | patrón ya existente en portfolio-cloud | OIDC viable; autenticación/licencia CLI adicional | OIDC viable; rol backend/estado y bootstrap distintos |
@@ -52,14 +52,14 @@ No hay DB privada ni servicio interno que justifique VPC. La salida pública nec
 | Ambientes/restore | stacks y nombres por ambiente; change sets/versions; drift soportado por recurso | stacks separados y change sets | stages y stacks; plugins/dashboard opcionales | stages, state/lock/secreto de cifrado y refresh |
 | Observabilidad | servicios AWS elegidos, sin SaaS obligatorio | misma base AWS | Dashboard opcional con costo separado | Console opcional y facturación propia |
 | Licencia/costo herramienta | Apache-2.0; sin licencia de pago del framework | Apache-2.0; sin licencia de pago del framework | v4 sujeto a términos; gratis bajo umbral de USD 2 M, suscripción encima; login/license en CI | MIT; no requiere cuenta Pulumi; Console tiene free tier y precio por recurso activo |
-| Ajuste personal | experiencia CDK diaria declarada por el usuario; control IAM y TypeScript | menos toolchains para el ecosistema existente | no aporta ventaja suficiente sobre finalistas | nuevo estado/modelo operativo para una API pequeña |
+| Ajuste personal | experiencia operativa con CDK; control IAM y TypeScript | menos toolchains para el ecosistema existente | no aporta ventaja suficiente sobre finalistas | nuevo estado/modelo operativo para una API pequeña |
 
 Los cuatro pueden definir recursos cuyo costo AWS es el mismo. CDK no vuelve gratis Lambda, logs, secrets o red. Tampoco es una emulación local. CloudFormation drift no cubre todo recurso/propiedad ni valida datos externos R2; una reversión del stack no recupera datos borrados.
 
-**Finalistas: CDK y SAM. Recomiendo CDK:** experiencia práctica del mantenedor, TypeScript compartido con Nest, policies explícitas y tests de infraestructura sin sumar SaaS. Permite dejar SAM existente independiente. No se copiará el arquetipo privado de Comafi; el proyecto será personal y autosuficiente.
+**Finalistas: CDK y SAM. Opción preferida: CDK.** Motivos: experiencia práctica del mantenedor, TypeScript compartido con Nest, policies explícitas y tests de infraestructura sin sumar SaaS. Permite dejar SAM existente independiente. La infraestructura se define de forma independiente y reproducible en este repositorio.
 
-**Desventajas:** bootstrap S3/ECR/roles debe diseñarse y aprobarse; CLI/library/constructs suman versiones; bundling Nest no es automático; nuevos roles deben respetar boundaries y denegaciones de Architect. La boundary del ejecutor no se aplica sola a los roles runtime. El antecedente CDK del workspace ya advierte estos límites.
+**Desventajas:** bootstrap S3/ECR/roles requiere diseño de permisos y recursos; CLI/library/constructs suman versiones; bundling Nest no es automático; nuevos roles deben respetar boundaries y restricciones de acceso de la cuenta. La boundary del ejecutor no se aplica sola a los roles runtime.
 
-**Elegir SAM en cambio** si se prioriza una única herramienta para los repos cloud, se quiere el template mínimo sin constructs o el bootstrap CDK no se aprueba. No migrar portfolio-cloud a CDK para uniformar. Serverless v4 no compensa sus requisitos/licencia adicionales; no elegir v3 sin mantenimiento para evitarlos. SST no es CDK actual ni requiere Pulumi Cloud, pero sí un modelo de estado distinto que hoy no resuelve una necesidad comprobada.
+**Elegir SAM en cambio** si se prioriza una única herramienta para los repos cloud, se quiere el template mínimo sin constructs o el costo operativo del bootstrap CDK no se justifica. No migrar portfolio-cloud a CDK para uniformar. Serverless v4 no compensa sus requisitos/licencia adicionales; no elegir v3 sin mantenimiento para evitarlos. SST no es CDK actual ni requiere Pulumi Cloud, pero sí un modelo de estado distinto que hoy no resuelve una necesidad comprobada.
 
 Serverless CLI gratis y Dashboard gratis no son lo mismo. SST Console también es opcional: referencia actual, hasta 350 recursos activos gratis, luego tarifa por recursos; validar términos al adoptar. [Serverless](https://www.serverless.com/pricing), [SST Console](https://sst.dev/docs/console/), [estado SST](https://sst.dev/docs/state/).

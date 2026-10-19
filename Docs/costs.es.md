@@ -4,7 +4,7 @@
 
 ## Modelo explícito
 
-Se calcula la candidata Lambda **Event Function**, no Lambda Web Functions. No hay tráfico medido por ruta ni factura accesible con Observer. Las cifras no garantizan ahorro.
+Se calcula la candidata Lambda **Event Function**, no Lambda Web Functions. Las cifras usan una carga hipotética, no tráfico medido ni facturación personal. El modelo permite comparar alternativas y no garantiza ahorro.
 
 | Supuesto mensual | Bajo | Mayor uso |
 | --- | --- | --- |
@@ -68,8 +68,8 @@ Contenedores: como referencia App Runner cobra 0,007/GB-h provisionada y 0,064/v
 
 1. Logs agregados existentes de acceso por ruta/status/duración de los últimos 30 días; no cuerpos ni emails. Obtener métricas ya disponibles sin enviar tráfico de negocio.
 2. Contar eventos chat_provider por outcome, tokens y cache_hit; comparar contra chat_reply, no solo source=faq. No recuperar prompts ni respuestas.
-3. Factura/Cost Explorer agregado por servicio y región mediante un acceso de lectura autorizado; Observer actual deniega el widget. No escalar permisos.
-4. Medir en entorno aislado cold/warm, INIT/billed duration/memoria, distribución de tokens, solicitudes rechazadas y contadores. Proveedor simulado primero; llamadas pagas solo con presupuesto autorizado.
+3. Contrastar el modelo con costos agregados por servicio y región. La facturación, los créditos y el presupuesto personal se conservan en el registro privado.
+4. Medir en entorno aislado cold/warm, INIT/billed duration/memoria, distribución de tokens, solicitudes rechazadas y contadores. Proveedor simulado primero; llamadas pagas solo con presupuesto definido.
 5. Inventariar metadata/retención de S3/logs/secrets y planes externos, sin GetSecretValue ni leer objetos privados de suscriptores.
 
 Antes de habilitar público, acordar alertas en USD, cuota diaria IA, límites de ingreso y procedimiento de corte. Una alerta puede llegar tarde y no garantiza un límite de gasto.

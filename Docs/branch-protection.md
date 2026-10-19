@@ -1,25 +1,31 @@
-# Branch protection: applied state
+# Branch protection
 
-[Español](branch-protection.es.md) · Verified through GitHub API on 2026-10-24. Applies only to matigaleanodev/portfolio-api-cloud.
+[Español](branch-protection.es.md) · 2026-10-24. Repository: matigaleanodev/portfolio-api-cloud.
 
-| Active ruleset | Rules | Bypass |
+## Policy
+
+Work branches use `feat/`, `fix/` or `release/`. `codex/` and other prefixes are blocked. `main` and `dev` require PRs, CI and automated merges; direct pushes, deletion and force are prohibited.
+
+| Ruleset | Rules | Steady-state bypass |
 | --- | --- | --- |
-| [main-dev-workflow-merges-only](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) | Restrict main/dev updates | none until dedicated App configuration |
-| [main-dev-required-pr-and-ci](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799502) | PR, GitHub Actions verify check with up-to-date branch, resolved threads, merge commits only; no deletion/force | none, including administrators |
+| [main-dev-workflow-merges-only](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) | Restrict main/dev updates | none until App configuration |
+| [main-dev-required-pr-and-ci](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799502) | PR, GitHub Actions verify check, current branch, resolved conversations, merge commits only; no deletion/force | none, including administrators |
 | [allowed-branch-prefixes](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799503) | restrict creation outside main/dev/feat/**/fix/**/release/** | none |
 
-Applicable-rule queries returned update/PR/status/non-fast-forward/deletion for main/dev, creation blocking for codex/example and feature/example, and no creation block for feat/example, fix/example and release/example. No test branches/push attempts were made. This verifies configuration, not an actual merge.
+Branch-name rule queries confirmed main/dev protection, creation blocking for codex/example and feature/example, and permitted creation for feat/example, fix/example and release/example. No test branches were created. Required review approvals are zero for solo maintenance; PR and CI remain mandatory.
 
-When these rules were applied, the repository was empty with no main/dev refs or real default branch. Rulesets still target those future names. No commit/push occurred at that stage; publication and dev-only integration were authorized afterward. Required human approvals remain zero to support a solo maintainer; this does not bypass the workflow/check. Initial branch seeding needs a separately agreed authorized Git bootstrap.
+## Initial integration
 
-## Encountered restriction and pending resolution
+`dev` was initialized with the root exclusions commit and is the default branch. `main` does not exist yet. [PR #1](https://github.com/matigaleanodev/portfolio-api-cloud/pull/1) contains documentation and workflow preparation.
 
-GitHub rejected integrated GitHub Actions App 15368 as sole pull_request update bypass with HTTP 422: `Actor GitHub Actions integration must be part of the ruleset source or owner organization`. That rejected request created no rule. It was not a Codex automatic-review rejection.
+Initial integration temporarily removes only dev from the update lock. PR/CI protection remains intact and main retains its rules. The original ruleset condition is restored afterward and effective configuration is verified through the API. This exception addresses repository initialization and is not the regular delivery process.
 
-Instead of allowing human merges, the active update ruleset has **no bypass** and blocks workflows too. A dedicated personal GitHub App must be installed only in this repo, added as its sole pull_request update bypass, and configured for the merge environment. Leave the quality ruleset without bypass so PR/check requirements still apply to the App. No App/key/secret/professional permission was created. Installation requires a user decision. [Prepared workflow](ci-cd.md).
+## Pending automation
 
-Do not claim merges already work, weaken the lock, add administrator bypass or substitute a human PAT. The repository owner can edit rules; protection is not immutable against its administrator.
+GitHub rejected integrated GitHub Actions App 15368 as a ruleset bypass with HTTP 422: `Actor GitHub Actions integration must be part of the ruleset source or owner organization`.
 
-The user's latest repo policy allows feat/, fix/, release/ and forbids codex/. It overrides the earlier workspace rule naming only feat/fix for this repository.
+The steady-state flow needs a dedicated App installed only in this repository. Its ID will be the update ruleset's sole pull_request bypass; the quality ruleset retains no bypass. Until that integration exists, the steady-state update lock also blocks workflow merges. [Planned configuration](ci-cd.md).
 
-References: [rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets), [branch-name rules API, including nonexistent branches](https://docs.github.com/en/rest/repos/rules#get-rules-for-a-branch).
+The owner can edit rules; protection is not immutable against repository administration.
+
+References: [rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets), [branch-name rules API](https://docs.github.com/en/rest/repos/rules#get-rules-for-a-branch).

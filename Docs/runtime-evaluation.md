@@ -1,8 +1,8 @@
 # Choose the runtime from evidence
 
-[Español](runtime-evaluation.es.md) · 2026-10-24. Incorporates the user's clarification: removing Nest is acceptable if optimal, without treating their opinion or existing code as the answer.
+[Español](runtime-evaluation.es.md) · 2026-10-24. Selection compares compatibility, latency, cost and maintenance; retaining the current framework is not a requirement.
 
-**CDK does not replace NestJS.** CDK defines/deploys infrastructure; Nest or Node.js handlers execute HTTP/business behavior. CDK can remain the recommendation with either runtime.
+**Infrastructure and runtime are separate decisions.** CDK defines/deploys infrastructure; Nest or Node.js handlers execute HTTP/business behavior. CDK can remain the recommendation with either runtime.
 
 ## Project evidence
 
@@ -26,8 +26,8 @@ No extra HTTP/validation framework or generic ports/adapters architecture by def
 
 Future local stage: same Node version for A/B, reproducible lockfiles, artifact, memory/contract inputs and deterministic provider mocks. Measure ZIP/dependency size, import/initialization in fresh processes and p50/p95, then warm execution. Start with at least 30 alternating starts per candidate, report spread and explicitly distinguish local results from Lambda.
 
-Authorized AWS test: same region/architecture/memory (512/1024 MiB), networking, secret/cache/protection settings. Identify cold starts through INIT/telemetry, not request count. Separate fast routes/chat; measure p50/p95/p99 when samples permit, errors/fallback, billed duration/cost. Mock providers to isolate framework; budgeted real-provider samples validate the final experience. No paid/production load tests now.
+Isolated AWS test: same region/architecture/memory (512/1024 MiB), networking, secret/cache/protection settings. Identify cold starts through INIT/telemetry, not request count. Separate fast routes/chat; measure p50/p95/p99 when samples permit, errors/fallback, billed duration/cost. Mock providers to isolate framework; budgeted real-provider samples validate the final experience. No paid/production load tests now.
 
 Choose B if it preserves all contracts/protections, meets measured targets and materially reduces startup/cost or operating complexity without disproportionate maintenance. Choose A if it meets targets and B's measured benefit does not justify adapting validation/errors/tests. If both fail, reconsider ingress/deadlines and C/containers. Do not buy provisioned concurrency before comparison.
 
-**Status:** CDK recommended, runtime undecided pending evidence. Lightweight handlers are a strong candidate at this scale, not a demonstrated winner. No prototypes/benchmarks were implemented; conditional rewrite acceptance is not blanket implementation approval.
+**Status:** CDK recommended, runtime undecided pending evidence. Lightweight handlers are a strong candidate at this scale, not a demonstrated winner. No prototypes/benchmarks were implemented.

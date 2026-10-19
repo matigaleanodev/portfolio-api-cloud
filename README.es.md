@@ -2,39 +2,43 @@
 
 [English](README.md)
 
-Migración de **toda** la API pública de Portfolio desde EC2 compartida hacia infraestructura administrada en AWS. Este repositorio contiene la auditoría, una propuesta y preparación de workflows. **No tiene código de aplicación, stack CDK, dependencias instaladas ni recursos desplegados**.
+Migración de la API pública de Portfolio desde EC2 compartida hacia servicios administrados de AWS. El objetivo es reducir la operación de servidores, conservar los contratos existentes y medir el costo total antes de cambiar producción.
 
-## Alcance y responsabilidades
+## Estado actual
 
-- `portfolio`: UI Angular, contenido editorial estático y Firebase Hosting.
-- `portfolio-api`: API NestJS existente; se conserva como respaldo operativo.
-- `portfolio-cloud`: automatización SAM existente, persistencia de suscriptores, notificaciones de releases, imágenes OG y publicación canónica del conocimiento del chat. Esas responsabilidades no se trasladan acá.
-- `portfolio-api-cloud`: futuro reemplazo de health, contacto, chat y fachada de suscripciones.
+La auditoría y la planificación están completas. El repositorio contiene documentación bilingüe, validación documental y workflows de CI, preparación de despliegue test y merges protegidos. Todavía no tiene código de aplicación, stack CDK ni recursos AWS desplegados.
 
-El contrato público tiene seis rutas. La API no tiene base de datos de aplicación, uploads, WebSockets ni streaming. Son hallazgos del código; no prueban que producción coincida con cada archivo local.
+La integración inicial se concentra en `dev`. `main` queda reservada para una etapa posterior. La API original continúa siendo el respaldo operativo.
 
-## Orden de lectura
+## Responsabilidades
 
-1. [Auditoría actual y evidencia](Docs/audit.es.md)
-2. [Arquitectura y recomendación de framework](Docs/architecture.es.md)
-3. [Escenarios de costos](Docs/costs.es.md)
-4. [Migración, aceptación y recuperación](Docs/migration.es.md)
-5. [Estado de decisiones](Docs/decisions.es.md)
-6. [Preparación de CI/CD](Docs/ci-cd.es.md)
-7. [Comparación de runtimes y criterios](Docs/runtime-evaluation.es.md)
-8. [Protecciones aplicadas y App de merges pendiente](Docs/branch-protection.es.md)
-9. [Referencias oficiales, consultadas el 24/10/2026](Docs/sources.es.md)
+- `portfolio`: frontend Angular, contenido editorial estático y Firebase Hosting.
+- `portfolio-api`: implementación NestJS actual de health, contacto, chat y fachada de suscripciones.
+- `portfolio-cloud`: persistencia de suscriptores, notificaciones, imágenes OG, procesamiento de releases y publicación del conocimiento del chat.
+- `portfolio-api-cloud`: futura implementación administrada de los seis endpoints de la API pública.
 
-**Recomendación, pendiente de aprobación para implementar:** CDK TypeScript; comparar NestJS adaptado con handlers Node.js livianos antes de elegir runtime. Evaluar inicialmente Lambda Event Function con API Gateway HTTP API. El límite compartido por IP y los tiempos máximos de llamadas externas bloquean la salida a producción hasta validarlos. SAM es la alternativa más cercana. No se presupone ahorro por usar serverless.
+El código auditado no tiene base de datos de aplicación, uploads, WebSockets ni streaming. La persistencia de suscripciones y la automatización editorial siguen en `portfolio-cloud`.
 
-## Autorización vigente
+## Documentación
 
-El usuario autorizó crear este repositorio público, documentación Markdown local, archivos de workflows y protección de ramas GitHub. El usuario autorizó después commits pequeños, publicación de la rama, integración solo a dev y limpieza posterior. main queda fuera de esta entrega. Siguen sin autorizarse implementación de la aplicación, mutaciones AWS, bootstrap CDK, despliegues o cambios de tráfico productivo. Las fechas Git solicitadas no cambian la fecha real de consulta de la auditoría (24/10/2026). El merge inicial depende de resolver la identidad de automatización y el bootstrap Git sin eludir protecciones.
+1. [Auditoría funcional y evidencia](Docs/audit.es.md)
+2. [Arquitectura y herramientas de infraestructura](Docs/architecture.es.md)
+3. [Costos y supuestos](Docs/costs.es.md)
+4. [Migración y recuperación](Docs/migration.es.md)
+5. [Registro de decisiones](Docs/decisions.es.md)
+6. [CI/CD](Docs/ci-cd.es.md)
+7. [Evaluación del runtime](Docs/runtime-evaluation.es.md)
+8. [Protección de ramas](Docs/branch-protection.es.md)
+9. [Fuentes consultadas el 24/10/2026](Docs/sources.es.md)
 
-## Trabajo local
+## Decisiones abiertas
 
-Trabajar en Ubuntu-26.04 desde WSL. Las ramas nuevas usan `feat/`, `fix/` o `release/`. `agents.md` y sus variantes, `roadmap` y `mentor` son locales ignorados y no se publican. La documentación duradera tiene pares inglés/español. Validar la documentación actual con `python3 scripts/check_docs.py`. Todavía no existen comandos npm/CDK; el contrato futuro de scripts está en [CI/CD](Docs/ci-cd.es.md).
+CDK TypeScript es la opción de infraestructura preferida; SAM es la alternativa más cercana por su uso en `portfolio-cloud`. La elección del runtime sigue abierta entre NestJS adaptado y handlers Node.js livianos. Lambda Event Function con HTTP API es la base inicial de evaluación; sus límites, latencia, protección contra abuso y costo deben validarse antes de cerrar la arquitectura.
 
-Conservar la API EC2 durante la migración de Portfolio. Foodly Notes y Modo Playa son migraciones posteriores independientes. Retirar EC2 queda fuera del alcance vigente.
+## Desarrollo y entrega
 
-Las ramas `codex/` están prohibidas. main/dev requieren PR fusionado por workflow; los updates siguen bloqueados hasta instalar la App dedicada. Ver la documentación de protección.
+El entorno local es Ubuntu-26.04 en WSL. Las ramas de trabajo usan `feat/`, `fix/` o `release/`; `codex/` está prohibido. `main` y `dev` requieren PR, CI y el flujo de integración definido en [protección de ramas](Docs/branch-protection.es.md).
+
+La validación documental se ejecuta con `python3 scripts/check_docs.py`. Los scripts npm/CDK corresponden a la implementación futura.
+
+La convivencia con EC2 permite validar la migración de Portfolio sin interrumpir las otras aplicaciones del servidor compartido. Su retiro depende de completar las migraciones restantes y el período de estabilización.

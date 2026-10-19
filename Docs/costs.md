@@ -4,7 +4,7 @@
 
 ## Explicit workload model
 
-These calculations cover the candidate Lambda **Event Function**, not native Web Functions. No per-route traffic or authorized bill was available; no saving is guaranteed.
+These calculations cover the candidate Lambda **Event Function**, not native Web Functions. Figures use hypothetical traffic rather than measured traffic or personal billing. The model compares alternatives without guaranteeing savings.
 
 | Monthly assumption | Low | Higher use |
 | --- | --- | --- |
@@ -68,8 +68,8 @@ Container reference: App Runner lists 0.007/GB-hour provisioned memory and 0.064
 
 1. Existing aggregate 30-day route/status/duration access logs, without bodies/emails or generated business traffic.
 2. Aggregate chat_provider outcomes/tokens/cache_hit against chat_reply, not just source=faq; do not retrieve prompts/replies.
-3. Aggregated regional service billing through authorized read access; current Observer cost widget is denied. Do not elevate.
-4. Isolated cold/warm/INIT/billed duration/memory/token/rejection/counter measurements. Mock providers first; paid calls only with an authorized budget.
+3. Compare the model with aggregate regional service costs. Actual billing, credits and personal budgets remain in the private record.
+4. Isolated cold/warm/INIT/billed duration/memory/token/rejection/counter measurements. Mock providers first; paid calls only with a defined budget.
 5. Asset/log/secret retention metadata and external plan information, without GetSecretValue or private subscriber reads.
 
 Agree USD alerts, daily AI quota, ingress controls and operational cutoff before public enablement. Alerts may arrive late and do not impose a spending cap.

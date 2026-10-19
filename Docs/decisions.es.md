@@ -1,28 +1,46 @@
-# Decisiones y propuestas
+# Registro de decisiones
 
 [English](decisions.md) · 24/10/2026.
 
-## Confirmado por el usuario
+## Decisiones cerradas
 
-- Migrar toda la API con respaldo en la implementación original; orden Portfolio→Foodly Notes→Modo Playa.
-- Conservar responsabilidades de portfolio-cloud y frontend estático.
-- Crear ahora portfolio-api-cloud **público**, con documentación y workflows locales y protección GitHub de main/dev.
-- Publicar la preparación en commits pequeños y avanzar solo a dev; main queda fuera. No autorizar todavía código de aplicación, recursos AWS, bootstrap CDK, deploy ni corte.
-- Solo cuenta personal, Observer para inspección; no credenciales/arquetipo privado de Comafi.
-- Aceptar 1–2 meses de convivencia; no apagar EC2 hasta migrar las otras apps y estabilizar.
+- La migración abarca toda la API pública, con la implementación original como respaldo.
+- `portfolio` conserva la entrega estática y `portfolio-cloud` sus responsabilidades actuales.
+- La implementación nueva vive en un repositorio público independiente.
+- La primera integración se realiza en `dev`; `main` queda para una etapa posterior.
+- La transición admite uno o dos meses de convivencia. EC2 permanece disponible hasta completar las migraciones restantes y la estabilización.
+- El trabajo usa exclusivamente la cuenta AWS personal y la región principal us-east-1.
 
-## ADR-001 — Herramienta de infraestructura
+## ADR-001 — Infraestructura como código
 
-Estado: **propuesta**. CDK v2 TypeScript recomendado por experiencia diaria del mantenedor, control IAM y pruebas de infraestructura. SAM finalista por continuidad con portfolio-cloud. La experiencia en el trabajo es contexto del usuario, no autoridad para copiar código ni acceder a cuentas laborales. No migrar SAM existente. [Comparación](architecture.es.md).
+Estado: **abierta; CDK TypeScript es la opción preferida**.
 
-## ADR-002 — Unidad de ejecución
+Los criterios principales son experiencia operativa con CDK, TypeScript compartido con la API, control explícito de IAM y pruebas de infraestructura. SAM sigue siendo finalista por continuidad con `portfolio-cloud`. Ese repositorio conserva SAM; uniformar herramientas no justifica migrarlo.
 
-Estado: **propuesta condicionada**. Comparar NestJS adaptado con handlers livianos antes de elegir runtime; CDK no reemplaza Nest. Event Function + HTTP API, sin VPC y con cuotas distribuidas es la infraestructura candidata común. Ver [evaluación](runtime-evaluation.es.md). Dividir chat solo ante contención medible. Comparar Lambda Web Functions nativas antes de cerrar implementación si su soporte/costo resulta favorable. [Riesgos](audit.es.md).
+Pendientes: diseño del bootstrap, roles, boundaries y confirmación de la herramienta con el runtime elegido. [Comparación](architecture.es.md).
 
-## ADR-003 — Publicación y workflows
+## ADR-002 — Runtime de la API
 
-Estado: **preparación y protección GitHub autorizadas, activación de workflows pendiente**. GitHub se creó vacío. La publicación de la preparación y su integración solo a dev se autorizaron después, conservando los bloqueos de merges hasta resolver la App y el bootstrap Git. CI distingue documentación de aplicación inexistente. Deploy manual solo prepara cambios de test tras opt-in y environment; no ejecuta changeset, no produce despliegue y no tiene camino prod. main/dev solo reciben PRs fusionados por workflow de App dedicada, sin PAT/force. Los rulesets ya están activos y el lock actual no tiene bypass: merges bloqueados hasta instalar la App. dev no se promete espejo exacto. Ramas de trabajo solo feat/fix/release; codex prohibido. Publicar no equivale a autorizar bootstrap ni activar mutaciones. [CI/CD](ci-cd.es.md).
+Estado: **abierta**.
 
-## Pendientes que condicionan implementación/producción
+Las candidatas son NestJS adaptado y handlers Node.js livianos. Ambas deben conservar contratos y comportamiento. Event Function con HTTP API, fuera de VPC y con cuotas distribuidas, es la base común de evaluación. La separación del chat en otra función depende de contención o necesidades de permisos comprobadas.
 
-Aprobar recomendaciones, escoger límites diarios/budget y latencia aceptable, definir edad máxima stale, aislar datos/proveedores test, revisar IAM/bootstrap/CDK seleccionado, elegir mecanismo de dominio y ensayar rollback. Faltan costos y tráfico reales; las estimaciones no se convierten en presupuesto por estar documentadas. Los dos repos antiguos de runtime y automatización permanecen operativos y sin cambios.
+La decisión se cierra con compatibilidad funcional, medidas de arranque y latencia, costo y mantenimiento. Lambda Web Functions sigue como alternativa si su modelo de ejecución resulta más conveniente. [Protocolo de evaluación](runtime-evaluation.es.md).
+
+## ADR-003 — Integración y entrega
+
+Estado: **política definida; automatización pendiente**.
+
+Las ramas de trabajo usan feat/fix/release. main y dev requieren PR, CI, conversaciones resueltas y protección contra borrado/force. El flujo estable de merge usará una App dedicada. La integración inicial del PR #1 contempla una excepción temporal limitada a dev; el bloqueo se restablece al finalizar.
+
+CI distingue validación documental de pruebas de aplicación. El workflow test prepara un changeset, sin ejecutarlo, y no tiene camino productivo. [CI/CD](ci-cd.es.md) y [reglas](branch-protection.es.md).
+
+## Decisiones abiertas restantes
+
+- Presupuesto, cuota diaria de IA y objetivos de latencia.
+- Edad máxima del conocimiento stale y política de fallback.
+- Aislamiento de datos y proveedores en test.
+- Roles, bootstrap y retención de artifacts.
+- Mecanismo de dominio, corte de tráfico y ensayo de recuperación.
+
+Faltan tráfico y costos reales para cerrar el presupuesto. Las hipótesis de los escenarios no representan consumos medidos.

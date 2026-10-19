@@ -2,39 +2,43 @@
 
 [Español](README.es.md)
 
-Migration of the **entire** public Portfolio API from shared EC2 to managed AWS infrastructure. This repository currently contains an audit, a proposal and workflow preparation. It has **no application code, CDK stack, installed dependencies or deployed resources**.
+Migration of the public Portfolio API from shared EC2 to managed AWS services. The goal is to reduce server operations, preserve existing contracts and measure total cost before changing production.
 
-## Scope and ownership
+## Current state
 
-- `portfolio`: Angular UI, static editorial content and Firebase Hosting.
-- `portfolio-api`: existing NestJS API; preserved as the operational fallback.
-- `portfolio-cloud`: existing SAM automation, subscriber persistence, release notifications, OG images and canonical chat knowledge publication. Its ownership does not move here.
-- `portfolio-api-cloud`: future replacement for health, contact, chat and the subscription facade.
+The audit and planning are complete. This repository contains bilingual documentation, document validation and workflows for CI, test deployment preparation and protected merges. Application code, a CDK stack and deployed AWS resources are not present yet.
 
-The public contract has six routes. The API has no application database, uploads, WebSockets or streaming. These are code findings, not an assertion that production matches every local file.
+Initial integration targets `dev`. `main` is reserved for a later stage. The original API remains the operational fallback.
 
-## Read in this order
+## Responsibilities
 
-1. [Current-state audit and evidence](Docs/audit.md)
-2. [Architecture and framework recommendation](Docs/architecture.md)
-3. [Cost scenarios](Docs/costs.md)
-4. [Migration, acceptance and recovery](Docs/migration.md)
-5. [Decision status](Docs/decisions.md)
-6. [CI/CD preparation](Docs/ci-cd.md)
-7. [Runtime comparison and selection gates](Docs/runtime-evaluation.md)
-8. [Applied branch protection and pending merge App](Docs/branch-protection.md)
-9. [Official references, consulted 2026-10-24](Docs/sources.md)
+- `portfolio`: Angular frontend, static editorial content and Firebase Hosting.
+- `portfolio-api`: current NestJS implementation of health, contact, chat and the subscription facade.
+- `portfolio-cloud`: subscriber persistence, notifications, OG images, release processing and chat knowledge publication.
+- `portfolio-api-cloud`: future managed implementation of all six public API endpoints.
 
-**Recommendation, not implementation approval:** TypeScript CDK; compare adapted NestJS against lightweight Node.js handlers before selecting runtime. Initially evaluate a Lambda Event Function behind API Gateway HTTP API. Shared rate limiting and bounded outbound requests are production gates. SAM is the closest alternative. No serverless cost saving is assumed.
+Audited code has no application database, uploads, WebSockets or streaming. Subscriber persistence and editorial automation remain in `portfolio-cloud`.
 
-## Current authorization
+## Documentation
 
-The user authorized creating this public repository, local Markdown documentation, workflow files and GitHub branch protection. The user subsequently authorized small commits, branch publication, integration into dev only and branch cleanup afterward. main is outside this delivery. Application implementation, AWS mutations, CDK bootstrap, deployment and production traffic changes remain unauthorized. Requested Git dates do not change the actual audit consultation date (2026-10-24). Initial merge requires resolving automation identity and Git bootstrap without bypassing protections.
+1. [Functional audit and evidence](Docs/audit.md)
+2. [Architecture and infrastructure tooling](Docs/architecture.md)
+3. [Cost assumptions and scenarios](Docs/costs.md)
+4. [Migration and recovery](Docs/migration.md)
+5. [Decision log](Docs/decisions.md)
+6. [CI/CD](Docs/ci-cd.md)
+7. [Runtime evaluation](Docs/runtime-evaluation.md)
+8. [Branch protection](Docs/branch-protection.md)
+9. [Sources consulted on 2026-10-24](Docs/sources.md)
 
-## Local workflow
+## Open decisions
 
-Work through Ubuntu-26.04 in WSL. New branches use `feat/`, `fix/` or `release/`. Local `agents.md` variants, `roadmap` and `mentor` are ignored and never published. Durable documentation is paired English/Spanish. Validate the current documentation with `python3 scripts/check_docs.py`. No npm/CDK commands exist yet; the future script contract is described in [CI/CD](Docs/ci-cd.md).
+TypeScript CDK is the preferred infrastructure option; SAM is its closest alternative because it already operates `portfolio-cloud`. Runtime selection remains open between adapted NestJS and lightweight Node.js handlers. Lambda Event Function with HTTP API is the initial evaluation baseline; limits, latency, abuse protection and cost need validation before architecture selection is complete.
 
-Keep the existing EC2 service available through the Portfolio migration. Foodly Notes and Modo Playa are separate later migrations. EC2 retirement is outside this repository's current scope.
+## Development and delivery
 
-Work branches `codex/` are forbidden. main/dev require workflow-merged PRs; updates are currently locked until a dedicated merge App is installed. See branch-protection documentation.
+The local environment is Ubuntu-26.04 in WSL. Work branches use `feat/`, `fix/` or `release/`; `codex/` is forbidden. `main` and `dev` require PRs, CI and the integration process described in [branch protection](Docs/branch-protection.md).
+
+Run document validation with `python3 scripts/check_docs.py`. npm/CDK scripts belong to the future implementation. Local instructions and tracking files remain ignored.
+
+EC2 coexistence allows Portfolio validation without interrupting other applications on the shared server. Retirement depends on the remaining migrations and the stabilization period.

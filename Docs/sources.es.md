@@ -44,7 +44,7 @@ Consulta: **24/10/2026**. Documentación primaria de proveedores. Revalidar prec
 - [GitHub rulesets and bypass / reglas](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets)
 - [GitHub rules API, nonexistent branch / rama inexistente](https://docs.github.com/en/rest/repos/rules#get-rules-for-a-branch)
 
-La evidencia de repositorios y commits exactos está en [la auditoría](audit.es.md). Las lecturas AWS vivas fueron portal personal, Observer, resumen/almacenamiento EC2 y resumen/recursos CloudFormation; solo metadata. No se leyeron valores de secretos ni objetos de suscriptores. Se releyeron los rulesets GitHub por ID y por nombre de rama aplicable.
+La auditoría enlaza los repositorios y commits inspeccionados. La evidencia de infraestructura corresponde al resumen y almacenamiento EC2 y a los recursos del stack CloudFormation, consultados el 24/10/2026. Las reglas GitHub se verificaron por ID y por nombre de rama.
 
 - [OpenAI Responses state / retención](https://developers.openai.com/api/docs/guides/conversation-state)
 - [Dedicated App token action / permisos](https://github.com/actions/create-github-app-token/blob/v2/action.yml)

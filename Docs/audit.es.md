@@ -4,7 +4,7 @@
 
 ## Evidencia y límites
 
-**Comprobado localmente:** los tres repos estaban limpios. Se preservaron sus ramas y archivos. No existe `graphify-out/graph.json`; no se generó un índice. El workspace padre tiene cambios preexistentes, que no se tocaron.
+La auditoría fija los commits inspeccionados para mantener trazabilidad de los contratos y las dependencias.
 
 | Repo | HEAD local inspeccionado | Rama local | `main` verificado en GitHub |
 | --- | --- | --- | --- |
@@ -14,9 +14,9 @@
 
 Las referencias locales `origin/main` estaban desactualizadas. Se consultó `main` por GitHub sin fetch ni modificación. La comparación remota local-HEAD→main mostró solo workflows en API/frontend y workflows/README/template en cloud. La evidencia siguiente referencia el HEAD realmente leído. El SHA desplegado en EC2 no se verificó.
 
-**AWS vivo:** la CLI Observer devolvió sesión SSO vencida. Luego se usó Chrome, portal personal→Observer, verificando cuenta `650387442642`, rol `AWSReservedSSO_Observer_b3caac6c63d98e74` y región `us-east-1` antes de inspeccionar recursos. Se observó una EC2 `t3.micro` en ejecución, 3/3 checks, Amazon Linux 2023, IMDSv2 requerido, stop/termination protection activas, perfil `EC2SystemsManagerRole` y volumen raíz EBS de 8 GiB no cifrado. CloudFormation listó `portfolio-cloud-prod` en `UPDATE_COMPLETE`, actualización 11/10/2026 19:40:43 AR, drift NOT_CHECKED y ejecutor PortfolioCloudCloudFormationExecutionRole. Sus 16 recursos incluyen las seis Lambdas, seis roles, HTTP API/stage y dos permisos de invocación. Sin CDKToolkit en la lista activa consultada de esa región. No se afirma ausencia global de bootstrap. El widget de costos denegó acceso; no se elevaron permisos.
+**Infraestructura observada:** en la cuenta personal, región us-east-1, una EC2 `t3.micro` en ejecución con 3/3 checks, Amazon Linux 2023, IMDSv2 requerido y protecciones de parada/terminación. El volumen raíz EBS tiene 8 GiB y no está cifrado. CloudFormation muestra `portfolio-cloud-prod` en `UPDATE_COMPLETE`, actualizado el 11/10/2026 19:40:43 AR, con drift `NOT_CHECKED`. Sus 16 recursos incluyen seis Lambdas, seis roles, HTTP API/stage y dos permisos de invocación. No aparece CDKToolkit en la lista de stacks activos consultada; esa observación se limita a esta región. La facturación real se mantiene en el registro privado; el [modelo público](costs.es.md) usa escenarios hipotéticos.
 
-**Pendiente:** factura, tráfico por ruta, latencias, CPU/créditos, tipo EBS, digest de imagen activa, valores de configuración efectiva, reglas vigentes Cloudflare, estado SSM y IAM efectivo. No se abrieron `.env`, secretos, parámetros sensibles ni datos de suscriptores. El documento `Docs/operations/aws-access-2026-10-11.es.md` del workspace se leyó como historia, no como evidencia viva.
+**Pendiente:** tráfico por ruta, latencias, CPU/créditos, tipo EBS, digest de imagen activa, valores de configuración efectiva, reglas vigentes Cloudflare, estado SSM y IAM efectivo. No se abrieron `.env`, secretos, parámetros sensibles ni datos de suscriptores. El documento `Docs/operations/aws-access-2026-10-11.es.md` del workspace se leyó como historia, no como evidencia viva.
 
 ## Módulos y contratos
 
@@ -67,7 +67,7 @@ La aplicación no guarda conversaciones en DB ni usa previous_response_id, pero 
 
 ## Límites entre repos
 
-[ApiService del frontend](https://github.com/matigaleanodev/portfolio/blob/c1eac3492a54933f5c99540a3b4f61d0e70938cd/src/app/services/api.service.ts) usa Angular HttpClient para las cinco rutas de negocio. `src/environments/environment.ts:2` fija `https://api.matiasgaleano.dev/api`. El chat conserva mensajes en localStorage; `chat-history.ts` envía hasta seis turnos y recorta el body a 15 KiB. No usa SSE ni WebSocket. Cambiar URL exige build/publicación del frontend o conservar el dominio mediante un corte de infraestructura autorizado.
+[ApiService del frontend](https://github.com/matigaleanodev/portfolio/blob/c1eac3492a54933f5c99540a3b4f61d0e70938cd/src/app/services/api.service.ts) usa Angular HttpClient para las cinco rutas de negocio. `src/environments/environment.ts:2` fija `https://api.matiasgaleano.dev/api`. El chat conserva mensajes en localStorage; `chat-history.ts` envía hasta seis turnos y recorta el body a 15 KiB. No usa SSE ni WebSocket. Cambiar URL exige build/publicación del frontend o conservar el dominio mediante un corte de infraestructura.
 
 [template SAM](https://github.com/matigaleanodev/portfolio-cloud/blob/4c0b1735dde0759a9dbef5625aae7788386e9210/template.yaml) declara seis funciones: subscribe, unsubscribe, generate-og, notify-post, process-release, publish-chat-knowledge. Las primeras dos se exponen por HTTP API; process-release invoca OG y notify. No hay EventBridge/schedule declarados en ese template. El workflow de `portfolio` tiene cron diario 12:17 UTC e invoca process-release/publish-chat-knowledge después del handoff editorial. No duplicarlo acá.
 
@@ -104,7 +104,7 @@ Pruebas existentes inspeccionadas: DTO/config, contacto con Resend mock, suscrip
 | Alto | pruebas de contacto o suscripciones reales duplican efectos | mocks por defecto; test aislado y sin retries automáticos de POST; no shadow writes |
 | Alto | timeouts no acotan todo el chat/R2/contacto | deadline total menor que entrada HTTP, abort real del SDK/body, revisar Resend/reintentos y probar resultados ambiguos |
 | Alto | fallback inexistente en entorno frío + R2 caído | empaquetar artifact versionado, checksum y fecha; probar error cold y definir staleness máximo |
-| Medio | IAM/bootstrap nuevo no aprobado; límites existentes son por proyecto | roles acotados y boundaries nuevas revisadas; no reutilizar roles SAM/SSM ni defaults admin |
+| Medio | IAM/bootstrap nuevo sin diseño final; límites existentes son por proyecto | roles acotados y boundaries nuevas revisadas; no reutilizar roles SAM/SSM ni defaults admin |
 | Medio | caché IA fragmentada aumenta costo/proveedor y cold start | medir hit rate, billed duration y tokens; no garantizar ahorro ni agregar Redis anticipadamente |
 | Medio | salud superficial y métricas de API por ruta ausentes | logs sin cuerpos, latencia/error/timeout/429/fallback, costo; umbrales en entorno test |
 | Medio | recuperación depende de artifacts/imagen/config y EC2 compartida | pin de imagen y documentación de restore; no apagar al terminar solo Portfolio |

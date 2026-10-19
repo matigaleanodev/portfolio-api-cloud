@@ -44,7 +44,7 @@ Consulted on **2026-10-24**. Primary vendor documentation only. Dynamic pricing/
 - [GitHub rulesets and bypass / reglas](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets)
 - [GitHub rules API, nonexistent branch / rama inexistente](https://docs.github.com/en/rest/repos/rules#get-rules-for-a-branch)
 
-Repository evidence and exact inspected commits are linked in [the audit](audit.md). Live AWS observations came from the personal access portal, Observer, EC2 instance summary/storage and CloudFormation stack overview/resources; only metadata was read. No secret values or customer objects were read. GitHub rulesets were read back by ID and applicable branch name.
+The audit links the repositories and exact inspected commits. Infrastructure evidence covers the EC2 summary/storage and CloudFormation stack resources inspected on 2026-10-24. GitHub rules were verified by ID and applicable branch name.
 
 - [OpenAI Responses state / retención](https://developers.openai.com/api/docs/guides/conversation-state)
 - [Dedicated App token action / permisos](https://github.com/actions/create-github-app-token/blob/v2/action.yml)
