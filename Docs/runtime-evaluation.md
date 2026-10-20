@@ -12,7 +12,7 @@ Verified Nest coupling includes decorators/DI, ConfigService, Logger, HTTP excep
 
 The [official Nest serverless guide](https://docs.nestjs.com/faq/serverless) shows framework/bundling effects on startup. Its local example microbenchmarks are **not this API's AWS cold starts**; do not extrapolate timings. Cold latency includes runtime/imports/DI/config/secrets/knowledge, while chat adds network/model generation. Framework optimization may not fix the dominant delay.
 
-## Candidates
+## Documented technical comparison
 
 | Candidate | Reuse | Work/risk | Testable hypothesis |
 | --- | --- | --- | --- |
@@ -22,12 +22,12 @@ The [official Nest serverless guide](https://docs.nestjs.com/faq/serverless) sho
 
 No extra HTTP/validation framework or generic ports/adapters architecture by default. Candidate B should use the smallest sufficient composition/routing surface without rewriting knowledge. A remains a genuine comparator.
 
-## Experiment and selection rule
+## Experiment and technical criteria
 
-Future local stage: same Node version for A/B, reproducible lockfiles, artifact, memory/contract inputs and deterministic provider mocks. Measure ZIP/dependency size, import/initialization in fresh processes and p50/p95, then warm execution. Start with at least 30 alternating starts per candidate, report spread and explicitly distinguish local results from Lambda.
+Implemented local stage: same Node version for A/B, reproducible lockfiles, artifact, memory/contract inputs and deterministic provider mocks. Measure ZIP/dependency size, import/initialization in fresh processes and p50/p95, then warm execution. Start with at least 30 alternating starts per candidate, report spread and explicitly distinguish local results from Lambda.
 
 Isolated AWS test: same region/architecture/memory (512/1024 MiB), networking, secret/cache/protection settings. Identify cold starts through INIT/telemetry, not request count. Separate fast routes/chat; measure p50/p95/p99 when samples permit, errors/fallback, billed duration/cost. Mock providers to isolate framework; budgeted real-provider samples validate the final experience. No paid/production load tests now.
 
-Choose B if it preserves all contracts/protections, meets measured targets and materially reduces startup/cost or operating complexity without disproportionate maintenance. Choose A if it meets targets and B's measured benefit does not justify adapting validation/errors/tests. If both fail, reconsider ingress/deadlines and C/containers. Do not buy provisioned concurrency before comparison.
+Migration is decided and the initial structure will use TypeScript handlers. Adapted Nest remains a documentary control and the original NestJS implementation is retained as an independent alternative. The comparison is not used to reopen the migration decision.
 
-**Status:** CDK recommended, runtime undecided pending evidence. Lightweight handlers are a strong candidate at this scale, not a demonstrated winner. No prototypes/benchmarks were implemented.
+Local results, compatibility and limits are recorded in the [experiment](local-runtime.md) and its [evidence](runtime-evidence.md). Distributed protections, AWS behavior, observed costs and recovery remain implementation acceptance requirements. These local startup measurements do not establish AWS cold starts or monthly savings.
