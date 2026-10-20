@@ -4,9 +4,9 @@
 
 ## Recomendación
 
-Usar **AWS CDK v2 con TypeScript** para el repo nuevo. Conservar contratos, dominio, contenido y proveedores. El runtime se elige comparando NestJS/Express adaptado y handlers Node.js livianos según [el protocolo de evaluación](runtime-evaluation.es.md). Candidata de infraestructura común: **una Lambda Event Function**, fuera de VPC, detrás de **API Gateway HTTP API regional**, sin dominio productivo durante pruebas. El tamaño real (seis rutas, sin DB ni workers) no justifica repartir por endpoint.
+La migración a serverless está decidida. Construir la API con **handlers TypeScript**, conservando contratos, dominio, contenido y proveedores. NestJS/Express adaptado queda como referencia del [experimento local](local-runtime.es.md). **AWS CDK v2 con TypeScript** sigue como herramienta de infraestructura preferida; su decisión final y bootstrap permanecen abiertos. Candidata de infraestructura común: **una Lambda Event Function**, fuera de VPC, detrás de **API Gateway HTTP API regional**, sin dominio productivo durante pruebas. El tamaño real (seis rutas, sin DB ni workers) no justifica repartir por endpoint.
 
-Para la candidata Nest, separar bootstrap HTTP de `listen`, reutilizar una inicialización Nest por entorno y probar un adaptador Express→Lambda compatible con Express 5. El adaptador aún no está elegido ni instalado; la guía [Nest serverless](https://docs.nestjs.com/faq/serverless) orienta la prueba. Empezar con tsc y metadata de decoradores; bundling/minificación solo después de probar ZIP, imports opcionales y cold start. Node 22/x86_64 da una comparación inicial con Docker; comparar 512/1024 MiB y ARM después, sin provisioned concurrency inicial.
+El control documental Nest separó bootstrap HTTP de listen y usó serverless-express 4.17.0 con metadata TypeScript. Ese prototipo se descartó después de registrar resultados; no es una dependencia requerida para la estructura inicial de handlers. La prueba local usó Node 24.19.0 en ambas variantes. La validación AWS futura debe fijar arquitectura/memoria y distinguir INIT de latencia de proveedores. [Método y límites](local-runtime.es.md).
 
 API Gateway conserva rutas `/api/*`, códigos, body DELETE y errores. CORS en una sola capa, explicitando origen test/frontend, Content-Type y GET/POST/DELETE/OPTIONS. Validar también headers en errores de plataforma. El adapter debe preservar rawPath y evitar doble prefijo de stage. No publicar Function URL paralela que eluda las protecciones.
 
@@ -24,7 +24,7 @@ API Gateway conserva rutas `/api/*`, códigos, body DELETE y errores. CORS en un
 | Alternativa | Beneficio concreto | Costo/compromiso | Decisión propuesta |
 | --- | --- | --- | --- |
 | Nest completo + Event Function + HTTP API | reutiliza casi todo, entrada económica, rutas y throttles globales, IAM conocido | cold start, coste de espera externa y adaptador; timeout 30 s | baseline comparativo condicionado a prueba de paquete/latencia/abuso |
-| Handlers Node.js livianos agrupados | menos imports/DI/servidor y posible menor startup | trasladar validación, errores, cuotas y composición preservando contratos | candidata fuerte; decidir con mediciones, sin cambiar dominio |
+| Handlers Node.js livianos agrupados | menos imports/DI/servidor y posible menor startup | trasladar validación, errores, cuotas y composición preservando contratos | base elegida para la estructura inicial; conservar dominio |
 | 2 funciones: chat y resto | concurrencia/memoria/secretos separados; chat no ocupa cupos de contacto | dos paquetes/cold starts, limiter sigue compartido | separar solo si prueba demuestra contención o necesidad de permisos |
 | Una función por endpoint | aislamiento fino | seis despliegues sin dominios independientes ni carga demostrada | descartar de inicio |
 | REST API regional + Lambda | integración AWS WAF, controles adicionales y streaming de respuesta actual | entrada de mayor costo; cuotas/timeout distintos | preferir si WAF nativo o streaming pasan a requisito; hoy no existen |
@@ -63,3 +63,11 @@ Los cuatro pueden definir recursos cuyo costo AWS es el mismo. CDK no vuelve gra
 **Elegir SAM en cambio** si se prioriza una única herramienta para los repos cloud, se quiere el template mínimo sin constructs o el costo operativo del bootstrap CDK no se justifica. No migrar portfolio-cloud a CDK para uniformar. Serverless v4 no compensa sus requisitos/licencia adicionales; no elegir v3 sin mantenimiento para evitarlos. SST no es CDK actual ni requiere Pulumi Cloud, pero sí un modelo de estado distinto que hoy no resuelve una necesidad comprobada.
 
 Serverless CLI gratis y Dashboard gratis no son lo mismo. SST Console también es opcional: referencia actual, hasta 350 recursos activos gratis, luego tarifa por recursos; validar términos al adoptar. [Serverless](https://www.serverless.com/pricing), [SST Console](https://sst.dev/docs/console/), [estado SST](https://sst.dev/docs/state/).
+
+## Estado y transición
+
+Se completó una comparación local de handlers y Nest adaptado con lógica de un SHA fijado, mocks y contratos diferenciales. Esta publicación contiene su documentación, no las fuentes ni herramientas del experimento. El próximo incremento construye la estructura inicial de la API. [Evidencia](local-runtime.es.md).
+
+Las tres APIs actuales siguen operativas durante toda la migración. Al finalizar y validar recuperación, EC2 se apaga y se conserva detenida, sin terminarla ni desmantelarla, junto con un backup recuperable. El mecanismo de corte y la restauración deben verificarse antes de ese apagado.
+
+La actualización de perfil y proyectos usados por el bot es el último paso previo al despliegue productivo. [Etapas y recuperación](migration.es.md).

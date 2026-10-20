@@ -4,43 +4,51 @@
 
 ## Closed decisions
 
-- Migration covers the complete public API, with the original implementation retained as fallback.
-- `portfolio` retains static delivery and `portfolio-cloud` its existing responsibilities.
-- The new implementation lives in an independent public repository.
-- Initial integration targets `dev`; `main` is reserved for a later stage.
-- Transition allows one or two months of coexistence. EC2 remains available until the remaining migrations and stabilization are complete.
-- Work uses only the personal AWS account and primary region us-east-1.
+- Migrate all three APIs on the shared server to serverless. This repository implements only Portfolio's alternative.
+- Retain the original NestJS implementations as technical references and independent alternatives.
+- Keep all three current APIs operational throughout migration. After completion and verified recovery, stop EC2 without terminating or dismantling it and retain a recoverable backup.
+- Preserve Portfolio's six contracts and behavior, with configurable URL or routing without rewriting the frontend.
+- Keep static delivery in portfolio and existing portfolio-cloud responsibilities.
+- Build this API's initial structure with TypeScript handlers. The Nest comparison remains technical evidence.
+- Protect main/dev with PRs, CI and workflow merges. The first delivery is integrated into dev; main belongs to a later stage.
+- Use only personal AWS in us-east-1.
 
 ## ADR-001 — Infrastructure as code
 
 Status: **open; TypeScript CDK is preferred**.
 
-Primary criteria are operational CDK experience, TypeScript shared with the API, explicit IAM control and infrastructure assertions. SAM remains a finalist for continuity with `portfolio-cloud`. That repository retains SAM; tooling uniformity alone does not justify migration.
+CDK supports TypeScript infrastructure, IAM review and resource tests. SAM remains the closest alternative through portfolio-cloud continuity; that repository keeps its existing tool. Roles, boundaries, retention and bootstrap remain open; tooling does not decide runtime. [Architecture](architecture.md).
 
-Pending: bootstrap, roles, boundaries and confirmation of tooling with the selected runtime. [Comparison](architecture.md).
+## ADR-002 — TypeScript handler implementation
 
-## ADR-002 — API runtime
+Status: **initial-structure direction defined**.
 
-Status: **open**.
+Grouped handlers with explicit composition, retaining domain, DTOs, validation, errors and limits. The existing API remains independent. The local experiment compared that composition against adapted Nest with simulated providers. Its purpose is to document differences, not decide whether to migrate. [Results](local-runtime.md).
 
-Candidates are adapted NestJS and lightweight Node.js handlers. Both must preserve contracts and behavior. Event Function with HTTP API, outside VPC and using shared quotas, is the common evaluation baseline. Splitting chat depends on demonstrated contention or permission needs.
-
-Selection requires functional compatibility, startup/latency measurements, cost and maintainability. Lambda Web Functions remains an alternative if its execution model proves more suitable. [Evaluation protocol](runtime-evaluation.md).
+Lambda Event Function with HTTP API outside a VPC is the proposed infrastructure baseline. Splitting chat requires demonstrated contention or permission needs. Production publication requires distributed protections and actual environment validation.
 
 ## ADR-003 — Integration and delivery
 
-Status: **policy defined; automation pending**.
+Status: **policy defined; stable automation pending**.
 
-Work branches use feat/fix/release. main/dev require PRs, CI, resolved conversations and deletion/force protection. The steady-state merge flow uses a dedicated App. Initial integration of PR #1 includes a temporary dev-only exception; the update lock is restored afterward.
+main/dev require PRs, CI, resolved conversations and deletion/force protection. Work branches use feat/fix. Stable workflow merging needs the dedicated App. PR #1 is integrated into dev, update restrictions were restored and the initial exception is consumed.
 
-CI separates documentation validation from application testing. The test workflow prepares a change set without executing it and has no production path. [CI/CD](ci-cd.md) and [rules](branch-protection.md).
+Versioned CI covers documentation preparation and the future application/CDK contract. Locally tested CI changes are not included in this delivery. [CI/CD](ci-cd.md) and [rules](branch-protection.md).
 
-## Remaining open decisions
+## ADR-004 — Provenance and per-application interchangeability
 
-- Budget, daily AI quota and latency objectives.
-- Maximum stale-knowledge age and fallback policy.
-- Isolated test data/providers.
-- Roles, bootstrap and artifact retention.
-- Domain routing, cutover and recovery rehearsal.
+Status: **criterion defined; local evidence recorded**.
 
-Actual traffic and costs are still missing from the budget. Scenario assumptions are not measured consumption.
+The comparison reused portfolio-api@a0ef80fa9f82d1cea5a31425a63ab0a344338c56 with per-file hashes without changing its working tree. [Provenance](runtime-evidence.md).
+
+Interchangeability means replacing this same API's implementation while retaining HTTP and behavior. URL or routing may require configuration. It does not mean interchanging unrelated API domains, creating a generic platform or guaranteeing multicloud parity.
+
+## ADR-005 — Bot knowledge before production
+
+Status: **delivery order defined; refresh pending**.
+
+Refreshing bot data about the professional profile and projects is the final step before production deployment. Scope includes curated/editorial sources, prompts or FAQs dependent on those facts, the published artifact and packaged fallback. Verify provenance, integrity, dates, links and representative answers while retaining the previous recoverable version. Final-package checks belong to this same step; production deployment follows it. [Sequence](migration.md).
+
+## Open operational decisions
+
+Budget and daily AI quota; latency/cost thresholds; maximum stale age and provider retention; test isolation; roles/bootstrap; artifact retention; URL/routing and cutover runbook. Actual billing and private plans are unverified. Public scenarios are hypothetical.

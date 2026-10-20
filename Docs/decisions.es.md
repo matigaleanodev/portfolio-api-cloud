@@ -4,43 +4,51 @@
 
 ## Decisiones cerradas
 
-- La migración abarca toda la API pública, con la implementación original como respaldo.
-- `portfolio` conserva la entrega estática y `portfolio-cloud` sus responsabilidades actuales.
-- La implementación nueva vive en un repositorio público independiente.
-- La primera integración se realiza en `dev`; `main` queda para una etapa posterior.
-- La transición admite uno o dos meses de convivencia. EC2 permanece disponible hasta completar las migraciones restantes y la estabilización.
-- El trabajo usa exclusivamente la cuenta AWS personal y la región principal us-east-1.
+- Migrar las tres APIs del servidor compartido a serverless. Este repositorio implementa solo la alternativa de Portfolio.
+- Conservar las implementaciones NestJS originales como referencias técnicas y alternativas independientes.
+- Mantener las tres APIs actuales operativas durante la migración completa. Al finalizar y verificar recuperación, apagar EC2 sin terminarla ni desmantelarla y conservar un backup recuperable.
+- Conservar los seis contratos de Portfolio y su comportamiento, con URL o enrutamiento configurables sin reescribir el frontend.
+- Mantener la entrega estática en portfolio y las responsabilidades actuales de portfolio-cloud.
+- Construir la estructura inicial de esta API con handlers TypeScript. La comparación con Nest queda como evidencia técnica.
+- Mantener main/dev protegidas: PR, CI y merge por workflow. La primera entrega está integrada en dev; main queda para una etapa posterior.
+- Usar exclusivamente AWS personal, región us-east-1.
 
 ## ADR-001 — Infraestructura como código
 
 Estado: **abierta; CDK TypeScript es la opción preferida**.
 
-Los criterios principales son experiencia operativa con CDK, TypeScript compartido con la API, control explícito de IAM y pruebas de infraestructura. SAM sigue siendo finalista por continuidad con `portfolio-cloud`. Ese repositorio conserva SAM; uniformar herramientas no justifica migrarlo.
+CDK permite definir infraestructura en TypeScript, revisar IAM y probar los recursos. SAM sigue siendo la alternativa más cercana por su continuidad con portfolio-cloud, que conserva su herramienta actual. Falta cerrar roles, boundaries, retención y bootstrap; la herramienta no decide el runtime. [Arquitectura](architecture.es.md).
 
-Pendientes: diseño del bootstrap, roles, boundaries y confirmación de la herramienta con el runtime elegido. [Comparación](architecture.es.md).
+## ADR-002 — Implementación con handlers TypeScript
 
-## ADR-002 — Runtime de la API
+Estado: **dirección definida para la estructura inicial**.
 
-Estado: **abierta**.
+Handlers agrupados con composición explícita, preservando dominio, DTOs, validaciones, errores y límites. La API actual permanece independiente. El experimento local comparó esa composición con Nest adaptado, con proveedores simulados. Su función es documentar diferencias, no decidir si se migra. [Resultados](local-runtime.es.md).
 
-Las candidatas son NestJS adaptado y handlers Node.js livianos. Ambas deben conservar contratos y comportamiento. Event Function con HTTP API, fuera de VPC y con cuotas distribuidas, es la base común de evaluación. La separación del chat en otra función depende de contención o necesidades de permisos comprobadas.
-
-La decisión se cierra con compatibilidad funcional, medidas de arranque y latencia, costo y mantenimiento. Lambda Web Functions sigue como alternativa si su modelo de ejecución resulta más conveniente. [Protocolo de evaluación](runtime-evaluation.es.md).
+Lambda Event Function con HTTP API, fuera de VPC, es la base de infraestructura propuesta. La separación del chat requiere una necesidad comprobada de contención o permisos. La publicación productiva requiere protecciones distribuidas y validación real del entorno.
 
 ## ADR-003 — Integración y entrega
 
-Estado: **política definida; automatización pendiente**.
+Estado: **política definida; automatización estable pendiente**.
 
-Las ramas de trabajo usan feat/fix/release. main y dev requieren PR, CI, conversaciones resueltas y protección contra borrado/force. El flujo estable de merge usará una App dedicada. La integración inicial del PR #1 contempla una excepción temporal limitada a dev; el bloqueo se restablece al finalizar.
+main y dev requieren PR, CI, conversaciones resueltas y protección contra borrado/force. Las ramas de trabajo usan feat/fix. El flujo estable de merge necesita la App dedicada. PR #1 quedó integrado en dev, el bloqueo de updates fue restaurado y la excepción inicial está consumida.
 
-CI distingue validación documental de pruebas de aplicación. El workflow test prepara un changeset, sin ejecutarlo, y no tiene camino productivo. [CI/CD](ci-cd.es.md) y [reglas](branch-protection.es.md).
+La CI versionada corresponde a la preparación documental y al contrato futuro de aplicación/CDK. Los cambios de CI probados localmente todavía no forman parte de esta entrega. [CI/CD](ci-cd.es.md) y [reglas](branch-protection.es.md).
 
-## Decisiones abiertas restantes
+## ADR-004 — Procedencia e intercambiabilidad por aplicación
 
-- Presupuesto, cuota diaria de IA y objetivos de latencia.
-- Edad máxima del conocimiento stale y política de fallback.
-- Aislamiento de datos y proveedores en test.
-- Roles, bootstrap y retención de artifacts.
-- Mecanismo de dominio, corte de tráfico y ensayo de recuperación.
+Estado: **criterio definido; evidencia local registrada**.
 
-Faltan tráfico y costos reales para cerrar el presupuesto. Las hipótesis de los escenarios no representan consumos medidos.
+La comparación reutilizó portfolio-api@a0ef80fa9f82d1cea5a31425a63ab0a344338c56 con hashes por archivo, sin modificar su working tree. [Procedencia](runtime-evidence.es.md).
+
+La intercambiabilidad significa sustituir la implementación de esta misma API conservando HTTP y comportamiento. URL o enrutamiento pueden requerir configuración. No significa intercambiar dominios entre APIs diferentes, crear una plataforma genérica ni garantizar paridad multicloud.
+
+## ADR-005 — Conocimiento del bot antes de producción
+
+Estado: **orden de entrega definido; actualización pendiente**.
+
+La renovación de los datos del bot sobre el perfil profesional y los proyectos es el último paso previo al despliegue productivo. Incluye fuentes editoriales y curadas, prompts o FAQs que dependan de esos hechos, artifact publicado y fallback empaquetado. Debe verificarse procedencia, integridad, fechas, enlaces y respuestas representativas, conservando la versión anterior recuperable. Las comprobaciones del paquete final son parte de este mismo paso; después sigue la puesta en producción. [Secuencia](migration.es.md).
+
+## Decisiones operativas abiertas
+
+Presupuesto y cuota diaria de IA; umbrales de latencia y costo; edad máxima stale y retención del proveedor; aislamiento de test; roles/bootstrap; retención de artefactos; URL/routing y runbook de corte. La factura y los planes privados no están verificados. Los escenarios públicos son hipotéticos.
