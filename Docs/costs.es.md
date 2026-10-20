@@ -60,7 +60,7 @@ Vivo: t3.micro y una IPv4 pública; root EBS 8 GiB, clase no verificada. Referen
 
 Mientras EC2 sigue encendida, el ahorro fijo por migrar solo Portfolio es **cero**. Incremento = nueva infraestructura test/prod + mediciones + duplicación puntual de recursos; baja si test no recibe tráfico, pero secretos/logs almacenados pueden seguir cobrando. Mantener dos stacks duplica sus costos fijos y consume beneficios compartidos.
 
-Después de retirar EC2, el total del ecosistema será las tres soluciones migradas + cloud/proveedores + observabilidad + EBS/snapshots retenidos. No atribuir toda la EC2 a Portfolio ni afirmar ahorro neto sin los costos de Foodly Notes/Modo Playa. Al detener la instancia se conserva el costo EBS; la IPv4 autoasignada puede cambiar al arrancar. Con Tunnel no es el origen DNS público, pero egress/SSM/Docker deben recuperarse y probarse.
+Después de apagar EC2 sin terminarla ni desmantelarla, el total del ecosistema será las tres soluciones migradas + cloud/proveedores + observabilidad + EBS/snapshots retenidos. No atribuir toda la EC2 a Portfolio ni afirmar ahorro neto sin los costos de Foodly Notes/Modo Playa. Al detener la instancia se conserva el costo EBS; la IPv4 autoasignada puede cambiar al arrancar. Con Tunnel no es el origen DNS público, pero egress/SSM/Docker deben recuperarse y probarse.
 
 Contenedores: como referencia App Runner cobra 0,007/GB-h provisionada y 0,064/vCPU-h activa en la región. Solo 1 GiB continuo serían ~5,11/mes de memoria antes de CPU/logs. Esto no prueba tamaño suficiente ni elegibilidad. Fargate+ALB agrega piso de cómputo, balanceador y red. Ninguno se elige por precio sin medir.
 
@@ -73,3 +73,23 @@ Contenedores: como referencia App Runner cobra 0,007/GB-h provisionada y 0,064/v
 5. Inventariar metadata/retención de S3/logs/secrets y planes externos, sin GetSecretValue ni leer objetos privados de suscriptores.
 
 Antes de habilitar público, acordar alertas en USD, cuota diaria IA, límites de ingreso y procedimiento de corte. Una alerta puede llegar tarde y no garantiza un límite de gasto.
+
+## Comparación total y criterio del siguiente incremento
+
+El piso operativo mínimo pesa más que una preferencia de framework. Nest adaptado y handlers comparten la misma candidata de infraestructura y los mismos proveedores: no hay una tarifa Lambda específica por usar Nest. Las [mediciones locales](local-runtime.es.md) no se convierten en duración facturada, ahorro de tokens ni presupuesto AWS.
+
+Sumando los supuestos anteriores, el escenario bajo da **USD 2,44/mes + P** (1,00 infraestructura + 1,44 IA); mayor uso **158,58 + P** (14,58 + 144). Con la franquicia Lambda íntegra supuesta serían **2,34 + P** y **151,71 + P**. P incluye los cargos efectivos de Resend, R2, Firebase, dominio, portfolio-cloud y CI/retención que no estén incluidos arriba. P es desconocido: estas expresiones no son un total final ni una factura. No se presume que planes gratuitos cubran el consumo ni que cada ambiente reciba toda la franquicia.
+
+| Alternativa | Costo total a comparar | Piso/condición |
+| --- | --- | --- |
+| EC2 compartida | instancia + IPv4 + EBS + observabilidad + proveedores | cómputo/red continuos; ejemplo de lista anterior, no costo exclusivo de Portfolio |
+| Event Function + HTTP API, A/B | invocaciones/duración + limiter + logs + assets + secretos/alarmas + P | menor piso propuesto; secreto y alarmas aportan ~0,80/mes por ambiente en este modelo antes de uso |
+| App Runner | memoria continua + CPU activa + logs/red + P | mínimo provisionado aun con poco tráfico |
+| Fargate + ALB | cómputo continuo + balanceador/red + observabilidad + P | piso desproporcionado para la carga demo supuesta |
+| Convivencia | EC2 actual + nueva infraestructura y proveedores incrementales | ahorro fijo nulo mientras EC2 permanece activa |
+
+La resta correcta al finalizar es costo fijo evitable de EC2 menos costo incremental de **todas** las APIs migradas y recursos retenidos. EBS/snapshots pueden continuar cobrando. Foodly Notes y Modo Playa aún no tienen estimaciones cerradas en este repo. Apagar EC2 conservando instancia y backup depende de migrarlas y validar recuperación; migrar solo Portfolio no produce ese ahorro.
+
+Los proveedores también pueden incorporar mínimos y sobreconsumos: [Resend](https://resend.com/pricing), [R2](https://developers.cloudflare.com/r2/pricing/). No se consultaron planes privados ni se reconstruyeron importes personales.
+
+La conservación final incluye la instancia detenida y un backup recuperable. El ahorro se evalúa descontando almacenamiento y recursos retenidos; no se asume eliminación de todo costo fijo. [Secuencia de apagado y recuperación](migration.es.md#ec2-detenida-y-backup-recuperable).
