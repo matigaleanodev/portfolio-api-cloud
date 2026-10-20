@@ -1,6 +1,6 @@
 # CI/CD preparado
 
-[English](ci-cd.md) · 24/10/2026. Los workflows cubren validación documental, preparación de test e integración de ramas. La API y el stack todavía no están implementados.
+[English](ci-cd.md) · 24/10/2026. Los workflows cubren validación documental, preparación de test e integración de ramas. Esta entrega versiona documentación; la aplicación y el stack productivos todavía no están implementados.
 
 ## CI
 
@@ -37,6 +37,10 @@ Para sincronizar main→dev sin violar el requisito de estar actualizado, crear 
 
 ## Pendientes operativos
 
-El repositorio tiene dev como rama predeterminada; main todavía no existe. Faltan la App dedicada, environments y políticas, implementación npm/stack y roles/bootstrap. Los flujos de merge con App y despliegue no se validaron end-to-end. La variable de habilitación por sí sola no permite merges: el ruleset de updates sigue bloqueado. La integración inicial del PR #1 utiliza la excepción temporal limitada a dev descrita en [protección de ramas](branch-protection.es.md).
+El repositorio tiene dev como rama predeterminada; main todavía no existe. Faltan la App dedicada, environments y políticas, implementación npm/stack y roles/bootstrap. Los flujos de merge con App y despliegue no se validaron end-to-end. La variable de habilitación por sí sola no permite merges: el ruleset de updates sigue bloqueado. La integración inicial del PR #1 consumió la excepción temporal limitada a dev descrita en [protección de ramas](branch-protection.es.md).
 
 Branches: solo feat/, fix/, release/; codex/ prohibido. main/dev se integran por PR fusionado desde workflow. Mantener ejecución serial, permisos por job y artifacts/versiones inmutables. Producción continúa fuera del alcance.
+
+## Evidencia local separada
+
+La comparación local ejecutó pruebas con mocks y ensayó una detección separada de aplicación/CDK. Esos cambios de workflow, scripts y paquetes no forman parte de estos commits documentales y se descartaron del checkout. El siguiente incremento debe adaptar expresamente la CI a la estructura inicial y evitar exigir una stack ficticia solo por incorporar package.json. [Estado y límites](local-runtime.es.md).

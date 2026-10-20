@@ -1,6 +1,6 @@
 # Prepared CI/CD
 
-[Español](ci-cd.es.md) · 2026-10-24. The workflows cover document validation, test planning and branch integration. The application and stack are not implemented yet.
+[Español](ci-cd.es.md) · 2026-10-24. The workflows cover document validation, test planning and branch integration. This delivery versions documentation; the production application and stack are not implemented yet.
 
 ## CI
 
@@ -37,6 +37,10 @@ To synchronize main→dev while satisfying strict up-to-date checks, create rele
 
 ## Pending operational setup
 
-The repository uses dev as its default branch; main does not exist yet. The dedicated App, environments/policies, npm/stack implementation and AWS roles/bootstrap remain pending. App-based merging and deployment have not been validated end to end. The enable variable alone cannot permit merges while the update lock remains active. Initial PR #1 integration uses the temporary dev-only exception described in [branch protection](branch-protection.md).
+The repository uses dev as its default branch; main does not exist yet. The dedicated App, environments/policies, npm/stack implementation and AWS roles/bootstrap remain pending. App-based merging and deployment have not been validated end to end. The enable variable alone cannot permit merges while the update lock remains active. Initial PR #1 integration consumed the temporary dev-only exception described in [branch protection](branch-protection.md).
 
 Only feat/, fix/, release/ work branches; codex/ forbidden. main/dev integrate through workflow-merged PRs. Preserve serial execution, scoped job permissions and immutable artifacts/versions. Production remains outside scope.
+
+## Separate local evidence
+
+The local comparison ran mocked tests and exercised separate application/CDK detection. Those workflow changes, scripts and packages are not part of these documentary commits and were discarded from the checkout. The next increment must explicitly adapt CI to the initial structure and avoid requiring a placeholder stack merely because package.json is added. [Status and limits](local-runtime.md).

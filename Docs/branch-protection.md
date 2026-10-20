@@ -16,9 +16,9 @@ Branch-name rule queries confirmed main/dev protection, creation blocking for co
 
 ## Initial integration
 
-`dev` was initialized with the root exclusions commit and is the default branch. `main` does not exist yet. [PR #1](https://github.com/matigaleanodev/portfolio-api-cloud/pull/1) contains documentation and workflow preparation.
+`dev` was initialized with the root exclusions commit and is the default branch. `main` does not exist yet. [PR #1](https://github.com/matigaleanodev/portfolio-api-cloud/pull/1) integrated documentation and workflow preparation into dev.
 
-Initial integration temporarily removes only dev from the update lock. PR/CI protection remains intact and main retains its rules. The original ruleset condition is restored afterward and effective configuration is verified through the API. This exception addresses repository initialization and is not the regular delivery process.
+Initial integration temporarily removed only dev from the update lock, preserved PR/CI, and restored the original ruleset condition with effective API verification. That exception is consumed and does not define the regular delivery process.
 
 ## Pending automation
 
@@ -29,3 +29,7 @@ The steady-state flow needs a dedicated App installed only in this repository. I
 The owner can edit rules; protection is not immutable against repository administration.
 
 References: [rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets), [branch-name rules API](https://docs.github.com/en/rest/repos/rules#get-rules-for-a-branch).
+
+## Status after initial integration
+
+PR #1 is integrated into dev and updates restrictions are restored. The initial exception is consumed. The dedicated App remains pending; this local increment does not modify rules, permissions or remote automation.
