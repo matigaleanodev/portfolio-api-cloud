@@ -8,7 +8,7 @@ Las ramas de trabajo usan `feat/`, `fix/` o `release/`. `codex/` y cualquier otr
 
 | Ruleset | Reglas | Bypass estable |
 | --- | --- | --- |
-| [main-dev-workflow-merges-only](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) | Restrict updates sobre main/dev | ninguno hasta configurar la App |
+| [main-dev-workflow-merges-only](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) | Restrict updates sobre main/dev | App 5461240, solo `pull_request` |
 | [main-dev-required-pr-and-ci](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799502) | PR, check verify de GitHub Actions, rama actualizada, conversaciones resueltas, solo merge commits; no delete/force | ninguno, tampoco administradores |
 | [allowed-branch-prefixes](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799503) | restringe creación fuera de main/dev/feat/**/fix/**/release/** | ninguno |
 
@@ -20,11 +20,11 @@ La revisión de reglas por nombre confirmó protección de main/dev, bloqueo de 
 
 La integración inicial retiró temporalmente solo dev del bloqueo de updates, conservó PR/CI y restauró el ruleset al finalizar, con verificación efectiva por API. Esa excepción quedó consumida; no define el flujo habitual de entrega.
 
-## Automatización pendiente
+## Automatización configurada
 
 GitHub rechazó la App integrada GitHub Actions (15368) como bypass del ruleset con HTTP 422: `Actor GitHub Actions integration must be part of the ruleset source or owner organization`.
 
-El flujo estable necesita una App dedicada instalada exclusivamente en este repositorio. Su ID será el único bypass pull_request del ruleset de updates; el ruleset de calidad continuará sin bypass. Mientras falta esa integración, el bloqueo estable también impide merges de workflows. [Configuración prevista](ci-cd.es.md).
+La App privada `matigaleanodev-portfolio-merge` (5461240, instalación 174974385) está instalada exclusivamente en este repositorio, con selección de repositorios verificada por API. Es el único bypass `pull_request` del ruleset de updates; el ruleset de calidad conserva cero bypass y sus reglas no cambiaron. [Configuración efectiva](ci-cd.es.md).
 
 El propietario puede editar reglas; la protección no es inmutable frente a la administración del repositorio.
 
@@ -32,4 +32,4 @@ Referencias: [rulesets](https://docs.github.com/en/repositories/configuring-bran
 
 ## Estado después de la integración inicial
 
-PR #1 integrado en dev y bloqueo de updates restaurado. La excepción inicial está consumida. La App dedicada sigue pendiente; este incremento local no modifica reglas, permisos ni automatizaciones remotas.
+PR #1 integrado en dev y bloqueo de updates restaurado. La excepción inicial está consumida. La App dedicada ya está configurada sin volver a retirar dev del bloqueo. La ejecución de integración documental se registra en el [PR #2](https://github.com/matigaleanodev/portfolio-api-cloud/pull/2).

@@ -38,6 +38,6 @@ Las tres APIs actuales permanecen operativas durante la migración. EC2 se apaga
 
 La renovación de los datos del bot sobre perfil y proyectos será el último paso antes del despliegue productivo. Incluye artifact publicado, fallback y validación del paquete final, con versión anterior recuperable.
 
-Las ramas de trabajo usan feat/fix. main/dev requieren PR, CI y merge por workflow. PR #1 está integrado en dev, el bloqueo fue restaurado y la App dedicada sigue pendiente. CDK TypeScript es la opción de infraestructura preferida; roles/bootstrap y mecanismo de conmutación siguen abiertos.
+Las ramas de trabajo usan feat/fix. main/dev requieren PR, CI y merge por workflow. PR #1 está integrado en dev, el bloqueo fue restaurado y la App dedicada ya está configurada exclusivamente para este repositorio. CDK TypeScript es la opción de infraestructura preferida; roles/bootstrap y mecanismo de conmutación siguen abiertos.
 
 La validación disponible en un checkout documental es python3 scripts/check_docs.py. No incluye comandos npm del experimento descartado. Entorno de trabajo: Ubuntu-26.04 en WSL.

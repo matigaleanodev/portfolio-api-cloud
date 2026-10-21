@@ -38,6 +38,6 @@ All three current APIs remain operational throughout migration. EC2 will be stop
 
 Refreshing bot data about the profile and projects is the final step before production deployment. Scope includes the published artifact, fallback and final-package validation, with a recoverable previous version.
 
-Work branches use feat/fix. main/dev require PRs, CI and workflow merges. PR #1 is integrated into dev, restrictions were restored and the dedicated App remains pending. TypeScript CDK is the preferred infrastructure option; roles/bootstrap and traffic switching remain open.
+Work branches use feat/fix. main/dev require PRs, CI and workflow merges. PR #1 is integrated into dev, restrictions were restored and the dedicated App is configured exclusively for this repository. TypeScript CDK is the preferred infrastructure option; roles/bootstrap and traffic switching remain open.
 
 Documentation-only checkout validation is python3 scripts/check_docs.py. It does not include npm commands from the discarded experiment. Development environment: Ubuntu-26.04 on WSL.
