@@ -32,4 +32,4 @@ Referencias: [rulesets](https://docs.github.com/en/repositories/configuring-bran
 
 ## Estado después de la integración inicial
 
-PR #1 integrado en dev y bloqueo de updates restaurado. La excepción inicial está consumida. La App dedicada ya está configurada sin volver a retirar dev del bloqueo. La ejecución de integración documental se registra en el [PR #2](https://github.com/matigaleanodev/portfolio-api-cloud/pull/2).
+PR #1 integrado en dev y bloqueo de updates restaurado. La excepción inicial está consumida. La App dedicada ya está configurada sin volver a retirar dev del bloqueo. El [PR #2](https://github.com/matigaleanodev/portfolio-api-cloud/pull/2) fue integrado por la App mediante [workflow](https://github.com/matigaleanodev/portfolio-api-cloud/actions/runs/40147939891), con CI previa y posterior aprobada. La entrada de recuperación acotada al SHA se retira del workflow y del environment; no se habilitó bypass de PR/CI.

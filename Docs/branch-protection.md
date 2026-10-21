@@ -32,4 +32,4 @@ References: [rulesets](https://docs.github.com/en/repositories/configuring-branc
 
 ## Status after initial integration
 
-PR #1 is integrated into dev and updates restrictions are restored. The initial exception is consumed. The dedicated App is configured without removing dev from the lock again. The documentation integration execution is tracked in [PR #2](https://github.com/matigaleanodev/portfolio-api-cloud/pull/2).
+PR #1 is integrated into dev and updates restrictions are restored. The initial exception is consumed. The dedicated App is configured without removing dev from the lock again. [PR #2](https://github.com/matigaleanodev/portfolio-api-cloud/pull/2) was merged by the App through a [workflow](https://github.com/matigaleanodev/portfolio-api-cloud/actions/runs/40147939891), with passing CI before and after integration. The SHA-bound recovery entry is removed from the workflow and environment; no PR/CI bypass was enabled.
