@@ -29,7 +29,7 @@ There is no execute-change-set, direct deploy, bootstrap, destroy, existing-clou
 
 ## Merges and dev synchronization
 
-`.github/workflows/merge.yml` requires main or dev dispatch, MERGE_WORKFLOW_ENABLED=true, environment merge, an existing PR and full reviewed head SHA. It verifies open/nondraft state, same repository, protected base/allowed source, required checks and uses --match-head-commit without --admin.
+`.github/workflows/merge.yml` requires main or dev dispatch, MERGE_WORKFLOW_ENABLED=true, environment merge, an existing PR and full reviewed head SHA. It verifies open/nondraft state, same repository, protected base/allowed source, required checks and requests the merge through the API with `merge_method=merge` and the exact `sha`, without --admin. GitHub applies its rules to the App token.
 
 It uses private **dedicated GitHub App** `matigaleanodev-portfolio-merge` (5461240), installed only on this repo. Permissions: Contents/Pull requests/Workflows write; Checks/Metadata read. Repository variables MERGE_APP_ID and MERGE_WORKFLOW_ENABLED are configured. The key is stored in MERGE_APP_PRIVATE_KEY within environment `merge`, restricted to main/dev branches; its local copy stays outside Git with private permissions. The App ID is the update ruleset's sole `pull_request` bypass; PR/CI retains zero bypass actors. [Effective rules](branch-protection.md).
 
@@ -44,3 +44,7 @@ Only feat/, fix/, release/ work branches; codex/ forbidden. main/dev integrate t
 ## Separate local evidence
 
 The local comparison ran mocked tests and exercised separate application/CDK detection. Those workflow changes, scripts and packages are not part of these documentary commits and were discarded from the checkout. The next increment must explicitly adapt CI to the initial structure and avoid requiring a placeholder stack merely because package.json is added. [Status and limits](local-runtime.md).
+
+## Recovery of the first App merge
+
+The [initial run](https://github.com/matigaleanodev/portfolio-api-cloud/actions/runs/40147675945) validated the PR and generated the token, but `gh pr merge` stopped locally on `mergeStateStatus=BLOCKED` before requesting a server merge. The correction uses the merge endpoint with the exact SHA and confirms `merged=true`. To integrate the fix, a temporary entry accepts only `feat/migration-evidence-docs`, gated by `github.sha == MERGE_RECOVERY_HEAD_SHA` and environment `merge`. After this PR is integrated, a cleanup PR removes the condition, variable and branch permission; main/dev and PR/CI rules retain their configuration.
