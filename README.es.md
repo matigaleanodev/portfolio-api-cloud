@@ -2,43 +2,42 @@
 
 [English](README.md)
 
-Migración de la API pública de Portfolio desde EC2 compartida hacia servicios administrados de AWS. El objetivo es reducir la operación de servidores, conservar los contratos existentes y medir el costo total antes de cambiar producción.
+Implementación alternativa de la API pública de Portfolio mediante handlers TypeScript y servicios administrados. La migración a serverless está decidida; la comparación con NestJS conserva evidencia técnica de comportamiento y costos de implementación.
 
-## Estado actual
+## Estado de esta entrega
 
-La auditoría y la planificación están completas. El repositorio contiene documentación bilingüe, validación documental y workflows de CI, preparación de despliegue test y merges protegidos. Todavía no tiene código de aplicación, stack CDK ni recursos AWS desplegados.
+Este repositorio versiona la planificación, auditoría, decisiones y resultados de un experimento local. El prototipo experimental se descarta después de registrar su evidencia; no forma parte de la base de código de la nueva API. El siguiente incremento construye su estructura inicial.
 
-La integración inicial se concentra en `dev`. `main` queda reservada para una etapa posterior. La API original continúa siendo el respaldo operativo.
+No hay aplicación productiva ni stack CDK implementados en esta entrega. La API NestJS original continúa operativa y se conserva como implementación independiente. Los resultados locales no son cold starts AWS ni prueban ahorro mensual.
 
-## Responsabilidades
+## Alcance
 
-- `portfolio`: frontend Angular, contenido editorial estático y Firebase Hosting.
-- `portfolio-api`: implementación NestJS actual de health, contacto, chat y fachada de suscripciones.
-- `portfolio-cloud`: persistencia de suscriptores, notificaciones, imágenes OG, procesamiento de releases y publicación del conocimiento del chat.
-- `portfolio-api-cloud`: futura implementación administrada de los seis endpoints de la API pública.
-
-El código auditado no tiene base de datos de aplicación, uploads, WebSockets ni streaming. La persistencia de suscripciones y la automatización editorial siguen en `portfolio-cloud`.
+- Seis contratos: health, contacto, starters, chat y alta/baja de suscripciones.
+- portfolio conserva frontend, contenido editorial estático y hosting.
+- portfolio-cloud conserva suscriptores, notificaciones, OG, releases y publicación de knowledge.
+- La alternativa mantiene HTTP y comportamiento para cambiar la implementación consumida por el frontend; URL o routing pueden requerir configuración.
+- Las APIs de dominios distintos no se intercambian entre sí.
 
 ## Documentación
 
-1. [Auditoría funcional y evidencia](Docs/audit.es.md)
-2. [Arquitectura y herramientas de infraestructura](Docs/architecture.es.md)
-3. [Costos y supuestos](Docs/costs.es.md)
-4. [Migración y recuperación](Docs/migration.es.md)
-5. [Registro de decisiones](Docs/decisions.es.md)
-6. [CI/CD](Docs/ci-cd.es.md)
-7. [Evaluación del runtime](Docs/runtime-evaluation.es.md)
-8. [Protección de ramas](Docs/branch-protection.es.md)
-9. [Fuentes consultadas el 24/10/2026](Docs/sources.es.md)
+1. [Auditoría y contratos](Docs/audit.es.md)
+2. [Arquitectura](Docs/architecture.es.md)
+3. [Costos hipotéticos y servicios auxiliares](Docs/costs.es.md)
+4. [Migración, renovación del bot y recuperación](Docs/migration.es.md)
+5. [Decisiones](Docs/decisions.es.md)
+6. [CI/CD preparado](Docs/ci-cd.es.md)
+7. [Comparación de runtime](Docs/runtime-evaluation.es.md)
+8. [Resultados locales](Docs/local-runtime.es.md)
+9. [Procedencia, muestras y dependencias](Docs/runtime-evidence.es.md)
+10. [Protección de ramas](Docs/branch-protection.es.md)
+11. [Fuentes](Docs/sources.es.md)
 
-## Decisiones abiertas
+## Transición y entrega
 
-CDK TypeScript es la opción de infraestructura preferida; SAM es la alternativa más cercana por su uso en `portfolio-cloud`. La elección del runtime sigue abierta entre NestJS adaptado y handlers Node.js livianos. Lambda Event Function con HTTP API es la base inicial de evaluación; sus límites, latencia, protección contra abuso y costo deben validarse antes de cerrar la arquitectura.
+Las tres APIs actuales permanecen operativas durante la migración. EC2 se apagará al completar las tres migraciones y validar recuperación, conservando la instancia sin terminarla ni desmantelarla y con un backup recuperable. Los recursos retenidos forman parte del costo total.
 
-## Desarrollo y entrega
+La renovación de los datos del bot sobre perfil y proyectos será el último paso antes del despliegue productivo. Incluye artifact publicado, fallback y validación del paquete final, con versión anterior recuperable.
 
-El entorno local es Ubuntu-26.04 en WSL. Las ramas de trabajo usan `feat/`, `fix/` o `release/`; `codex/` está prohibido. `main` y `dev` requieren PR, CI y el flujo de integración definido en [protección de ramas](Docs/branch-protection.es.md).
+Las ramas de trabajo usan feat/fix. main/dev requieren PR, CI y merge por workflow. PR #1 está integrado en dev, el bloqueo fue restaurado y la App dedicada sigue pendiente. CDK TypeScript es la opción de infraestructura preferida; roles/bootstrap y mecanismo de conmutación siguen abiertos.
 
-La validación documental se ejecuta con `python3 scripts/check_docs.py`. Los scripts npm/CDK corresponden a la implementación futura.
-
-La convivencia con EC2 permite validar la migración de Portfolio sin interrumpir las otras aplicaciones del servidor compartido. Su retiro depende de completar las migraciones restantes y el período de estabilización.
+La validación disponible en un checkout documental es python3 scripts/check_docs.py. No incluye comandos npm del experimento descartado. Entorno de trabajo: Ubuntu-26.04 en WSL.

@@ -51,3 +51,7 @@ La auditoría enlaza los repositorios y commits inspeccionados. La evidencia de 
 
 - [CDK CLI role versus CloudFormation execution role](https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd.html)
 - [DefaultStackSynthesizer execution/deploy roles](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.DefaultStackSynthesizer.html)
+
+## Evidencia propia del experimento
+
+[Procedencia, hashes y muestras](runtime-evidence.es.md) y [método/resultados](local-runtime.es.md), obtenidos el 24/10/2026 en WSL. El adaptador de comparación fue [serverless-express](https://github.com/CodeGenieApp/serverless-express). Son evidencia local, separada de fuentes de precios y documentación AWS. El código experimental se descarta; no se publica como estructura inicial de la API.
