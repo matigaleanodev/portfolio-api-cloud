@@ -2,42 +2,51 @@
 
 [English](README.md)
 
-Implementación alternativa de la API pública de Portfolio mediante handlers TypeScript y servicios administrados. La migración a serverless está decidida; la comparación con NestJS conserva evidencia técnica de comportamiento y costos de implementación.
+Implementación alternativa de la API pública de Portfolio con handlers TypeScript. La migración a serverless está decidida; la API NestJS original se conserva como implementación independiente.
 
-## Estado de esta entrega
+## Estado actual
 
-Este repositorio versiona la planificación, auditoría, decisiones y resultados de un experimento local. El prototipo experimental se descarta después de registrar su evidencia; no forma parte de la base de código de la nueva API. El siguiente incremento construye su estructura inicial.
+Base local implementada: composición explícita, configuración CORS y `GET /api/health` → 200 `{"status":"ok"}`, con entrada HTTP API v2. Las otras cinco rutas siguen pendientes y devuelven 404. La cobertura contractual es parcial; no hay stack CDK ni despliegue.
 
-No hay aplicación productiva ni stack CDK implementados en esta entrega. La API NestJS original continúa operativa y se conserva como implementación independiente. Los resultados locales no son cold starts AWS ni prueban ahorro mensual.
+El prototipo comparativo fue descartado. Sus [resultados](Docs/local-runtime.es.md) se conservan como evidencia histórica y no son mediciones de esta base, cold starts AWS ni prueba de ahorro mensual.
+
+## Desarrollo local
+
+Ubuntu-26.04 en WSL. Objetivo Node **24.22.1 LTS** (`.nvmrc`), la LTS más reciente al 24/10/2026. Versión comprobada mediante ejecución aislada, sin instalaciones globales.
+
+```bash
+npm ci --ignore-scripts
+npm run check
+python3 -m unittest discover -s scripts -p 'test_*.py'
+```
+
+`check` ejecuta tipos estrictos, build ESM, tests sin red, smoke fuera del checkout y validación documental. Los scripts no corrigen fuentes. El paquete usa `dist/handler.js`, export `handler`, y requiere el `package.json` con `type: module`. No necesita `node_modules` en runtime. No carga `.env`; únicamente la entrada Lambda lee el ambiente para CORS.
 
 ## Alcance
 
-- Seis contratos: health, contacto, starters, chat y alta/baja de suscripciones.
+- Seis contratos previstos: health, contacto, starters, chat y alta/baja de suscripciones.
 - portfolio conserva frontend, contenido editorial estático y hosting.
 - portfolio-cloud conserva suscriptores, notificaciones, OG, releases y publicación de knowledge.
-- La alternativa mantiene HTTP y comportamiento para cambiar la implementación consumida por el frontend; URL o routing pueden requerir configuración.
-- Las APIs de dominios distintos no se intercambian entre sí.
+- La sustitución de implementación conserva HTTP y comportamiento; URL/routing pueden requerir configuración.
+- La compatibilidad completa todavía requiere migrar las cinco rutas de negocio y sus escenarios.
 
 ## Documentación
 
-1. [Auditoría y contratos](Docs/audit.es.md)
-2. [Arquitectura](Docs/architecture.es.md)
-3. [Costos hipotéticos y servicios auxiliares](Docs/costs.es.md)
-4. [Migración, renovación del bot y recuperación](Docs/migration.es.md)
-5. [Decisiones](Docs/decisions.es.md)
-6. [CI/CD preparado](Docs/ci-cd.es.md)
-7. [Comparación de runtime](Docs/runtime-evaluation.es.md)
-8. [Resultados locales](Docs/local-runtime.es.md)
-9. [Procedencia, muestras y dependencias](Docs/runtime-evidence.es.md)
-10. [Protección de ramas](Docs/branch-protection.es.md)
-11. [Fuentes](Docs/sources.es.md)
+1. [Base implementada, pruebas y procedencia](Docs/application.es.md)
+2. [Auditoría y contratos](Docs/audit.es.md)
+3. [Arquitectura](Docs/architecture.es.md)
+4. [Costos hipotéticos y servicios auxiliares](Docs/costs.es.md)
+5. [Migración y recuperación](Docs/migration.es.md)
+6. [Decisiones](Docs/decisions.es.md)
+7. [CI/CD](Docs/ci-cd.es.md)
+8. [Comparación de runtime](Docs/runtime-evaluation.es.md)
+9. [Resultados históricos](Docs/local-runtime.es.md)
+10. [Evidencia del experimento](Docs/runtime-evidence.es.md)
+11. [Protección de ramas](Docs/branch-protection.es.md)
+12. [Fuentes](Docs/sources.es.md)
 
-## Transición y entrega
+## Transición
 
-Las tres APIs actuales permanecen operativas durante la migración. EC2 se apagará al completar las tres migraciones y validar recuperación, conservando la instancia sin terminarla ni desmantelarla y con un backup recuperable. Los recursos retenidos forman parte del costo total.
+Las tres APIs actuales permanecen operativas durante toda la migración. Después de migrar y estabilizar las tres y validar recuperación, EC2 se apagará conservando instancia y backup recuperable. Sus recursos retenidos forman parte del costo total.
 
-La renovación de los datos del bot sobre perfil y proyectos será el último paso antes del despliegue productivo. Incluye artifact publicado, fallback y validación del paquete final, con versión anterior recuperable.
-
-Las ramas de trabajo usan feat/fix. main/dev requieren PR, CI y merge por workflow. PR #1 está integrado en dev, el bloqueo fue restaurado y la App dedicada ya está configurada exclusivamente para este repositorio. CDK TypeScript es la opción de infraestructura preferida; roles/bootstrap y mecanismo de conmutación siguen abiertos.
-
-La validación disponible en un checkout documental es python3 scripts/check_docs.py. No incluye comandos npm del experimento descartado. Entorno de trabajo: Ubuntu-26.04 en WSL.
+La renovación de perfil/proyectos del bot sigue siendo el último paso previo al despliegue productivo. Las ramas main/dev requieren PR, CI y merge por workflow. La [transición a integración atribuida a la cuenta](Docs/integration.es.md) está preparada localmente y sigue bloqueada por configuración pendiente. CDK TypeScript sigue como opción preferida; roles/bootstrap y conmutación de tráfico permanecen abiertos.

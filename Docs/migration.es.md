@@ -26,13 +26,13 @@ La migración a serverless está decidida. Este plan corresponde a Portfolio; Fo
 
 La etapa 11 es el último paso antes del despliegue productivo. Las comprobaciones del conocimiento y del paquete final pertenecen a esa misma etapa; no se intercala otra entrega entre su cierre y producción.
 
-## Próximo incremento: estructura inicial
+## Etapa 1 implementada localmente
 
-Construir una base mantenible de handlers TypeScript y pruebas locales. El experimento previo documentó compatibilidad y diferencias con Nest, pero sus fuentes y herramientas no forman parte de esta entrega documental. No tratar la estructura experimental como un runtime productivo terminado.
+La base está implementada con health, configuración/composición explícitas, tipos estrictos, build ESM, cerco de red y CI separada. [Cobertura, procedencia y comprobaciones](application.es.md). El experimento permanece como evidencia histórica; no se recuperaron sus fuentes.
 
 Revisar los archivos locales antes de reutilizarlos. Recuperar del origen únicamente lo necesario, con commit, rutas y hashes. Mantener el runtime sin dependencias transitivas Nest/Express; conservar class-validator/class-transformer u otras utilidades existentes cuando reduzcan riesgo de cambiar contratos. No introducir un framework nuevo, plataforma genérica o capa multicloud.
 
-La primera entrega debe compilar y probarse de forma reproducible, sin llamadas pagas ni escrituras remotas. La lógica incompleta debe identificarse como pendiente, sin responder éxitos ficticios en caminos productivos.
+La siguiente etapa es recuperar progresivamente lógica/DTOs desde el SHA fijado e implementar una sección de negocio con mocks. Cinco rutas permanecen en 404; falta compatibilidad completa y endurecimiento antes de exposición.
 
 ## Datos, efectos y convivencia
 

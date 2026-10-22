@@ -66,7 +66,7 @@ Serverless CLI gratis y Dashboard gratis no son lo mismo. SST Console también e
 
 ## Estado y transición
 
-Se completó una comparación local de handlers y Nest adaptado con lógica de un SHA fijado, mocks y contratos diferenciales. Esta publicación contiene su documentación, no las fuentes ni herramientas del experimento. El próximo incremento construye la estructura inicial de la API. [Evidencia](local-runtime.es.md).
+Se completó una comparación local de handlers y Nest adaptado con lógica de un SHA fijado, mocks y contratos diferenciales. Esta publicación contiene su documentación, no las fuentes ni herramientas del experimento. La base local actual implementa health y composición mínima; las cinco rutas de negocio siguen pendientes. [Implementación y cobertura parcial](application.es.md). [Evidencia](local-runtime.es.md).
 
 Las tres APIs actuales siguen operativas durante toda la migración. Al finalizar y validar recuperación, EC2 se apaga y se conserva detenida, sin terminarla ni desmantelarla, junto con un backup recuperable. El mecanismo de corte y la restauración deben verificarse antes de ese apagado.
 

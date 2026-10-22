@@ -29,11 +29,11 @@ Lambda Event Function with HTTP API outside a VPC is the proposed infrastructure
 
 ## ADR-003 — Integration and delivery
 
-Status: **policy defined; stable automation pending**.
+Status: **policy defined; App merges validated in PR #2 and #3**.
 
-main/dev require PRs, CI, resolved conversations and deletion/force protection. Work branches use feat/fix. Stable workflow merging needs the dedicated App. PR #1 is integrated into dev, update restrictions were restored and the initial exception is consumed.
+main/dev require PRs, CI, resolved conversations and deletion/force protection. Work branches use feat/fix. Effective configuration merges through the dedicated App; the new policy requires actual account identity and its transition remains pending. [Integration](integration.md). PR #1 is integrated into dev, update restrictions were restored and the initial exception is consumed.
 
-Versioned CI covers documentation preparation and the future application/CDK contract. Locally tested CI changes are not included in this delivery. [CI/CD](ci-cd.md) and [rules](branch-protection.md).
+CI separates documentation, application and infrastructure; verify remains required. The application is tested on Node 24.22.1 LTS without requiring a placeholder stack. These changes have local validation; remote execution remains pending. [CI/CD](ci-cd.md) and [rules](branch-protection.md).
 
 ## ADR-004 — Provenance and per-application interchangeability
 
@@ -52,3 +52,19 @@ Refreshing bot data about the professional profile and projects is the final ste
 ## Open operational decisions
 
 Budget and daily AI quota; latency/cost thresholds; maximum stale age and provider retention; test isolation; roles/bootstrap; artifact retention; URL/routing and cutover runbook. Actual billing and private plans are unverified. Public scenarios are hypothetical.
+
+## ADR-006 — Local foundation and independent validation
+
+Status: **implemented locally; partial coverage**.
+
+Four runtime modules, explicit composition, isolated CORS configuration and provider-free health. Node 24.22.1 LTS is the target, verified through isolated execution. Strict TypeScript, JS compiler 6.0.3, native test runner and zero runtime dependencies: this slice does not require a framework, bundler or SDK.
+
+CI separates application from CDK and retains verify as its required aggregate check. An absent stack skips only infrastructure; it cannot skip types/build/tests for a present application. The new foundation does not use discarded prototype code. [Implementation, limits and provenance](application.md).
+
+## ADR-007 — Actual integration identity
+
+Status: **policy defined; local candidate tested; activation blocked**.
+
+New automated merges must be attributed to matigaleanodev through a user credential, validating login/ID/type and merged_by. An installation token attributes the operation to the App and does not satisfy this policy. PRs, CI, reviewed SHA and workflow remain required; no bot fallback or cosmetic metadata changes.
+
+Effective configuration allows only the App through updates. A human credential alone does not grant that access. Replacing the bypass actor changes access guarantees: that account could also merge a PR outside the workflow. Transition must explicitly resolve that difference and initial activation from protected branches. [Status, alternatives and limits](integration.md).

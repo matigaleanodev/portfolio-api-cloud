@@ -66,7 +66,7 @@ Free Serverless CLI does not imply free Dashboard. SST Console is optional: curr
 
 ## Status and transition
 
-A local comparison of handlers and adapted Nest was completed using pinned logic, mocks and differential contracts. This publication contains its documentation, not experiment sources or tooling. The next increment builds the initial API structure. [Evidence](local-runtime.md).
+A local comparison of handlers and adapted Nest was completed using pinned logic, mocks and differential contracts. This publication contains its documentation, not experiment sources or tooling. The current local foundation implements health and minimal composition; the five business routes remain pending. [Implementation and partial coverage](application.md). [Evidence](local-runtime.md).
 
 All three current APIs remain operational throughout migration. After completion and verified recovery, EC2 will be stopped and retained without termination or dismantling, together with a recoverable backup. Traffic switching and restoration must be verified before shutdown.
 

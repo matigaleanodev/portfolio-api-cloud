@@ -33,3 +33,7 @@ Referencias: [rulesets](https://docs.github.com/en/repositories/configuring-bran
 ## Estado después de la integración inicial
 
 PR #1 integrado en dev y bloqueo de updates restaurado. La excepción inicial está consumida. La App dedicada ya está configurada sin volver a retirar dev del bloqueo. El [PR #2](https://github.com/matigaleanodev/portfolio-api-cloud/pull/2) fue integrado por la App mediante [workflow](https://github.com/matigaleanodev/portfolio-api-cloud/actions/runs/40147939891), con CI previa y posterior aprobada. La entrada de recuperación acotada al SHA se retira del workflow y del environment; no se habilitó bypass de PR/CI.
+
+## Política de identidad de la siguiente integración
+
+Los merges nuevos deben atribuirse realmente a matigaleanodev. El candidato local verifica un token de usuario y no utiliza el token de instalación como fallback. Las reglas de la tabla anterior siguen vigentes y no fueron modificadas: la cuenta no tiene acceso de integración en updates. El cambio de actor y la activación del workflow no están resueltos. [Análisis de permisos y garantías](integration.es.md).

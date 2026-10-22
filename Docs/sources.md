@@ -55,3 +55,21 @@ The audit links the repositories and exact inspected commits. Infrastructure evi
 ## Experiment evidence
 
 [Provenance, hashes and samples](runtime-evidence.md) and [method/results](local-runtime.md), collected on 2026-10-24 in WSL. The comparison adapter was [serverless-express](https://github.com/CodeGenieApp/serverless-express). This is local evidence, separate from pricing sources and AWS documentation. Experimental code is discarded rather than published as the initial API structure.
+
+## Local foundation sources
+
+- [HTTP API v2 events and responses](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)
+- [TypeScript strict](https://www.typescriptlang.org/tsconfig/strict.html)
+- [Node 22 test runner](https://nodejs.org/docs/latest-v22.x/api/test.html)
+- [npm registry: TypeScript 6.0.3](https://registry.npmjs.org/typescript/6.0.3)
+- [Current provenance, dependencies and coverage](application.md)
+
+Event format and strict were checked against primary documentation. Versions, engines and licenses were queried through npm metadata; compatibility was verified by running Node 22.23.4 and 24.19.0. Selecting JS compiler 6 avoids the platform binary dependencies reported by TypeScript 7.0.2.
+
+## Node and integration update
+
+- [Current LTS: Node 24.22.1](https://nodejs.org/en/blog/release/v24.22.1)
+- [LTS versus Current](https://nodejs.org/en/about/previous-releases)
+- [Human identity, credentials and rulesets](integration.md)
+
+As of 2026-10-24, Node 24.22.1 was verified as latest LTS and Node 26 as Current; the updated suite ran on 24.22.1. Historical experiment results remain unchanged.

@@ -29,11 +29,11 @@ Lambda Event Function con HTTP API, fuera de VPC, es la base de infraestructura 
 
 ## ADR-003 — Integración y entrega
 
-Estado: **política definida; automatización estable pendiente**.
+Estado: **política definida; merge con App validado en PR #2 y #3**.
 
-main y dev requieren PR, CI, conversaciones resueltas y protección contra borrado/force. Las ramas de trabajo usan feat/fix. El flujo estable de merge necesita la App dedicada. PR #1 quedó integrado en dev, el bloqueo de updates fue restaurado y la excepción inicial está consumida.
+main y dev requieren PR, CI, conversaciones resueltas y protección contra borrado/force. Las ramas de trabajo usan feat/fix. La configuración efectiva integra con la App dedicada; la política nueva exige identidad real de la cuenta y su transición sigue pendiente. [Integración](integration.es.md). PR #1 quedó integrado en dev, el bloqueo de updates fue restaurado y la excepción inicial está consumida.
 
-La CI versionada corresponde a la preparación documental y al contrato futuro de aplicación/CDK. Los cambios de CI probados localmente todavía no forman parte de esta entrega. [CI/CD](ci-cd.es.md) y [reglas](branch-protection.es.md).
+La CI separa documentación, aplicación e infraestructura; verify sigue siendo obligatorio. La aplicación se prueba en Node 24.22.1 LTS y no exige stack ficticia. Estos cambios tienen validación local; su ejecución remota sigue pendiente. [CI/CD](ci-cd.es.md) y [reglas](branch-protection.es.md).
 
 ## ADR-004 — Procedencia e intercambiabilidad por aplicación
 
@@ -52,3 +52,19 @@ La renovación de los datos del bot sobre el perfil profesional y los proyectos 
 ## Decisiones operativas abiertas
 
 Presupuesto y cuota diaria de IA; umbrales de latencia y costo; edad máxima stale y retención del proveedor; aislamiento de test; roles/bootstrap; retención de artefactos; URL/routing y runbook de corte. La factura y los planes privados no están verificados. Los escenarios públicos son hipotéticos.
+
+## ADR-006 — Base local y validación independiente
+
+Estado: **implementada localmente; cobertura parcial**.
+
+Cuatro módulos de runtime, composición explícita, configuración CORS aislada y health sin proveedores. Node 24.22.1 LTS como objetivo, comprobado mediante ejecución aislada. TypeScript estricto, compilador JS 6.0.3, runner nativo y cero dependencias de runtime: no hay necesidad de framework, bundler o SDK para esta sección.
+
+La CI separa aplicación de CDK y conserva verify como check agregado obligatorio. Una stack ausente omite únicamente infraestructura; no permite omitir tipos/build/tests de una aplicación presente. La nueva base no usa código del prototipo descartado. [Implementación, límites y procedencia](application.es.md).
+
+## ADR-007 — Identidad real de la integración
+
+Estado: **política definida; candidato local probado; activación bloqueada**.
+
+Los nuevos merges automatizados deben atribuirse a matigaleanodev mediante una credencial de usuario, validando login/ID/tipo y merged_by. El token de instalación atribuye la operación a la App y no satisface esta política. Se conserva PR, CI, SHA revisado y workflow; no hay fallback a bot ni cambios cosméticos de metadatos.
+
+La configuración efectiva solo permite a la App atravesar updates. Una credencial humana no concede por sí sola ese acceso. Reemplazar el actor de bypass modifica garantías de acceso: permitiría a esa cuenta integrar un PR también fuera del workflow. La transición requiere resolver explícitamente esa diferencia y la activación inicial desde ramas protegidas. [Estado, alternativas y límites](integration.es.md).
