@@ -20,33 +20,46 @@ jobs:
     timeout-minutes: 5
     outputs:
       application: ${{ steps.scope.outputs.application }}
+      infrastructure: ${{ steps.scope.outputs.infrastructure }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Validate documentation
         run: python3 scripts/check_docs.py
-      - name: Detect application readiness
+      - name: Validate CI scope detection
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Detect application and infrastructure independently
         id: scope
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -f package.json ]]; then
-            test -f package-lock.json
-            test -f cdk.json
-            echo "application=true" >> "$GITHUB_OUTPUT"
-          else
-            test ! -f package-lock.json
-            test ! -f cdk.json
-            echo "application=false" >> "$GITHUB_OUTPUT"
-            echo "Aplicación todavía inexistente: no se ejecutaron tests/build/synth." >> "$GITHUB_STEP_SUMMARY"
-          fi
+        run: python3 scripts/ci_scope.py >> "$GITHUB_OUTPUT"
 
   application:
     needs: documentation
     if: needs.documentation.outputs.application == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
+    env:
+      NODE_ENV: test
+      AWS_EC2_METADATA_DISABLED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:package
+
+  infrastructure:
+    needs: documentation
+    if: needs.documentation.outputs.infrastructure == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       NODE_ENV: test
       AWS_REGION: us-east-1
@@ -60,26 +73,25 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '24.22.1'
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test -- --ci --runInBand
-      - run: npm run test:e2e
-      - run: npm run build
+      - run: npm ci --ignore-scripts
+      - run: npm run test:infra
       - name: Synthesize test stack without AWS lookups
         run: npm run cdk -- synth --no-lookups --context stage=test
 
   verify:
     name: verify
     if: always()
-    needs: [documentation, application]
+    needs: [documentation, application, infrastructure]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     env:
       DOC_RESULT: ${{ needs.documentation.result }}
       APP_RESULT: ${{ needs.application.result }}
+      INFRA_RESULT: ${{ needs.infrastructure.result }}
       APP_PRESENT: ${{ needs.documentation.outputs.application }}
+      INFRA_PRESENT: ${{ needs.documentation.outputs.infrastructure }}
     steps:
       - name: Report required check accurately
         shell: bash
@@ -88,8 +100,15 @@ jobs:
           [[ "$DOC_RESULT" == success ]]
           if [[ "$APP_PRESENT" == true ]]; then
             [[ "$APP_RESULT" == success ]]
-            echo "Documentación, aplicación y synth verificados." >> "$GITHUB_STEP_SUMMARY"
+            echo "Aplicación: tipos, build, contratos y paquete verificados en Node 24.22.1 LTS." >> "$GITHUB_STEP_SUMMARY"
           else
             [[ "$APP_PRESENT" == false && "$APP_RESULT" == skipped ]]
-            echo "Solo documentación verificada; no existe aplicación ni stack." >> "$GITHUB_STEP_SUMMARY"
+            echo "Aplicación inexistente: no se ejecutaron sus checks." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [[ "$INFRA_PRESENT" == true ]]; then
+            [[ "$INFRA_RESULT" == success ]]
+            echo "Infraestructura: tests y synth sin lookups verificados." >> "$GITHUB_STEP_SUMMARY"
+          else
+            [[ "$INFRA_PRESENT" == false && "$INFRA_RESULT" == skipped ]]
+            echo "Stack inexistente: no se ejecutó synth." >> "$GITHUB_STEP_SUMMARY"
           fi
