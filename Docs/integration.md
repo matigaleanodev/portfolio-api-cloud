@@ -6,9 +6,9 @@
 
 New automated merges must be attributed to **matigaleanodev** (ID 99203645). The credential performing the operation determines identity, confirmed through GitHub's `merged_by`. Changing author/committer, merge title or date does not change the authenticated actor.
 
-The local workflow replaces the installation token with environment `merge` user secret `MERGE_USER_TOKEN`. It verifies login, ID and User type; retains same-repository PRs, main/dev base, full reviewed SHA, required checks, serial execution and API merge without --admin. It does not check out or execute PR code with credentials. Missing valid credentials or effective access fails before integration, without App fallback.
+The workflow replaces the installation token with environment `merge` user secret `MERGE_USER_TOKEN`. It verifies login, ID and User type; retains same-repository PRs, main/dev base, full reviewed SHA, required checks, serial execution and API merge without --admin. It does not check out or execute PR code with credentials. Missing valid credentials or effective access fails before integration, without App fallback.
 
-This preparation is neither activated nor verified by a remote merge. Inspected effective configuration remains unchanged: [updates](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) allows only App 5461240 through PRs; [quality](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799502) has no bypass. The account-identity query returns `current_user_can_bypass=never`. These rulesets were not modified.
+The mechanism is installed on dev after PR #5. [Updates](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) allows matigaleanodev through PRs only; [quality](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799502) retains zero bypass with unchanged rules.
 
 ## Required credential
 
@@ -24,15 +24,15 @@ Current configuration reuses user OAuth; a dedicated granular PAT remains an alt
 
 The existing GitHub CLI OAuth credential was stored as MERGE_USER_TOKEN in environment merge. GET /user verified login matigaleanodev, ID 99203645 and User type; the environment still admits only main/dev. No new token, expanded scopes, permission changes or expiry changes were introduced. The value was transferred through stdin without file storage or display. The workflow will repeat GET /user before integration.
 
-## Protected access and pending transition
+## Protected transition completed
 
-A credential identifies the user but cannot grant access the account lacks. The workflow requires effective **PR-only** access to the update ruleset and no PR/CI bypass. GitHub applies rules again when merging the exact SHA.
+[Preparatory PR #5](https://github.com/matigaleanodev/portfolio-api-cloud/pull/5) installed the new workflow through one final App merge, with passing CI and existing protections. Only the update actor was then replaced with **User 99203645**, **pull_request** mode. Effective verification returns `current_user_can_bypass=pull_requests_only`.
 
-Replacing the update bypass actor with user 99203645 in pull_request mode is one possible administrative change; it was not performed. Direct pushes would remain blocked and independent PR/CI rules would still apply, but that account could also merge PRs through the UI. A ruleset distinguishes actors; it cannot certify that a human token was used exclusively inside Actions. This differs from the current App-only restriction and requires an explicit decision.
+The quality ruleset remains identical with no bypass: PRs, GitHub Actions verify, an updated base, resolved conversations and deletion/force protection remain required. Environment merge still admits only main/dev. No temporary feat/ access, protection removal or previous recovery path was introduced.
 
-Additionally, dev's versioned workflow still uses an installation token. The local candidate accepts dispatch only from main/dev and retains the environment limited to those branches. It therefore cannot run from feat/ to integrate itself. No temporary entry, environment expansion or previous recovery path was introduced.
+The account could now also merge a PR through the UI; a ruleset distinguishes actors rather than where a token was used. Operational policy still requires the workflow exclusively, without manual merges, direct pushes or --admin.
 
-Initial transition must be resolved specifically without false identity, skipped CI or manual merges. Until credentials, access and activation are resolved, the delivery can remain reviewed in a PR, but merging under this policy remains blocked.
+A token identifies the user, while effective rules determine authorization. The workflow checks both before requesting a merge, and GitHub applies the rules again to the exact SHA. Each integration's attribution is confirmed through PR `merged_by`, for example [application PR #4](https://github.com/matigaleanodev/portfolio-api-cloud/pull/4).
 
 ## Local verification
 

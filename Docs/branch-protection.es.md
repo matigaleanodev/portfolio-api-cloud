@@ -8,7 +8,7 @@ Las ramas de trabajo usan `feat/`, `fix/` o `release/`. `codex/` y cualquier otr
 
 | Ruleset | Reglas | Bypass estable |
 | --- | --- | --- |
-| [main-dev-workflow-merges-only](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) | Restrict updates sobre main/dev | App 5461240, solo `pull_request` |
+| [main-dev-workflow-merges-only](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) | Restrict updates sobre main/dev | Usuario 99203645 (matigaleanodev), solo `pull_request` |
 | [main-dev-required-pr-and-ci](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799502) | PR, check verify de GitHub Actions, rama actualizada, conversaciones resueltas, solo merge commits; no delete/force | ninguno, tampoco administradores |
 | [allowed-branch-prefixes](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799503) | restringe creación fuera de main/dev/feat/**/fix/**/release/** | ninguno |
 
@@ -24,7 +24,7 @@ La integración inicial retiró temporalmente solo dev del bloqueo de updates, c
 
 GitHub rechazó la App integrada GitHub Actions (15368) como bypass del ruleset con HTTP 422: `Actor GitHub Actions integration must be part of the ruleset source or owner organization`.
 
-La App privada `matigaleanodev-portfolio-merge` (5461240, instalación 174974385) está instalada exclusivamente en este repositorio, con selección de repositorios verificada por API. Es el único bypass `pull_request` del ruleset de updates; el ruleset de calidad conserva cero bypass y sus reglas no cambiaron. [Configuración efectiva](ci-cd.es.md).
+La App privada `matigaleanodev-portfolio-merge` (5461240, instalación 174974385) está instalada exclusivamente en este repositorio, con selección de repositorios verificada por API. Fue el único bypass `pull_request` de updates hasta la transición del PR #5. El actor actual es el usuario 99203645, solo vía PR; calidad conserva cero bypass y sus reglas no cambiaron. [Configuración efectiva](ci-cd.es.md).
 
 El propietario puede editar reglas; la protección no es inmutable frente a la administración del repositorio.
 
@@ -36,4 +36,4 @@ PR #1 integrado en dev y bloqueo de updates restaurado. La excepción inicial es
 
 ## Política de identidad de la siguiente integración
 
-Los merges nuevos deben atribuirse realmente a matigaleanodev. El candidato local verifica un token de usuario y no utiliza el token de instalación como fallback. Las reglas de la tabla anterior siguen vigentes y no fueron modificadas: la cuenta no tiene acceso de integración en updates. El cambio de actor y la activación del workflow no están resueltos. [Análisis de permisos y garantías](integration.es.md).
+Los merges nuevos se atribuyen a matigaleanodev. El workflow verifica un token de usuario y no utiliza el token de instalación como fallback. El PR #5 instaló el mecanismo; se reemplazó únicamente el actor de updates por User 99203645, solo vía PR, y se verificó acceso efectivo pull_requests_only. PR/CI conserva sus reglas y cero bypass. El environment sigue limitado a main/dev. [Análisis de permisos y garantías](integration.es.md).

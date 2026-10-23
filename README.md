@@ -49,4 +49,4 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 
 All three current APIs remain operational throughout migration. After all three migrate, stabilize and pass recovery validation, EC2 will be stopped with its instance and recoverable backup retained. Retained resources belong in total cost.
 
-Refreshing bot profile/project data remains the final step before production deployment. main/dev require PRs, CI and workflow merges. The [transition to account-attributed integration](Docs/integration.md) is prepared locally and remains blocked by pending configuration. TypeScript CDK remains preferred; roles/bootstrap and traffic switching remain open.
+Refreshing bot profile/project data remains the final step before production deployment. main/dev require PRs, CI and workflow merges. [Integration attributed to matigaleanodev](Docs/integration.md) uses a user credential while retaining mandatory PRs and CI. TypeScript CDK remains preferred; roles/bootstrap and traffic switching remain open.

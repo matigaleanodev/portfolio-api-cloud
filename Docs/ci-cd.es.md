@@ -14,7 +14,7 @@ Infrastructure se omite mientras no exista cdk.json. Cuando exista, ejecutará `
 
 El check obligatorio sigue llamándose `verify`, ligado a GitHub Actions: exige documentation exitosa y éxito de cada ámbito presente; solo admite skipped para un ámbito ausente. El job de aplicación debe aprobar completo. El summary distingue aplicación y synth; no declara infraestructura comprobada si falta la stack.
 
-Validación local: `npm run check`, `python3 -m unittest discover -s scripts -p 'test_*.py'` y actionlint. Los workflows actualizados se comprobaron localmente; su ejecución remota para esta base sigue pendiente.
+Validación local: `npm run check`, `python3 -m unittest discover -s scripts -p 'test_*.py'` y actionlint. La CI de la base se comprobó también en el PR #4; cada nuevo head debe volver a aprobar los checks requeridos.
 
 ## Preparación de despliegue test
 
@@ -35,15 +35,15 @@ No contiene execute-change-set, deploy directo, bootstrap, destroy, imports clou
 
 ## Merges y sincronización de dev
 
-El candidato local de `.github/workflows/merge.yml` exige dispatch por matigaleanodev desde main/dev, environment merge, PR existente del mismo repositorio y SHA completo revisado. Valida checks con GITHUB_TOKEN de solo lectura y usa `MERGE_USER_TOKEN` exclusivamente para comprobar la identidad y solicitar el merge por API. Rechaza bots, otra cuenta, acceso insuficiente o bypass amplio; confirma merged_by y el commit devueltos por GitHub. No altera autoría ni fechas del merge y no tiene fallback al token de instalación.
+El workflow `.github/workflows/merge.yml` exige dispatch por matigaleanodev desde main/dev, environment merge, PR existente del mismo repositorio y SHA completo revisado. Valida checks con GITHUB_TOKEN de solo lectura y usa `MERGE_USER_TOKEN` exclusivamente para comprobar la identidad y solicitar el merge por API. Rechaza bots, otra cuenta, acceso insuficiente o bypass amplio; confirma merged_by y el commit devueltos por GitHub. No altera autoría ni fechas del merge y no tiene fallback al token de instalación.
 
-MERGE_USER_TOKEN está provisionado con la credencial OAuth de usuario existente, verificada como matigaleanodev, sin ampliar scopes. La configuración efectiva sigue otorgando solo a la App 5461240 acceso pull_request sobre updates, sin bypass de PR/CI. La migración de identidad y el mecanismo de activación del workflow permanecen pendientes; este candidato no se puede ejecutar desde feat/ bajo las restricciones actuales. [Credencial, permisos, comprobaciones y limitaciones de la transición](integration.es.md).
+MERGE_USER_TOKEN está provisionado con la credencial OAuth de usuario existente, verificada como matigaleanodev, sin ampliar scopes. El PR #5 instaló el mecanismo mediante una última integración por la App. El actor de updates es ahora User 99203645, solo pull_request; PR/CI sigue sin bypass. El environment conserva main/dev y no admite ejecución desde feat/. [Credencial, permisos, comprobaciones y limitaciones de la transición](integration.es.md).
 
 Para sincronizar main→dev, mantener una rama release/sync-main-to-dev basada en dev, integrar main allí y abrir PR a dev. No hacer push directo, force, merge manual ni --admin. dev no se declara espejo SHA exacto de main: conserva merge commits propios.
 
 ## Pendientes operativos
 
-El repositorio tiene dev como rama predeterminada; main todavía no existe. La App y el environment de merge están configurados y su alcance fue verificado. La primera ejecución se registra en el PR #2; la configuración por sí sola no demuestra un merge exitoso. Siguen pendientes el environment test-plan, la implementación de stack y los roles/bootstrap. El despliegue no se validó end-to-end. La integración inicial del PR #1 consumió la excepción temporal limitada a dev descrita en [protección de ramas](branch-protection.es.md).
+El repositorio tiene dev como rama predeterminada; main todavía no existe. El environment de merge conserva main/dev; el workflow usa identidad de usuario tras la transición del PR #5. La primera ejecución se registra en el PR #2; la configuración por sí sola no demuestra un merge exitoso. Siguen pendientes el environment test-plan, la implementación de stack y los roles/bootstrap. El despliegue no se validó end-to-end. La integración inicial del PR #1 consumió la excepción temporal limitada a dev descrita en [protección de ramas](branch-protection.es.md).
 
 Branches: solo feat/, fix/, release/; codex/ prohibido. main/dev se integran por PR fusionado desde workflow. Mantener ejecución serial, permisos por job y artifacts/versiones inmutables. Producción continúa fuera del alcance.
 

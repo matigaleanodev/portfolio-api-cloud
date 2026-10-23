@@ -31,9 +31,9 @@ Lambda Event Function with HTTP API outside a VPC is the proposed infrastructure
 
 Status: **policy defined; App merges validated in PR #2 and #3**.
 
-main/dev require PRs, CI, resolved conversations and deletion/force protection. Work branches use feat/fix. Effective configuration merges through the dedicated App; the new policy requires actual account identity and its transition remains pending. [Integration](integration.md). PR #1 is integrated into dev, update restrictions were restored and the initial exception is consumed.
+main/dev require PRs, CI, resolved conversations and deletion/force protection. Work branches use feat/fix. Current configuration integrates with matigaleanodev's actual identity; the App transition was installed through PR #5 without removing PR/CI. [Integration](integration.md). PR #1 is integrated into dev, update restrictions were restored and the initial exception is consumed.
 
-CI separates documentation, application and infrastructure; verify remains required. The application is tested on Node 24.22.1 LTS without requiring a placeholder stack. These changes have local validation; remote execution remains pending. [CI/CD](ci-cd.md) and [rules](branch-protection.md).
+CI separates documentation, application and infrastructure; verify remains required. The application is tested on Node 24.22.1 LTS without requiring a placeholder stack. These changes have local validation and passing CI in PR #4; each later head requires fresh validation. [CI/CD](ci-cd.md) and [rules](branch-protection.md).
 
 ## ADR-004 — Provenance and per-application interchangeability
 
@@ -63,8 +63,8 @@ CI separates application from CDK and retains verify as its required aggregate c
 
 ## ADR-007 — Actual integration identity
 
-Status: **policy defined; local candidate tested; activation blocked**.
+Status: **policy implemented; mechanism activated**.
 
 New automated merges must be attributed to matigaleanodev through a user credential, validating login/ID/type and merged_by. An installation token attributes the operation to the App and does not satisfy this policy. PRs, CI, reviewed SHA and workflow remain required; no bot fallback or cosmetic metadata changes.
 
-Effective configuration allows only the App through updates. A human credential alone does not grant that access. Replacing the bypass actor changes access guarantees: that account could also merge a PR outside the workflow. Transition must explicitly resolve that difference and initial activation from protected branches. [Status, alternatives and limits](integration.md).
+The transition was installed through PR #5 with one final App merge, after which only the update actor changed to User 99203645, PR-only. PR/CI retains zero bypass and the environment remains limited to main/dev. The account can also merge through the UI; operational policy retains mandatory workflow integration. [Status, alternatives and limits](integration.md).

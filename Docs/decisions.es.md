@@ -31,9 +31,9 @@ Lambda Event Function con HTTP API, fuera de VPC, es la base de infraestructura 
 
 Estado: **política definida; merge con App validado en PR #2 y #3**.
 
-main y dev requieren PR, CI, conversaciones resueltas y protección contra borrado/force. Las ramas de trabajo usan feat/fix. La configuración efectiva integra con la App dedicada; la política nueva exige identidad real de la cuenta y su transición sigue pendiente. [Integración](integration.es.md). PR #1 quedó integrado en dev, el bloqueo de updates fue restaurado y la excepción inicial está consumida.
+main y dev requieren PR, CI, conversaciones resueltas y protección contra borrado/force. Las ramas de trabajo usan feat/fix. La configuración actual integra con identidad real de matigaleanodev; la transición de la App se instaló por PR #5 sin quitar PR/CI. [Integración](integration.es.md). PR #1 quedó integrado en dev, el bloqueo de updates fue restaurado y la excepción inicial está consumida.
 
-La CI separa documentación, aplicación e infraestructura; verify sigue siendo obligatorio. La aplicación se prueba en Node 24.22.1 LTS y no exige stack ficticia. Estos cambios tienen validación local; su ejecución remota sigue pendiente. [CI/CD](ci-cd.es.md) y [reglas](branch-protection.es.md).
+La CI separa documentación, aplicación e infraestructura; verify sigue siendo obligatorio. La aplicación se prueba en Node 24.22.1 LTS y no exige stack ficticia. Estos cambios tienen validación local y CI aprobada en el PR #4; cada head posterior requiere su nueva validación. [CI/CD](ci-cd.es.md) y [reglas](branch-protection.es.md).
 
 ## ADR-004 — Procedencia e intercambiabilidad por aplicación
 
@@ -63,8 +63,8 @@ La CI separa aplicación de CDK y conserva verify como check agregado obligatori
 
 ## ADR-007 — Identidad real de la integración
 
-Estado: **política definida; candidato local probado; activación bloqueada**.
+Estado: **política implementada; mecanismo activado**.
 
 Los nuevos merges automatizados deben atribuirse a matigaleanodev mediante una credencial de usuario, validando login/ID/tipo y merged_by. El token de instalación atribuye la operación a la App y no satisface esta política. Se conserva PR, CI, SHA revisado y workflow; no hay fallback a bot ni cambios cosméticos de metadatos.
 
-La configuración efectiva solo permite a la App atravesar updates. Una credencial humana no concede por sí sola ese acceso. Reemplazar el actor de bypass modifica garantías de acceso: permitiría a esa cuenta integrar un PR también fuera del workflow. La transición requiere resolver explícitamente esa diferencia y la activación inicial desde ramas protegidas. [Estado, alternativas y límites](integration.es.md).
+La transición se instaló por PR #5 con una última integración de la App y luego se reemplazó únicamente el actor de updates por User 99203645, solo vía PR. PR/CI conserva cero bypass y el environment sigue limitado a main/dev. La cuenta también puede integrar desde la UI; la política operativa mantiene workflow obligatorio. [Estado, alternativas y límites](integration.es.md).

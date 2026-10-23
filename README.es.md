@@ -49,4 +49,4 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 
 Las tres APIs actuales permanecen operativas durante toda la migración. Después de migrar y estabilizar las tres y validar recuperación, EC2 se apagará conservando instancia y backup recuperable. Sus recursos retenidos forman parte del costo total.
 
-La renovación de perfil/proyectos del bot sigue siendo el último paso previo al despliegue productivo. Las ramas main/dev requieren PR, CI y merge por workflow. La [transición a integración atribuida a la cuenta](Docs/integration.es.md) está preparada localmente y sigue bloqueada por configuración pendiente. CDK TypeScript sigue como opción preferida; roles/bootstrap y conmutación de tráfico permanecen abiertos.
+La renovación de perfil/proyectos del bot sigue siendo el último paso previo al despliegue productivo. Las ramas main/dev requieren PR, CI y merge por workflow. La [integración atribuida a matigaleanodev](Docs/integration.es.md) utiliza una credencial de usuario y mantiene PR/CI obligatorios. CDK TypeScript sigue como opción preferida; roles/bootstrap y conmutación de tráfico permanecen abiertos.
