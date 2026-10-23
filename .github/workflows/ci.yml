@@ -26,6 +26,8 @@ jobs:
           persist-credentials: false
       - name: Validate documentation
         run: python3 scripts/check_docs.py
+      - name: Validate merge workflow guards
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Detect application readiness
         id: scope
         shell: bash

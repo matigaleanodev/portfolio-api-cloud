@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   merge:
-    if: github.repository == 'matigaleanodev/portfolio-api-cloud' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') && vars.MERGE_WORKFLOW_ENABLED == 'true'
+    if: github.repository == 'matigaleanodev/portfolio-api-cloud' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') && github.actor == 'matigaleanodev' && github.triggering_actor == 'matigaleanodev' && vars.MERGE_WORKFLOW_ENABLED == 'true'
     environment: merge
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -31,7 +31,7 @@ jobs:
       PR_NUMBER: ${{ inputs.pull_request }}
       REVIEWED_HEAD_SHA: ${{ inputs.reviewed_head_sha }}
       GH_REPO: matigaleanodev/portfolio-api-cloud
-      MERGE_APP_ID: ${{ vars.MERGE_APP_ID }}
+      GH_HOST: github.com
     steps:
       - name: Validate the reviewed PR with read-only token
         env:
@@ -41,7 +41,6 @@ jobs:
           set -euo pipefail
           [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
           [[ "$REVIEWED_HEAD_SHA" =~ ^[a-f0-9]{40}$ ]]
-          [[ "$MERGE_APP_ID" =~ ^[1-9][0-9]*$ ]]
           gh api "repos/$GH_REPO/pulls/$PR_NUMBER" > "$RUNNER_TEMP/reviewed-pr.json"
           python3 - <<'PY'
           import json, os
@@ -52,37 +51,70 @@ jobs:
           assert pr['head']['repo']['full_name'] == os.environ['GH_REPO']
           assert pr['base']['repo']['full_name'] == os.environ['GH_REPO']
           assert pr['base']['ref'] in ('main', 'dev')
+          assert pr['base']['ref'] == os.environ['GITHUB_REF_NAME']
           head = pr['head']['ref']
           assert head.startswith(('feat/', 'fix/', 'release/')) or head in ('main', 'dev')
           assert not head.startswith('codex/')
           assert head != pr['base']['ref']
           PY
           gh pr checks "$PR_NUMBER" --repo "$GH_REPO" --required
-      - name: Obtain the dedicated merge App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ vars.MERGE_APP_ID }}
-          private-key: ${{ secrets.MERGE_APP_PRIVATE_KEY }}
-          owner: matigaleanodev
-          repositories: portfolio-api-cloud
-          permission-contents: write
-          permission-pull-requests: write
-          permission-checks: read
-          permission-workflows: write
-      - name: Merge only the reviewed head under GitHub rules
+      - name: Verify user identity and protected integration access
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.MERGE_USER_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$GH_TOKEN" ]] || { echo "Falta MERGE_USER_TOKEN del environment merge."; exit 1; }
+          gh api user > "$RUNNER_TEMP/merge-user.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          user = json.loads((Path(os.environ['RUNNER_TEMP']) / 'merge-user.json').read_text())
+          assert user['login'] == 'matigaleanodev' and user['id'] == 99203645 and user['type'] == 'User'
+          PY
+          gh api "repos/$GH_REPO/rulesets/25799501" > "$RUNNER_TEMP/update-rules.json"
+          gh api "repos/$GH_REPO/rulesets/25799502" > "$RUNNER_TEMP/quality-rules.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          directory = Path(os.environ['RUNNER_TEMP'])
+          updates = json.loads((directory / 'update-rules.json').read_text())
+          quality = json.loads((directory / 'quality-rules.json').read_text())
+          for ruleset in (updates, quality):
+              assert ruleset['enforcement'] == 'active'
+              assert set(ruleset['conditions']['ref_name']['include']) == {'refs/heads/main', 'refs/heads/dev'}
+              assert ruleset['conditions']['ref_name']['exclude'] == []
+          assert any(rule['type'] == 'update' for rule in updates['rules'])
+          assert updates.get('current_user_can_bypass') == 'pull_requests_only', 'La cuenta no tiene integración protegida solo por PR'
+          assert quality.get('current_user_can_bypass') == 'never', 'La cuenta no debe omitir PR/CI'
+          rules = {rule['type']: rule for rule in quality['rules']}
+          assert {'pull_request', 'required_status_checks', 'deletion', 'non_fast_forward'} <= rules.keys()
+          assert rules['pull_request']['parameters']['required_review_thread_resolution']
+          assert rules['pull_request']['parameters']['allowed_merge_methods'] == ['merge']
+          checks = rules['required_status_checks']['parameters']
+          assert checks['strict_required_status_checks_policy']
+          assert {'context': 'verify', 'integration_id': 15368} in checks['required_status_checks']
+          PY
+      - name: Merge only the reviewed head as the verified user
+        env:
+          GH_TOKEN: ${{ secrets.MERGE_USER_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
           gh api --method PUT "repos/$GH_REPO/pulls/$PR_NUMBER/merge" \
             -f merge_method=merge -f sha="$REVIEWED_HEAD_SHA" \
             > "$RUNNER_TEMP/merge-result.json"
+          gh api "repos/$GH_REPO/pulls/$PR_NUMBER" > "$RUNNER_TEMP/merged-pr.json"
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          result = json.loads((Path(os.environ['RUNNER_TEMP']) / 'merge-result.json').read_text())
+          directory = Path(os.environ['RUNNER_TEMP'])
+          result = json.loads((directory / 'merge-result.json').read_text())
+          pr = json.loads((directory / 'merged-pr.json').read_text())
           assert result.get('merged') is True, result.get('message', 'Merge no confirmado')
+          assert pr['merged'] and pr['merge_commit_sha'] == result['sha']
+          assert pr['head']['sha'] == os.environ['REVIEWED_HEAD_SHA']
+          user = pr['merged_by']
+          assert user['login'] == 'matigaleanodev' and user['id'] == 99203645 and user['type'] == 'User'
+          print(f"Merge confirmado: {pr['html_url']} por {user['login']}, commit {result['sha']}")
           PY
-          gh pr view "$PR_NUMBER" --repo "$GH_REPO" --json state,mergeCommit,url
