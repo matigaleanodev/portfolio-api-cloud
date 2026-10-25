@@ -8,20 +8,25 @@
     "node": "^24.22.1"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.infra.json",
     "build": "node scripts/build.mjs",
-    "test": "node scripts/test.mjs",
+    "test": "node scripts/prepare-infra.mjs && node scripts/test.mjs",
     "check:docs": "python3 scripts/check_docs.py",
-    "check": "npm run typecheck && npm run build && npm test && npm run test:package && npm run check:docs",
+    "check": "npm run typecheck && npm test && npm run test:package && npm run cdk -- synth --no-lookups --context stage=test --quiet && npm run check:docs",
     "test:package": "node scripts/test-package.mjs",
     "test:app": "node scripts/test.mjs --project application",
-    "test:tooling": "node scripts/test.mjs --project tooling"
+    "test:tooling": "node scripts/test.mjs --project tooling",
+    "test:infra": "node scripts/prepare-infra.mjs && node scripts/test.mjs --project infrastructure",
+    "cdk": "cdk"
   },
   "devDependencies": {
     "@types/aws-lambda": "8.10.164",
     "@types/body-parser": "1.19.6",
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",
+    "aws-cdk": "2.1146.1",
+    "aws-cdk-lib": "2.274.0",
+    "constructs": "10.8.1",
     "typescript": "6.0.3",
     "vitest": "5.0.5"
   },

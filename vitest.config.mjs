@@ -15,6 +15,14 @@ export default defineConfig({
       {
         envDir: false,
         test: {
+          ...isolated,
+          name: "infrastructure",
+          include: [".tmp/tests/test/infra/*.test.js"],
+        },
+      },
+      {
+        envDir: false,
+        test: {
           environment: "node",
           name: "tooling",
           include: [".tmp/tests/test/tooling/*.test.js"],

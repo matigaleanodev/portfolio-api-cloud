@@ -1,0 +1,8 @@
+{
+  "app": "node scripts/cdk-app.mjs",
+  "versionReporting": false,
+  "context": {
+    "stage": "test",
+    "@aws-cdk/core:checkSecretUsage": true
+  }
+}

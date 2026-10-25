@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": ".tmp/infra",
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["infra/**/*.ts", "test/infra/**/*.ts"],
+  "exclude": []
+}

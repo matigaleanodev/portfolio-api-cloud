@@ -9,6 +9,17 @@ execFileSync(process.execPath, ["node_modules/typescript/bin/tsc"], {
 execFileSync(
   process.execPath,
   [
+    "node_modules/typescript/bin/tsc",
+    "-p",
+    "tsconfig.infra.json",
+    "--outDir",
+    ".tmp/tests",
+  ],
+  { cwd: root, stdio: "inherit" },
+);
+execFileSync(
+  process.execPath,
+  [
     "node_modules/vitest/vitest.mjs",
     "run",
     "--config",

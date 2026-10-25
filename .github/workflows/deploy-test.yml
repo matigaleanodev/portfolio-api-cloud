@@ -12,7 +12,7 @@ concurrency:
 
 env:
   AWS_REGION: us-east-1
-  CDK_DEFAULT_ACCOUNT: '650387442642'
+  CDK_DEFAULT_ACCOUNT: "650387442642"
   CDK_DEFAULT_REGION: us-east-1
 
 jobs:
@@ -44,7 +44,7 @@ jobs:
           [[ "$TEST_CDK_DEPLOY_ROLE_ARN" == arn:aws:iam::650387442642:role/PortfolioApiCloudTestCdkDeployRole ]]
       - uses: actions/setup-node@v4
         with:
-          node-version: '24.22.1'
+          node-version: "24.22.1"
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
@@ -72,7 +72,7 @@ jobs:
         with:
           aws-region: us-east-1
           role-to-assume: ${{ vars.TEST_AWS_ROLE_ARN }}
-          allowed-account-ids: '650387442642'
+          allowed-account-ids: "650387442642"
           role-session-name: PortfolioApiCloudTest-${{ github.run_id }}
       - name: Verify personal test identity
         shell: bash
@@ -87,5 +87,5 @@ jobs:
         run: |
           set -euo pipefail
           change_set="portfolio-api-cloud-test-${GITHUB_SHA}-${GITHUB_RUN_ID}"
-          npm run cdk -- deploy PortfolioApiCloudTest --app cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never
+          npm run cdk -- deploy PortfolioApiCloudTest --app cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never --parameters PortfolioApiCloudTest:RuntimePermissionsBoundaryArn=arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary
           echo "Changeset test preparado: $change_set. No se ejecutó el despliegue." >> "$GITHUB_STEP_SUMMARY"
