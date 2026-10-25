@@ -2,7 +2,7 @@
   "name": "portfolio-api-cloud",
   "version": "0.1.0",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": "^24.22.1"
@@ -13,11 +13,23 @@
     "test": "node scripts/test.mjs",
     "check:docs": "python3 scripts/check_docs.py",
     "check": "npm run typecheck && npm run build && npm test && npm run test:package && npm run check:docs",
-    "test:package": "node scripts/test-package.mjs"
+    "test:package": "node scripts/test-package.mjs",
+    "test:app": "node scripts/test.mjs --project application",
+    "test:tooling": "node scripts/test.mjs --project tooling"
   },
   "devDependencies": {
     "@types/aws-lambda": "8.10.164",
+    "@types/body-parser": "1.19.6",
     "@types/node": "24.19.2",
-    "typescript": "6.0.3"
+    "@types/react": "19.3.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  },
+  "dependencies": {
+    "body-parser": "2.4.0",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.15.1",
+    "rate-limiter-flexible": "11.2.3",
+    "resend": "6.34.1"
   }
 }
