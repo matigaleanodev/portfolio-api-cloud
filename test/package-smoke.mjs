@@ -1,3 +1,4 @@
+import { ChatKnowledgeRepository } from './dist/chat/chat-knowledge.repository.js';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
@@ -39,7 +40,7 @@ const result = await handler({
   version: '2.0',
   rawPath: '/api/health',
   headers: { origin: 'https://dotenv.example.invalid' },
-  requestContext: { http: { method: 'GET' } },
+  requestContext: { http: { method: 'GET', sourceIp: '192.0.2.1' } },
   isBase64Encoded: false,
 });
 
@@ -101,7 +102,7 @@ assert.equal(
       }),
     })
   ).statusCode,
-  500,
+  503,
 );
 
 const subscriptionConfig = readSubscriptionConfiguration({
@@ -130,7 +131,7 @@ for (const method of ['POST', 'DELETE']) {
   assert.equal(response.statusCode, 200);
   assert.equal(response.body, '{"message":"ok","email":"test@example.com"}');
   assert.equal(response.headers['x-ratelimit-remaining'], '9');
-  assert.equal((await handler(subscriptionEvent)).statusCode, 500);
+  assert.equal((await handler(subscriptionEvent)).statusCode, 503);
 
   for (let index = 1; index < 10; index++)
     assert.equal((await subscriptions(subscriptionEvent)).statusCode, 200);
@@ -161,7 +162,7 @@ assert.equal(
       requestContext: { http: { method: 'GET', sourceIp: '192.0.2.3' } },
     })
   ).statusCode,
-  200,
+  503,
 );
 assert.equal((await handler(chatEvent)).statusCode, 503);
 
@@ -260,3 +261,15 @@ try {
 console.log(
   'Chat empaquetado: 201/503, cachés, cuotas independientes, fallback sintético, SDK S3 simulado y sin red.',
 );
+
+assert.equal(existsSync('fallback/chat-knowledge.v1.json'), true);
+const packagedKnowledge = await new ChatKnowledgeRepository(
+  null,
+  null,
+  process.cwd(),
+  true,
+).getKnowledge();
+assert.ok(packagedKnowledge.projects.some((project) => project.slug === 'foodly-notes'));
+assert.ok(packagedKnowledge.projects.some((project) => project.slug === 'modo-playa'));
+assert.deepEqual(packagedKnowledge.posts, []);
+console.log('Fallback real versionado, integridad y lectura en frío verificados desde el paquete.');

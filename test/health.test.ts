@@ -12,7 +12,9 @@ test('Dado el servicio sin proveedores, cuando se consulta health, entonces resp
   assert.equal(result.statusCode, 200);
   assert.equal(result.body, '{"status":"ok"}');
   assert.equal(result.isBase64Encoded, false);
+  assert.match(String(result.headers?.['x-request-id']), /^[0-9a-f-]{36}$/);
   assert.deepEqual(result.headers, {
+    'x-request-id': result.headers?.['x-request-id'],
     'x-content-type-options': 'nosniff',
     'x-frame-options': 'DENY',
     'referrer-policy': 'no-referrer',
