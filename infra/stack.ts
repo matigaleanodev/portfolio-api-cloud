@@ -58,6 +58,7 @@ export class PortfolioApiStack extends Stack {
       description: 'Secreto por ambiente previamente provisionado; sin valores en synth.',
     });
     const control = new Table(this, 'RuntimeControl', {
+      tableName: 'portfolio-api-cloud-test-control',
       partitionKey: { name: 'pk', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
       timeToLiveAttribute: 'ttl',
@@ -128,6 +129,7 @@ export class PortfolioApiStack extends Stack {
       ],
     ] as const) {
       new Alarm(this, `Runtime${name}Alarm`, {
+        alarmName: `portfolio-api-cloud-test-${name.toLowerCase()}`,
         metric,
         threshold,
         evaluationPeriods: 1,

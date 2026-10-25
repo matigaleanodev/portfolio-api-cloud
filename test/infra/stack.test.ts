@@ -213,3 +213,83 @@ test('Dada entrada administrada, cuando se configura Lambda, entonces fija API y
   expect(template.toJSON().Parameters.RuntimeSecretArn.NoEcho).toBe(true);
   expect(() => readFileSync('.tmp/lambda/fallback/chat-knowledge.v1.json')).not.toThrow();
 });
+
+test('Dado el runtime, cuando se inspecciona su identidad, entonces confía solo en Lambda y no administra IAM ni asume otros roles', () => {
+  template.hasResourceProperties('AWS::IAM::Role', {
+    RoleName: 'PortfolioApiCloudTestRuntimeRole',
+    AssumeRolePolicyDocument: {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Action: 'sts:AssumeRole',
+          Effect: 'Allow',
+          Principal: { Service: 'lambda.amazonaws.com' },
+        },
+      ],
+    },
+  });
+  const policies = Object.values(template.findResources('AWS::IAM::Policy'));
+  expect(policies).toHaveLength(1);
+  const statements = policies[0]!.Properties.PolicyDocument.Statement as {
+    Action: string | string[];
+    Resource: unknown;
+  }[];
+  expect(statements.flatMap((statement) => statement.Action).sort()).toEqual([
+    'dynamodb:GetItem',
+    'dynamodb:PutItem',
+    'dynamodb:UpdateItem',
+    'logs:CreateLogStream',
+    'logs:PutLogEvents',
+    'secretsmanager:GetSecretValue',
+  ]);
+  expect(statements.every((statement) => statement.Resource !== '*')).toBe(true);
+});
+
+test('Dada invocación desde API Gateway, cuando se sintetizan permisos Lambda, entonces se restringen a la API de esta cuenta y región', () => {
+  const apiId = Object.keys(template.findResources('AWS::ApiGatewayV2::Api'))[0]!;
+  const permissions = Object.values(template.findResources('AWS::Lambda::Permission'));
+  expect(permissions).toHaveLength(2);
+  for (const permission of permissions) {
+    expect(permission.Properties.Principal).toBe('apigateway.amazonaws.com');
+    expect(permission.Properties.Action).toBe('lambda:InvokeFunction');
+    const parts = permission.Properties.SourceArn['Fn::Join'][1] as unknown[];
+    expect(parts).toContain(':execute-api:us-east-1:650387442642:');
+    expect(parts).toContainEqual({ Ref: apiId });
+  }
+});
+
+test('Dados recursos de control y alarmas, cuando se nombran, entonces el diseño de permisos puede acotarlos a test', () => {
+  template.hasResourceProperties('AWS::DynamoDB::Table', {
+    TableName: 'portfolio-api-cloud-test-control',
+  });
+  expect(
+    Object.values(template.findResources('AWS::CloudWatch::Alarm'))
+      .map((resource) => resource.Properties.AlarmName)
+      .sort(),
+  ).toEqual([
+    'portfolio-api-cloud-test-duration',
+    'portfolio-api-cloud-test-errors',
+    'portfolio-api-cloud-test-throttles',
+  ]);
+  for (const type of [
+    'AWS::EC2::VPC',
+    'AWS::SQS::Queue',
+    'AWS::ApiGatewayV2::DomainName',
+    'AWS::IAM::ManagedPolicy',
+    'AWS::S3::Bucket',
+  ]) {
+    template.resourceCountIs(type, 0);
+  }
+});
+
+test('Dados parámetros externos, cuando se sintetizan, entonces no incluyen valores de credenciales ni defaults privados', () => {
+  const parameters = template.toJSON().Parameters;
+  expect(parameters.RuntimePermissionsBoundaryArn.AllowedPattern).toBe(
+    'arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary',
+  );
+  expect(parameters.RuntimeSecretArn.AllowedPattern).toContain('secret:portfolio-api-cloud/test/');
+  expect(parameters.CorsOrigin.Default).toBe('');
+  expect(Object.keys(template.toJSON().Outputs)).toEqual(['ApiEndpoint']);
+  const manifest = app.synth().manifest;
+  expect(JSON.stringify(manifest)).not.toMatch(/AdministratorAccess/);
+});
