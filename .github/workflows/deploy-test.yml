@@ -47,6 +47,7 @@ jobs:
           node-version: '24.22.1'
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
@@ -87,5 +88,5 @@ jobs:
         run: |
           set -euo pipefail
           change_set="portfolio-api-cloud-test-${GITHUB_SHA}-${GITHUB_RUN_ID}"
-          npm run cdk -- deploy PortfolioApiCloudTest --app cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never
+          npm run cdk -- deploy PortfolioApiCloudTest --app cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never --parameters PortfolioApiCloudTest:RuntimePermissionsBoundaryArn=arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary
           echo "Changeset test preparado: $change_set. No se ejecutó el despliegue." >> "$GITHUB_STEP_SUMMARY"

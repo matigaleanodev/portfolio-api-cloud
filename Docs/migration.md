@@ -6,23 +6,23 @@ Serverless migration is decided. This plan covers Portfolio; Foodly Notes and Mo
 
 ## Stages and exit criteria
 
-| Stage | Delivery | Exit criterion |
-| --- | --- | --- |
-| 0. Documentary evidence | audit, provenance, local comparison, decisions and hypothetical costs | bilingual documentation and links verifiable from a checkout without experimental code |
-| 1. Initial structure | TypeScript handlers, minimal composition, explicit configuration, scripts and local tests | build/types pass; real networking/providers blocked in tests; no placeholder stack or abstractions |
-| 2. Reused logic | recover only necessary pinned source files and record provenance | retain domain/content/DTOs; remove transitive Nest imports from handler runtime |
-| 3. Complete contracts | six routes, errors, validation, headers and limits | chat 201, contact 204, DELETE body and 400/413/429/500/502/503; simulated effects without duplication or business traffic |
-| 4. Hardening | trusted IP, shared quotas, deadline/cancellation, integral fallback and bounded logs | concurrency, expiry, spoofing, corruption, failed-provider and ambiguous-outcome tests |
-| 5. Local infrastructure | select tooling and define isolated test, IAM/network/retention/routes | offline synth/assertions; review boundaries and pipeline/publication/execution/runtime separation |
-| 6. Protected delivery | dedicated App, environments and runner-compatible workflows | PR/CI/workflow merges without new update-lock exceptions; do not equate documentation checks with application validation |
-| 7. AWS test preparation | identity, roles, bootstrap and isolated data/providers | reviewed setup, resources and expected costs, without production data/destinations |
-| 8. Test deployment | immutable artifact and independent endpoint | reviewed exact change set and traceable execution; initial workflow only prepares deployment |
-| 9. Managed validation | contracts/e2e/security/observability and real measurements | cold execution demonstrated with telemetry; route latency/error/cost, AI quota and alerts; mock providers first |
-| 10. Cutover and recovery ready | URL/routing, runbook, original image/config and return rehearsal | one write destination per request; tested return with running EC2 and retained artifacts |
-| 11. Final bot knowledge refresh | update professional profile/projects, curated/editorial sources and fallback | verify provenance/checksum/dates/links/representative answers in final package; previous version recoverable |
-| 12. Production deployment | publish final package and switch according to runbook | controlled smoke, monitoring and operational reversion; EC2 stays running |
-| 13. Stabilization | observe behavior, costs and real effects | stability criteria met and recovery current; duration follows evidence |
-| 14. EC2 preservation | complete both remaining migrations and verify backup/restoration | stop and retain the instance without termination or dismantling |
+| Stage                           | Delivery                                                                                  | Exit criterion                                                                                                            |
+| ------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 0. Documentary evidence         | audit, provenance, local comparison, decisions and hypothetical costs                     | bilingual documentation and links verifiable from a checkout without experimental code                                    |
+| 1. Initial structure            | TypeScript handlers, minimal composition, explicit configuration, scripts and local tests | build/types pass; real networking/providers blocked in tests; no placeholder stack or abstractions                        |
+| 2. Reused logic                 | recover only necessary pinned source files and record provenance                          | retain domain/content/DTOs; remove transitive Nest imports from handler runtime                                           |
+| 3. Complete contracts           | six routes, errors, validation, headers and limits                                        | chat 201, contact 204, DELETE body and 400/413/429/500/502/503; simulated effects without duplication or business traffic |
+| 4. Hardening                    | trusted IP, shared quotas, deadline/cancellation, integral fallback and bounded logs      | concurrency, expiry, spoofing, corruption, failed-provider and ambiguous-outcome tests                                    |
+| 5. Local infrastructure         | select tooling and define isolated test, IAM/network/retention/routes                     | offline synth/assertions; review boundaries and pipeline/publication/execution/runtime separation                         |
+| 6. Protected delivery           | dedicated App, environments and runner-compatible workflows                               | PR/CI/workflow merges without new update-lock exceptions; do not equate documentation checks with application validation  |
+| 7. AWS test preparation         | identity, roles, bootstrap and isolated data/providers                                    | reviewed setup, resources and expected costs, without production data/destinations                                        |
+| 8. Test deployment              | immutable artifact and independent endpoint                                               | reviewed exact change set and traceable execution; initial workflow only prepares deployment                              |
+| 9. Managed validation           | contracts/e2e/security/observability and real measurements                                | cold execution demonstrated with telemetry; route latency/error/cost, AI quota and alerts; mock providers first           |
+| 10. Cutover and recovery ready  | URL/routing, runbook, original image/config and return rehearsal                          | one write destination per request; tested return with running EC2 and retained artifacts                                  |
+| 11. Final bot knowledge refresh | update professional profile/projects, curated/editorial sources and fallback              | verify provenance/checksum/dates/links/representative answers in final package; previous version recoverable              |
+| 12. Production deployment       | publish final package and switch according to runbook                                     | controlled smoke, monitoring and operational reversion; EC2 stays running                                                 |
+| 13. Stabilization               | observe behavior, costs and real effects                                                  | stability criteria met and recovery current; duration follows evidence                                                    |
+| 14. EC2 preservation            | complete both remaining migrations and verify backup/restoration                          | stop and retain the instance without termination or dismantling                                                           |
 
 Stage 11 is the final step before production deployment. Knowledge and final-package checks belong to that same stage; no other delivery is inserted between its completion and production.
 
@@ -32,7 +32,7 @@ The foundation is implemented with health, explicit configuration/composition, s
 
 Review local files before reuse. Recover only necessary source files with commit, paths and hashes. Keep runtime free of transitive Nest/Express dependencies; retain class-validator/class-transformer or existing utilities when they reduce contract risk. Do not introduce a new framework, generic platform or multicloud layer.
 
-The next stage incrementally recovers logic/DTOs from the pinned SHA and implements a business slice using mocks. Five routes remain 404; complete compatibility and hardening are required before exposure.
+Stages 2/3 progressed with [contact](contact.md): pinned logic/DTO/cases, provenance, mocked provider and local quota. Four routes remain 404. The next slice completes another contract with mocks; full compatibility and hardening remain required before exposure.
 
 ## Data, effects and coexistence
 
@@ -69,3 +69,7 @@ Stop EC2 only after all three migrations, stabilization and verified recovery. R
 Define backup contents/destination/retention: relevant volumes/snapshots or AMI, images by digest, Compose/Traefik, scripts, securely held private configuration and startup/access dependencies. Secrets are not copied to this repository. R2 data is recovered through its owner's procedure, not an EC2 snapshot.
 
 Returning from a stopped instance requires startup and validation of network, volumes, Docker, access, ingress and health; it is not immediate coexistence rollback. Retained resources and backups belong in total cost.
+
+## Local infrastructure progress
+
+Stage 5 local definition was brought forward: CDK selected, IAM-isolated test stack, 11 assertions and synth without lookups. This does not waive stages 3/4 or enable AWS test/production. [Resources, package and prerequisites](infrastructure.md).

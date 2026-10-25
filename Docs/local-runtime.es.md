@@ -28,21 +28,21 @@ Node v24.19.0; Linux x64 / WSL2; AMD Ryzen 7 9800X3D 8-Core Processor.
 
 SDK reales de S3 y Resend incluidos en ambos bundles. Configuración/proveedores ficticios obligatorios: fetch, S3.send y sockets interceptados antes de importar los servicios. Ninguna opción habilita red real. Logs silenciados en ambas candidatas durante la medición.
 
-| Metric (ms) | Nest | TypeScript handlers |
-| --- | ---: | ---: |
-| Import + init, p50 / p95 | 195.194 / 219.406 | 141.441 / 165.677 |
-| Import + init, min / max | 187.438 / 225.579 | 137.211 / 167.159 |
-| Import, p50 / p95 | 147.569 / 166.439 | 131.108 / 153.752 |
-| Init, p50 / p95 | 48.164 / 55.993 | 10.239 / 13.466 |
-| Health first, p50 / p95 | 3.327 / 4.091 | 2.589 / 2.894 |
-| Health warm, p50 / p95 | 0.194 / 0.580 | 0.100 / 0.346 |
-| Chat mock warm, p50 / p95 | 0.845 / 5.539 | 0.679 / 4.456 |
+| Metric (ms)               |              Nest | TypeScript handlers |
+| ------------------------- | ----------------: | ------------------: |
+| Import + init, p50 / p95  | 195.194 / 219.406 |   141.441 / 165.677 |
+| Import + init, min / max  | 187.438 / 225.579 |   137.211 / 167.159 |
+| Import, p50 / p95         | 147.569 / 166.439 |   131.108 / 153.752 |
+| Init, p50 / p95           |   48.164 / 55.993 |     10.239 / 13.466 |
+| Health first, p50 / p95   |     3.327 / 4.091 |       2.589 / 2.894 |
+| Health warm, p50 / p95    |     0.194 / 0.580 |       0.100 / 0.346 |
+| Chat mock warm, p50 / p95 |     0.845 / 5.539 |       0.679 / 4.456 |
 
-| Package | Nest | TypeScript handlers |
-| --- | ---: | ---: |
-| Bundle (bytes) | 8,096,529 | 6,224,140 |
-| ZIP (bytes) | 1,684,535 | 1,405,179 |
-| Modules | 2,235 | 1,431 |
+| Package        |      Nest | TypeScript handlers |
+| -------------- | --------: | ------------------: |
+| Bundle (bytes) | 8,096,529 |           6,224,140 |
+| ZIP (bytes)    | 1,684,535 |           1,405,179 |
+| Modules        |     2,235 |               1,431 |
 
 Import + init empieza antes de require y termina al obtener el handler listo; excluye el arranque del ejecutable Node. Percentiles nearest-rank. Warm combina 600 invocaciones por ruta/candidata dentro de esos 30 procesos, con cachés por entorno y proveedores instantáneos. processWallMs en el JSON incluye creación, todas las invocaciones y cierre: no es startup. No se calcula p99 con esta muestra. [Muestras de arranque, entorno, hashes y dependencias](runtime-evidence.es.md).
 

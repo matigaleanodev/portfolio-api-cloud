@@ -14,11 +14,11 @@ The [official Nest serverless guide](https://docs.nestjs.com/faq/serverless) sho
 
 ## Documented technical comparison
 
-| Candidate | Reuse | Work/risk | Testable hypothesis |
-| --- | --- | --- | --- |
-| A. Adapted Nest/Express | services/DTOs/validation/errors/tests | bootstrap/adapter/package; quotas/deadlines still need fixes | smaller migration, more initialization/imports |
-| B. Compact responsibility-grouped Node handler | domain/content/SDKs/contract cases | explicit composition/parsing/validation/error mapping/IP/limits/headers; retain class-validator if it reduces changes | fewer dependencies/bootstrap with acceptable migration cost |
-| C. HTTP server in Web Functions | chosen server/framework | Node 24 plus different endpoint/IAM/billing | concurrency/active CPU benefits outweigh resident memory |
+| Candidate                                      | Reuse                                 | Work/risk                                                                                                             | Testable hypothesis                                         |
+| ---------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| A. Adapted Nest/Express                        | services/DTOs/validation/errors/tests | bootstrap/adapter/package; quotas/deadlines still need fixes                                                          | smaller migration, more initialization/imports              |
+| B. Compact responsibility-grouped Node handler | domain/content/SDKs/contract cases    | explicit composition/parsing/validation/error mapping/IP/limits/headers; retain class-validator if it reduces changes | fewer dependencies/bootstrap with acceptable migration cost |
+| C. HTTP server in Web Functions                | chosen server/framework               | Node 24 plus different endpoint/IAM/billing                                                                           | concurrency/active CPU benefits outweigh resident memory    |
 
 No extra HTTP/validation framework or generic ports/adapters architecture by default. Candidate B should use the smallest sufficient composition/routing surface without rewriting knowledge. A remains a genuine comparator.
 

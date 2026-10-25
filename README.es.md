@@ -6,7 +6,7 @@ Implementación alternativa de la API pública de Portfolio con handlers TypeScr
 
 ## Estado actual
 
-Base local implementada: composición explícita, configuración CORS y `GET /api/health` → 200 `{"status":"ok"}`, con entrada HTTP API v2. Las otras cinco rutas siguen pendientes y devuelven 404. La cobertura contractual es parcial; no hay stack CDK ni despliegue.
+Aplicación local con composición explícita y entrada HTTP API v2: `GET /api/health` → 200 `{"status":"ok"}` y `POST /api/contact` → 204 vacío, con validación, honeypot, proveedor simulado en pruebas y cuota local 5/h/IP. Las otras cuatro rutas siguen pendientes y devuelven 404. La cobertura contractual es parcial. La stack CDK de test está definida y sintetizada localmente; no se desplegó.
 
 El prototipo comparativo fue descartado. Sus [resultados](Docs/local-runtime.es.md) se conservan como evidencia histórica y no son mediciones de esta base, cold starts AWS ni prueba de ahorro mensual.
 
@@ -17,10 +17,13 @@ Ubuntu-26.04 en WSL. Objetivo Node **24.22.1 LTS** (`.nvmrc`), la LTS más recie
 ```bash
 npm ci --ignore-scripts
 npm run check
-python3 -m unittest discover -s scripts -p 'test_*.py'
 ```
 
-`check` ejecuta tipos estrictos, build ESM, tests sin red, smoke fuera del checkout y validación documental. Los scripts no corrigen fuentes. El paquete usa `dist/handler.js`, export `handler`, y requiere el `package.json` con `type: module`. No necesita `node_modules` en runtime. No carga `.env`; únicamente la entrada Lambda lee el ambiente para CORS.
+`check` verifica el formato y ejecuta tipos estrictos, build ESM, tests sin red, smoke fuera del checkout y validación documental. Los comandos de verificación no corrigen fuentes. El paquete usa `dist/handler.js`, export `handler`, y requiere el `package.json` con `type: module`. Requiere `node_modules` de producción según el lock y `LICENSE`. No carga `.env`; únicamente la entrada Lambda lee el ambiente para CORS y contacto (`RESEND_API_KEY`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`). Health sigue disponible sin esas claves. [Contrato, procedencia y límites](Docs/contact.es.md).
+
+[Stack de test y requisitos](Docs/infrastructure.es.md) · [Casos de prueba en español](Docs/testing.es.md). Vitest ejecuta 178 casos (155 aplicación, 12 tooling, 11 infraestructura).
+
+Formato legible con Prettier **3.9.10** y reglas explícitas en `.prettierrc.json`: 2 espacios, comillas simples, punto y coma, comas finales y ancho orientativo de 100 columnas. Los scripts separan preparación, ejecución y comprobación con líneas en blanco; Prettier conserva esa separación. `npm run format` aplica el formato; `npm run format:check` verifica sin modificar archivos y es obligatorio en CI. `.gitignore` y `.prettierignore` excluyen privados, generados, lock y fixture histórico con hash fijado.
 
 ## Alcance
 
@@ -28,7 +31,7 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 - portfolio conserva frontend, contenido editorial estático y hosting.
 - portfolio-cloud conserva suscriptores, notificaciones, OG, releases y publicación de knowledge.
 - La sustitución de implementación conserva HTTP y comportamiento; URL/routing pueden requerir configuración.
-- La compatibilidad completa todavía requiere migrar las cinco rutas de negocio y sus escenarios.
+- La compatibilidad completa todavía requiere migrar las cuatro rutas de negocio restantes y sus escenarios.
 
 ## Documentación
 
@@ -49,4 +52,8 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 
 Las tres APIs actuales permanecen operativas durante toda la migración. Después de migrar y estabilizar las tres y validar recuperación, EC2 se apagará conservando instancia y backup recuperable. Sus recursos retenidos forman parte del costo total.
 
-La renovación de perfil/proyectos del bot sigue siendo el último paso previo al despliegue productivo. Las ramas main/dev requieren PR, CI y merge por workflow. La [integración atribuida a matigaleanodev](Docs/integration.es.md) utiliza una credencial de usuario y mantiene PR/CI obligatorios. CDK TypeScript sigue como opción preferida; roles/bootstrap y conmutación de tráfico permanecen abiertos.
+La renovación de perfil/proyectos del bot sigue siendo el último paso previo al despliegue productivo. Las ramas main/dev requieren PR, CI y merge por workflow. La [integración atribuida a matigaleanodev](Docs/integration.es.md) utiliza una credencial de usuario y mantiene PR/CI obligatorios. CDK TypeScript queda elegido; roles/bootstrap y conmutación de tráfico permanecen abiertos.
+
+## Licencia
+
+[MIT](LICENSE). LICENSE contiene la licencia de la implementación propia y la autoría de Matias Galeano; no se mantiene un archivo de atribuciones de terceros. Las dependencias mantienen sus licencias dentro de sus paquetes.

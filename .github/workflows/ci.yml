@@ -27,8 +27,6 @@ jobs:
           persist-credentials: false
       - name: Validate documentation
         run: python3 scripts/check_docs.py
-      - name: Validate CI scope detection
-        run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Detect application and infrastructure independently
         id: scope
         run: python3 scripts/ci_scope.py >> "$GITHUB_OUTPUT"
@@ -50,9 +48,11 @@ jobs:
           node-version: '24.22.1'
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npm run format:check
       - run: npm run typecheck
       - run: npm run build
-      - run: npm test
+      - run: npm run test:app
+      - run: npm run test:tooling
       - run: npm run test:package
 
   infrastructure:

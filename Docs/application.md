@@ -1,67 +1,84 @@
-# Local handler foundation
+# Local handler application
 
 [Español](application.es.md) · 2026-10-24.
 
 ## Structure and configuration
 
-- `src/handler.ts`: Lambda `handler` entry; reads environment once per initialization.
-- `src/config.ts`: accepts an explicit map, normalizes and freezes CORS; reads no files or credentials.
-- `src/application.ts`: grouped composition, rawPath routing, CORS and HTTP API v2 responses.
-- `src/health.ts`: process health with no provider calls or initialization.
+- src/handler.ts: Lambda entry; reads CORS at initialization and contact's three keys when sending is attempted. Never loads .env.
+- src/config.ts: explicit maps, frozen CORS and contact-configuration validation.
+- src/application.ts: async composition, rawPath, CORS/headers, health, quota/validation/contact and controlled errors.
+- src/health.ts: process status with no providers or quota.
+- src/body.ts: complete-event adaptation to body-parser without a server or connected sockets.
+- src/contact.dto.ts: project-owned DTO with direct class-transformer/class-validator use and explicit ValidationPipe differences.
+- src/contact.ts: message/date/awaited send and direct official Resend SDK usage.
+- src/contact-quota.ts: local 5/h/IP quota through rate-limiter-flexible, fixed windows and independent IP expiry.
 
-Health does not check Resend, R2, AI or upstream availability. No empty provider interfaces are added: required composition and configuration will arrive with each real slice. The other five routes return 404; general CORS preflight does not register business routes.
+`GET /api/health` → 200 {status:ok}; `POST /api/contact` → empty 204. The other four business routes return 404. General preflight does not register pending routes. Health does not check provider availability. Full original startup validation remains pending: health stays available without credentials; missing contact keys produce 500 when sending is attempted.
 
-CORS preserves lists, disabled behavior when absent and origin reflection for wildcard. An unlisted origin receives no Allow-Origin; this is not authentication. Enabled OPTIONS returns 204 before security headers, matching original bootstrap order. Future infrastructure must avoid duplicate CORS configuration.
+CORS preserves lists, disabled behavior when absent and reflected origins for wildcard. Unlisted origins receive no Allow-Origin; this is not authentication. Parser before CORS/security and preflight before security follow source bootstrap. 204 omits Content-Type. [Contact contract, limits and differences](contact.md).
 
 ## Toolchain and package
 
-Target **Node 24.22.1 LTS**, Linux x64 / WSL2. It is the latest LTS as of 2026-10-24; Node 26 remains Current. The [October 21 release](https://nodejs.org/en/blog/release/v24.22.1) includes security fixes. .nvmrc, engines and all Node jobs target 24.22.1. It was run through an isolated npm package without changing WSL's global Node. The historical experiment retains its 24.19.0 measurement.
+Target **Node 24.22.1 LTS**, Linux x64/WSL2, latest LTS verified on 2026-10-24 through the [official index](https://nodejs.org/dist/index.json); Node 26 remains Current. The existing isolated binary was executed, checking process.version, without global installations. .nvmrc, engines and workflows retain that version. The historical experiment retains Node 24.19.0.
 
-TypeScript 6.0.3, @types/node 24.19.2 and @types/aws-lambda 8.10.164 are pinned development dependencies. TypeScript 6 uses the JS compiler, avoiding 7.0.2's platform binary packages. Node 24 types maintain the target API. The new lock also includes undici-types 7.24.6 as a types dependency; it is not a runtime HTTP client. The experimental lock was not reused.
+TypeScript 6.0.3, @types/node 24.19.2, @types/aws-lambda 8.10.164 and @types/body-parser 1.19.6 are development-only. Runtime uses body-parser 2.4.0, class-validator 0.15.1, class-transformer 0.5.1, rate-limiter-flexible 11.2.3 and resend 6.34.1. These parsing/validation utilities preserve contracts; no HTTP framework or bundler is added. Resend is an installed SDK rather than adapted code. Direct versions are pinned and the new lock is audited. [Review and provenance](contact.md).
 
-tsc builds ESM/ES2023 without a bundler or runtime dependencies. `dist/` and `package.json` form the package foundation; AWS type imports are erased. There is no deployment ZIP or infrastructure template. `typecheck` includes sources and specs with strict, exactOptionalPropertyTypes and noUncheckedIndexedAccess; it does not use skipLibCheck.
+tsc builds ESM/ES2023 with validation decorators and no DI metadata. Strict types cover sources/tests, exactOptionalPropertyTypes and noUncheckedIndexedAccess, without skipLibCheck. Verification scripts do not modify sources; `npm run format` explicitly applies formatting.
+
+The package requires dist/, package.json with type:module, LICENSE and **production node_modules** from package-lock.json. dist/manifest alone are no longer sufficient. test:package copies only non-dev lock dependencies outside the checkout and checks health/contact with mocks, absence of Nest/Express/React/TypeScript, ignored synthetic .env and blocked network. Dependency licenses are retained. The same function stages the asset for the [local CDK stack](infrastructure.md).
+
+The SDK requires development-only @types/react 19.3.0. src/resend-types.d.ts supplies HeadersInit from Node fetch types without DOM, runtime React or skipLibCheck.
 
 ## Local checks
 
 ```bash
 npm ci --ignore-scripts
 npm run check
-python3 -m unittest discover -s scripts -p 'test_*.py'
 python3 scripts/ci_scope.py
 actionlint
 npm audit
 ```
 
-28 application tests, 5 CI detection tests and 7 merge-workflow validation tests passed. Types, build, out-of-checkout ESM smoke, document pairs/links and actionlint passed. Current suite passed on Node 24.22.1 LTS. Review corrected comma/space-only CORS_ORIGIN: it disables CORS like the source, with a dedicated regression test. npm audit of the new lock: **0 reported vulnerabilities**, including development; this does not guarantee freedom from future issues.
+**155 application tests passed**, including 69 DTO/controller references (66 unchanged, 3 explicit direct-validator differences) and 36 parser references; 12 tooling tests (5 CI scope, 7 merge workflow). Types, build, separate ESM smoke, documentation pairs/links and actionlint passed on Node 24.22.1. npm audit of the current lock: **0 reported vulnerabilities**, including development; this does not guarantee freedom from future issues.
 
-The runner removes inherited environment before executing specs and loads the network guard before importing application code. It blocks fetch/WebSocket, HTTP(S), sockets/TLS/UDP, DNS and child processes, with its own regression test. This prevents accidental calls; it is not a sandbox for hostile code. No SDKs or real providers are installed. Future business tests must explicitly inject mocks.
+The suite clears inherited environment and loads the network guard before importing application code. It blocks fetch/WebSocket, HTTP(S), socket/TLS/UDP connections, DNS and child processes. Parsing uses in-memory streams without listening on ports. Providers are explicit mocks; no emails are sent. The guard prevents accidental calls, not hostile code.
 
-The smoke copies dist and manifest outside the checkout without node_modules, creates a synthetic .env and confirms health ignores it. Scripts require only public files and lockfile dependencies. npm ci and validation were reproduced on Node 24.22.1 in a temporary tree without .git, private files, previous node_modules or dist; actionlint received explicit workflow paths. No startup timings or cost extrapolations were recorded.
+npm ci and validation are reproduced from a temporary tree of public files without .git, private files, .tmp, previous dist or node_modules. The suite needs neither the original repository nor reference Nest packages. Synthetic fixtures are public. No remote workflows, cold-start measurements or cost extrapolations.
 
 ## Partial contract coverage
 
-| Covered | Evidence |
-| --- | --- |
-| GET /api/health | 200, exact JSON, functional headers, no quota or providers |
-| Health transport | rawPath independent of stage/query, trailing slash/case, bodyless HEAD |
-| CORS | listed/unlisted/wildcard origins, preflight and headers on 404 |
-| Basic body handling | 16 KiB limit, UTF-8/base64, urlencoded and 400 for invalid/primitive JSON |
-| Pending routes | explicit 404 without simulated success |
-| Isolation | independent configurations, no credentials, clean environment and blocked network |
+| Covered           | Evidence                                                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Health            | exact JSON/status, HEAD, rawPath/stage/query, case/slash, no provider/quota                                                   |
+| Contact           | original DTO rules with three explicit differences; unknown/null/optional/Unicode cases, honeypot, empty 204 and awaited send |
+| Provider          | payload/text/date/destinations, resolved/rejected/JSON failures, controlled 500, no retries                                   |
+| Parsing           | JSON/extended forms, base64/UTF-8/UTF-16/Latin1/BOM, compression/errors, decoded 16 KiB                                       |
+| Local quota       | 5/h/IP, sourceIp versus XFF, concurrent reservation, fixed windows/blocking, logical expiration and independent IP expiry     |
+| Headers           | original CORS/security order, rate-limit/Retry-After, no Content-Type on 204                                                  |
+| Pending routes    | four routes return 404 without fabricated success                                                                             |
+| Isolation/package | fake configuration, blocked network, ignored .env, production without dev dependencies                                        |
 
-Exact original parsing error text, compression/content-encoding, charsets, DTO validation and nested urlencoded parsing do not yet have demonstrated parity. Current 400 uses a controlled message and is not claimed as differential equivalence with the original. Distributed quotas, Throttler timers, five business contracts, providers, fallback/editorial behavior, IAM and actual AWS transport are also uncovered. Health without business configuration is deliberate for this slice; full startup validation will arrive when composing those routes.
+The differential scope is finite, not full API parity. Actual framing/proxies/gateway, distributed quotas, deadline/cancellation, four contracts, full startup, secrets/IAM and recovery remain unverified. Local quota is lost on restart and not shared across environments; it does not make public exposure acceptable. [Detailed limits and new provenance](contact.md).
 
 ## Provenance and ownership
 
 Reference: [portfolio-api](https://github.com/matigaleanodev/portfolio-api/tree/a0ef80fa9f82d1cea5a31425a63ab0a344338c56), commit `a0ef80fa9f82d1cea5a31425a63ab0a344338c56`. Only pinned blobs were read; no prototype recovery or source repository modifications.
 
-| Consulted blob | SHA-256 | Use |
-| --- | --- | --- |
-| src/app.controller.ts | 4c590447c3a5451e12ee62392ed42f3858fb9d551a330032f99d36448ff8c59a | health contract; function without decorators |
-| src/main.ts | c8aff3128c62d1c6c4925d34d494aac053748f10d68e7d8b0cb41c04424ca1f7 | routes, limit, CORS and headers; event adaptation |
-| src/config/runtime.config.ts | 366b7c532275fda3aaee639db60884999e3a0ee8f268b4a983124f6f6f672890 | CORS semantics; minimal explicit configuration |
-| package.json | 38599e23e6b9910f24f157ae19a55c30dcbf5e9e3d179d9dcdb4ab2f275e3961 | license and dependency comparison |
+| Consulted blob               | SHA-256                                                          | Use                                               |
+| ---------------------------- | ---------------------------------------------------------------- | ------------------------------------------------- |
+| src/app.controller.ts        | 4c590447c3a5451e12ee62392ed42f3858fb9d551a330032f99d36448ff8c59a | health contract; function without decorators      |
+| src/main.ts                  | c8aff3128c62d1c6c4925d34d494aac053748f10d68e7d8b0cb41c04424ca1f7 | routes, limit, CORS and headers; event adaptation |
+| src/config/runtime.config.ts | 366b7c532275fda3aaee639db60884999e3a0ee8f268b4a983124f6f6f672890 | CORS semantics; minimal explicit configuration    |
+| package.json                 | 38599e23e6b9910f24f157ae19a55c30dcbf5e9e3d179d9dcdb4ab2f275e3961 | license and dependency comparison                 |
 
-Both repositories are maintained by matigaleanodev. The source declares UNLICENSED and has no LICENSE/LICENSE.md at that SHA; this manifest retains UNLICENSED. A public repository does not imply a third-party license grant. TypeScript declares Apache-2.0; type packages declare MIT. No wholesale API or professional/editorial content copy.
+Both repositories are maintained by matigaleanodev. The source declares UNLICENSED and has no LICENSE/LICENSE.md at that SHA. This implementation is distributed under [MIT](../LICENSE) by its copyright holder's decision; this does not change the original repository's license. A public repository does not imply a third-party license grant. TypeScript declares Apache-2.0; type packages declare MIT. No wholesale API or professional/editorial content copy.
 
-The next stage incrementally reuses logic/DTOs from that SHA with per-file provenance, starting with a business slice using simulated providers. Bot data refresh remains reserved for immediately before production.
+The contact increment adds [per-blob and reference-package provenance](contact.md). The next stage incrementally completes another contract with simulated providers; bot refresh remains reserved for immediately before production.
+
+## Vitest and local infrastructure
+
+All suites use Vitest 5.0.5: 155 application cases, 12 tooling cases migrated from unittest and 11 infrastructure cases, **178 passing**. Package smoke remains a Node verifier without devDependencies. Spanish Given/When/Then titles and [test case format](testing.md). CDK v2 is installed and the test stack synthesizes without lookups; [resources and limits](infrastructure.md). Only infrastructure disables exactOptionalPropertyTypes due to CDK declaration incompatibility; application retains it. No deployment.
+
+## Code formatting
+
+Prettier 3.9.10 is pinned as a development dependency, with explicit readability rules: advisory 100 columns, two spaces and single quotes. It formats supported sources, tests, infrastructure, JavaScript scripts, configuration and documentation. `format` writes changes; `format:check` only checks and is part of `check` and CI. The historical fixture and its hash are preserved. Python is outside Prettier's scope.

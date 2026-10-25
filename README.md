@@ -6,7 +6,7 @@ Alternative implementation of Portfolio's public API using TypeScript handlers. 
 
 ## Current status
 
-Implemented local foundation: explicit composition, CORS configuration and `GET /api/health` → 200 `{"status":"ok"}`, using HTTP API v2 events. The other five routes remain pending and return 404. Contract coverage is partial; there is no CDK stack or deployment.
+Local application with explicit composition and HTTP API v2 events: `GET /api/health` → 200 `{"status":"ok"}` and `POST /api/contact` → empty 204, with validation, honeypot, a mocked provider in tests and local 5/h/IP quota. The other four routes remain pending and return 404. Contract coverage is partial. The CDK test stack is defined and locally synthesized; it is not deployed.
 
 The comparison prototype was discarded. Its [results](Docs/local-runtime.md) remain historical evidence, not measurements of this foundation, AWS cold starts or proof of monthly savings.
 
@@ -17,10 +17,13 @@ Ubuntu-26.04 on WSL. Target Node **24.22.1 LTS** (`.nvmrc`), the latest LTS as o
 ```bash
 npm ci --ignore-scripts
 npm run check
-python3 -m unittest discover -s scripts -p 'test_*.py'
 ```
 
-`check` runs strict types, ESM build, network-blocked tests, an out-of-checkout smoke test and document validation. Scripts do not fix sources. The package uses `dist/handler.js`, export `handler`, and requires `package.json` with `type: module`. Runtime does not require `node_modules`. It does not load `.env`; only the Lambda entry reads environment configuration for CORS.
+`check` validates formatting and runs strict types, ESM build, network-blocked tests, an out-of-checkout smoke test and document validation. Verification commands do not fix sources. The package uses `dist/handler.js`, export `handler`, and requires `package.json` with `type: module`. Runtime requires production `node_modules` from the lock and `LICENSE`. It does not load `.env`; only the Lambda entry reads environment for CORS and contact (`RESEND_API_KEY`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`). Health remains available without these keys. [Contract, provenance and limits](Docs/contact.md).
+
+[Test stack and prerequisites](Docs/infrastructure.md) · [Spanish test cases](Docs/testing.md). Vitest runs 178 cases (155 application, 12 tooling, 11 infrastructure).
+
+Readable formatting with Prettier **3.9.10** and explicit `.prettierrc.json` rules: two spaces, single quotes, semicolons, trailing commas and an advisory 100-column print width. Scripts separate preparation, execution and checks with blank lines preserved by Prettier. `npm run format` writes changes; `npm run format:check` checks without writing and is required in CI. `.gitignore` and `.prettierignore` exclude private/generated files, the lockfile and the pinned historical fixture.
 
 ## Scope
 
@@ -28,7 +31,7 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 - portfolio retains frontend, static editorial content and hosting.
 - portfolio-cloud retains subscribers, notifications, OG, releases and knowledge publication.
 - Replacing this API's implementation preserves HTTP and behavior; URL/routing may require configuration.
-- Full compatibility still requires migrating the five business routes and their scenarios.
+- Full compatibility still requires migrating the four remaining business routes and their scenarios.
 
 ## Documentation
 
@@ -49,4 +52,8 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 
 All three current APIs remain operational throughout migration. After all three migrate, stabilize and pass recovery validation, EC2 will be stopped with its instance and recoverable backup retained. Retained resources belong in total cost.
 
-Refreshing bot profile/project data remains the final step before production deployment. main/dev require PRs, CI and workflow merges. [Integration attributed to matigaleanodev](Docs/integration.md) uses a user credential while retaining mandatory PRs and CI. TypeScript CDK remains preferred; roles/bootstrap and traffic switching remain open.
+Refreshing bot profile/project data remains the final step before production deployment. main/dev require PRs, CI and workflow merges. [Integration attributed to matigaleanodev](Docs/integration.md) uses a user credential while retaining mandatory PRs and CI. TypeScript CDK is selected; roles/bootstrap and traffic switching remain open.
+
+## License
+
+[MIT](LICENSE). LICENSE covers the application's own implementation and Matias Galeano's authorship; no third-party attribution file is maintained. Dependencies retain their licenses within their packages.

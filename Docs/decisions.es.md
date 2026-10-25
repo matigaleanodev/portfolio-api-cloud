@@ -15,9 +15,9 @@
 
 ## ADR-001 — Infraestructura como código
 
-Estado: **abierta; CDK TypeScript es la opción preferida**.
+Estado: **cerrada; AWS CDK v2 TypeScript, con stack local implementada**.
 
-CDK permite definir infraestructura en TypeScript, revisar IAM y probar los recursos. SAM sigue siendo la alternativa más cercana por su continuidad con portfolio-cloud, que conserva su herramienta actual. Falta cerrar roles, boundaries, retención y bootstrap; la herramienta no decide el runtime. [Arquitectura](architecture.es.md).
+CDK permite definir infraestructura en TypeScript, revisar IAM y probar los recursos. SAM sigue siendo la alternativa más cercana por su continuidad con portfolio-cloud, que conserva su herramienta actual. La definición local fija retención, boundary y roles separados; la provisión/revisión efectiva de roles y bootstrap sigue pendiente. La herramienta no decide el runtime. [Arquitectura](architecture.es.md).
 
 ## ADR-002 — Implementación con handlers TypeScript
 
@@ -57,7 +57,7 @@ Presupuesto y cuota diaria de IA; umbrales de latencia y costo; edad máxima sta
 
 Estado: **implementada localmente; cobertura parcial**.
 
-Cuatro módulos de runtime, composición explícita, configuración CORS aislada y health sin proveedores. Node 24.22.1 LTS como objetivo, comprobado mediante ejecución aislada. TypeScript estricto, compilador JS 6.0.3, runner nativo y cero dependencias de runtime: no hay necesidad de framework, bundler o SDK para esta sección.
+La sección inicial de health tuvo cuatro módulos de runtime, composición explícita, configuración CORS aislada y health sin proveedores. Node 24.22.1 LTS como objetivo, comprobado mediante ejecución aislada. TypeScript estricto, compilador JS 6.0.3, runner nativo y cero dependencias de runtime: no hubo necesidad de framework, bundler o SDK para esa sección. El incremento de contacto incorpora las dependencias de aplicación documentadas en ADR-008 y ADR-010.
 
 La CI separa aplicación de CDK y conserva verify como check agregado obligatorio. Una stack ausente omite únicamente infraestructura; no permite omitir tipos/build/tests de una aplicación presente. La nueva base no usa código del prototipo descartado. [Implementación, límites y procedencia](application.es.md).
 
@@ -68,3 +68,31 @@ Estado: **política implementada; mecanismo activado**.
 Los nuevos merges automatizados deben atribuirse a matigaleanodev mediante una credencial de usuario, validando login/ID/tipo y merged_by. El token de instalación atribuye la operación a la App y no satisface esta política. Se conserva PR, CI, SHA revisado y workflow; no hay fallback a bot ni cambios cosméticos de metadatos.
 
 La transición se instaló por PR #5 con una última integración de la App y luego se reemplazó únicamente el actor de updates por User 99203645, solo vía PR. PR/CI conserva cero bypass y el environment sigue limitado a main/dev. La cuenta también puede integrar desde la UI; la política operativa mantiene workflow obligatorio. [Estado, alternativas y límites](integration.es.md).
+
+## ADR-008 — Contacto con dependencias públicas
+
+Estado: **sección local implementada; endurecimiento pendiente**.
+
+Contacto conserva DTO, texto, fecha y honeypot del código propio auditado, con composición explícita. body-parser, class-validator y class-transformer se usan como dependencias. Los validadores se invocan directamente; no se copia ValidationPipe ni sus helpers. Dos arrays cambian de mensaje y prototype pasa de eliminación silenciosa a rechazo: diferencias explícitas y probadas. Resend se utiliza mediante su SDK oficial con transporte simulado en pruebas, sin mantener una implementación del SDK.
+
+## ADR-009 — MIT propia, sin archivo de atribuciones
+
+Estado: **implementada; reemplaza la consolidación inicial de avisos**.
+
+LICENSE contiene el texto MIT y únicamente la autoría de Matias Galeano. Las adaptaciones del código de Throttler, helpers de Nest y cliente manual de Resend se reemplazan por uso de dependencias públicas e integración propia. Las licencias originales permanecen dentro de los paquetes distribuidos; no se mantiene NOTICE ni un catálogo manual de atribuciones. El origen fijado conserva UNLICENSED; la implementación propia de este repositorio adopta MIT por decisión de su titular.
+
+## ADR-010 — Cuota mantenida por rate-limiter-flexible
+
+Estado: **implementada localmente; cuota distribuida pendiente**.
+
+Se fija rate-limiter-flexible 11.2.3: publicación del 17/10/2026, actividad reciente, repo no archivado, adopción señalada por 11,3 millones de descargas npm en el mes consultado y sin dependencias de producción. Se usa RateLimiterMemory mediante su API; no se mantiene una copia del algoritmo. [Evidencia fechada y fuentes](contact.es.md).
+
+Contacto conserva 5/h/IP, bloqueo de una hora desde el sexto intento, sourceIp, cuota por método y headers existentes. La ventana es fija desde el primer intento y libera todos sus puntos al vencer; no conserva decrementos por hit ni el bug de timers de Throttler 6.5.0. Los reintentos bloqueados no extienden la sanción y una IP no altera el vencimiento de otra. Estas diferencias se prueban explícitamente. El JSON 429 histórico se mantiene por compatibilidad, sin dependencia Nest.
+
+Resend 6.34.1 reemplaza el cliente manual. Su dependencia de tipos React se limita al desarrollo; HeadersInit se toma de los tipos fetch de Node, sin DOM ni skipLibCheck. Configuración productiva requiere NODE_ENV=production para evitar logs detallados del SDK. La suite usa mocks de transporte cargados después del cerco de red; ningún envío real.
+
+La selección no resuelve cuotas compartidas entre Lambdas: distribución/atomicidad, proxies reales, deadline/cancelación y secretos siguen antes de exposición. No se agrega infraestructura en este corte. [Contrato y pendientes](contact.es.md).
+
+## ADR-011 — Vitest y stack local de test
+
+Estado: **implementados y verificados localmente**. Vitest 5.0.5 reemplaza node:test/unittest en las suites; títulos QA en español con Dado/Cuando/Entonces. CDK CLI 2.1146.1, library 2.274.0 y constructs 10.8.1 solo de desarrollo. Stack única de test, IAM, boundaries externas y roles separados; synth sin lookups. [Pruebas](testing.es.md) y [stack](infrastructure.es.md). Bootstrap, provisión de roles/secretos y despliegue no se ejecutaron.

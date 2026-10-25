@@ -1,20 +1,20 @@
 # CI/CD preparado
 
-[English](ci-cd.md) · 24/10/2026. Los workflows cubren validación documental, preparación de test e integración de ramas. La base local incluye health y pruebas; las rutas de negocio y la stack siguen pendientes.
+[English](ci-cd.md) · 24/10/2026. Los workflows cubren validación documental, preparación de test e integración de ramas. La aplicación local incluye health y contacto con pruebas; cuatro rutas de negocio siguen pendientes; la stack se sintetiza localmente.
 
 ## CI
 
 `.github/workflows/ci.yml`: PR hacia main/dev, push a esas ramas y dispatch manual. Permisos de lectura; sin OIDC, secretos ni credenciales AWS.
 
-El job documentation valida pares/enlaces y ejecuta cinco pruebas de `scripts/ci_scope.py` y siete de las validaciones de identidad/reglas del workflow de merge. La detección informa aplicación e infraestructura por separado: package.json requiere lock, tsconfig y entrada real; restos de aplicación sin manifiesto fallan. cdk.json activa infraestructura y exige sus scripts específicos.
+El job documentation valida pares/enlaces y detecta aplicación e infraestructura por separado. package.json exige lock, tsconfig y entrada real; restos de aplicación sin manifiesto fallan. cdk.json activa infraestructura y exige sus scripts específicos.
 
-Application ejecuta `npm ci --ignore-scripts`, `typecheck`, `build`, `test` y `test:package` en Node 24.22.1 LTS. El runner nativo reemplaza el contrato Jest anterior; no hay lint con --fix ni modificación automática de fuentes. El cerco de red se carga antes de la aplicación, con configuración ficticia y ambiente sin credenciales heredadas. [Cobertura parcial](application.es.md).
+Application ejecuta `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` y `test:package` en Node 24.22.1. Vitest ejecuta 155 casos de aplicación y 12 de tooling migrados desde unittest. No hay lint con --fix ni modificación automática de fuentes. El cerco de red se carga antes de la aplicación, con ambiente sin credenciales heredadas. [Cobertura y reporte QA](testing.es.md).
 
-Infrastructure se omite mientras no exista cdk.json. Cuando exista, ejecutará `test:infra` y `cdk -- synth --no-lookups --context stage=test`. Agregar aplicación no exige CDK ficticio.
+Infrastructure está activo porque ya existe cdk.json; ejecuta 11 casos en `test:infra` y `cdk -- synth --no-lookups --context stage=test`, sin credenciales AWS. [Stack local y prerrequisitos](infrastructure.es.md).
 
 El check obligatorio sigue llamándose `verify`, ligado a GitHub Actions: exige documentation exitosa y éxito de cada ámbito presente; solo admite skipped para un ámbito ausente. El job de aplicación debe aprobar completo. El summary distingue aplicación y synth; no declara infraestructura comprobada si falta la stack.
 
-Validación local: `npm run check`, `python3 -m unittest discover -s scripts -p 'test_*.py'` y actionlint. La CI de la base se comprobó también en el PR #4; cada nuevo head debe volver a aprobar los checks requeridos.
+Validación local: `npm run check` y actionlint. La CI de la base se comprobó también en el PR #4; cada nuevo head debe volver a aprobar los checks requeridos.
 
 ## Preparación de despliegue test
 
@@ -27,11 +27,13 @@ La configuración del ambiente requiere revisión del environment y OIDC limitad
 - Variable TEST_EXECUTION_ROLE_ARN: `PortfolioApiCloudTestCloudFormationExecutionRole`.
 - Stack única: ID CDK PortfolioApiCloudTest, nombre físico portfolio-api-cloud-test, cuenta 650387442642, us-east-1.
 
-El synthesizer futuro debe configurar cloudFormationExecutionRole y deployRoleArn con esos roles distintos. El workflow valida cloudFormationExecutionRoleArn/assumeRoleArn en el manifest; no pasa el ejecutor como --role-arn de la CLI. Roles de publicación de assets y trust del bootstrap se revisan aparte antes de habilitar.
+El synthesizer configura cloudFormationExecutionRole y deployRoleArn con esos roles distintos. El workflow valida cloudFormationExecutionRoleArn/assumeRoleArn en el manifest; no pasa el ejecutor como --role-arn de la CLI. Roles de publicación de assets y trust del bootstrap se revisan aparte antes de habilitar.
 
 El workflow comprueba archivos, scripts, tests y synth offline antes de autenticarse; revisa manifest y luego identidad exacta. El plan usa `cdk deploy --method prepare-change-set` con nombre SHA/run único. **Es una mutación futura:** puede publicar assets S3/ECR y crear changeset/stack preparatoria, aunque no ejecute infraestructura. No es una consulta read-only y no se ejecutó en esta auditoría. `--require-approval never` evita el prompt CLI; la revisión se aplica mediante el environment y el changeset.
 
 No contiene execute-change-set, deploy directo, bootstrap, destroy, imports cloud existentes ni roles genéricos. Para ejecutar un changeset se necesita un paso de ejecución que vincule el ARN exacto a stack, SHA, assets y revisión. CDK `diff` por defecto también puede crear changesets; no usarlo como supuesto read-only durante auditorías.
+
+El comando proporciona el parámetro obligatorio `RuntimePermissionsBoundaryArn` con el ARN previsto. Antes de habilitar preparación, revisar/provisionar esa boundary y bootstrap/roles de publicación con permisos acotados. La stack no lo crea automáticamente. Esta ejecución no se realizó.
 
 ## Merges y sincronización de dev
 
@@ -43,13 +45,13 @@ Para sincronizar main→dev, mantener una rama release/sync-main-to-dev basada e
 
 ## Pendientes operativos
 
-El repositorio tiene dev como rama predeterminada; main todavía no existe. El environment de merge conserva main/dev; el workflow usa identidad de usuario tras la transición del PR #5. La primera ejecución se registra en el PR #2; la configuración por sí sola no demuestra un merge exitoso. Siguen pendientes el environment test-plan, la implementación de stack y los roles/bootstrap. El despliegue no se validó end-to-end. La integración inicial del PR #1 consumió la excepción temporal limitada a dev descrita en [protección de ramas](branch-protection.es.md).
+El repositorio tiene dev como rama predeterminada; main todavía no existe. El environment de merge conserva main/dev; el workflow usa identidad de usuario tras la transición del PR #5. La primera ejecución se registra en el PR #2; la configuración por sí sola no demuestra un merge exitoso. Siguen pendientes el environment test-plan, los roles/bootstrap. El despliegue no se validó end-to-end. La integración inicial del PR #1 consumió la excepción temporal limitada a dev descrita en [protección de ramas](branch-protection.es.md).
 
 Branches: solo feat/, fix/, release/; codex/ prohibido. main/dev se integran por PR fusionado desde workflow. Mantener ejecución serial, permisos por job y artifacts/versiones inmutables. Producción continúa fuera del alcance.
 
 ## Evidencia local separada
 
-Los cambios del experimento fueron descartados. Esta base incorpora una nueva detección aplicación/infraestructura con pruebas propias; no recupera los scripts comparativos. El plan test conserva sus restricciones de repo, rama, environment, roles, identidad y changeset. Sus comandos ahora coinciden con typecheck, build, test y test:package; test:infra y CDK siguen siendo requisitos futuros. [Base local](application.es.md).
+Los cambios del experimento fueron descartados. Esta base incorpora una nueva detección aplicación/infraestructura con pruebas propias; no recupera los scripts comparativos. El plan test conserva sus restricciones de repo, rama, environment, roles, identidad y changeset. Sus comandos ahora coinciden con typecheck, build, test y test:package; test:infra y CDK ya ejecutan validación local; sus requisitos AWS siguen pendientes. [Base local](application.es.md).
 
 ## Recuperación del primer merge con App
 

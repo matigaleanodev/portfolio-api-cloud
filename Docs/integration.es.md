@@ -14,11 +14,11 @@ El mecanismo está instalado en dev tras el PR #5. [Updates](https://github.com/
 
 Las siguientes alternativas atribuyen la actividad a una cuenta humana:
 
-| Alternativa | Alcance y mantenimiento |
-| --- | --- |
-| OAuth de usuario existente — configuración actual | Credencial de GitHub CLI con scopes repo y workflow, de alcance amplio; se conserva su configuración y se almacena únicamente como secreto de environment. No modifica el acceso de la cuenta frente a los rulesets. |
-| Fine-grained PAT de matigaleanodev | Elegir solo portfolio-api-cloud y caducidad corta. Contents write para merge, Pull requests read para verificar el PR y Workflows write para este corte que modifica workflows; Metadata read implícito. No requiere Administration write ni acceso a otros repos. |
-| User access token de la App dedicada | Requiere autorización OAuth explícita de la cuenta. Conserva la intersección de permisos del usuario y de la App; no hereda por suposición el bypass de su token de instalación. La expiración predeterminada es 8 horas; una renovación requiere refresh token y su protección. |
+| Alternativa                                       | Alcance y mantenimiento                                                                                                                                                                                                                                                          |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OAuth de usuario existente — configuración actual | Credencial de GitHub CLI con scopes repo y workflow, de alcance amplio; se conserva su configuración y se almacena únicamente como secreto de environment. No modifica el acceso de la cuenta frente a los rulesets.                                                             |
+| Fine-grained PAT de matigaleanodev                | Elegir solo portfolio-api-cloud y caducidad corta. Contents write para merge, Pull requests read para verificar el PR y Workflows write para este corte que modifica workflows; Metadata read implícito. No requiere Administration write ni acceso a otros repos.               |
+| User access token de la App dedicada              | Requiere autorización OAuth explícita de la cuenta. Conserva la intersección de permisos del usuario y de la App; no hereda por suposición el bypass de su token de instalación. La expiración predeterminada es 8 horas; una renovación requiere refresh token y su protección. |
 
 La configuración actual reutiliza OAuth de usuario; un PAT granular dedicado sigue siendo una alternativa para reducir alcance sin agregar un servicio de renovación OAuth de la App. MERGE_USER_TOKEN se mantiene en el environment protegido, sin valores en documentación, conversación, argumentos o logs. La clave privada de instalación no se convierte en identidad humana. GITHUB_TOKEN de solo lectura conserva la validación de checks, por lo que la credencial de merge no necesita acceso adicional a Checks.
 

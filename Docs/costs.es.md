@@ -6,17 +6,17 @@
 
 Se calcula la candidata Lambda **Event Function**, no Lambda Web Functions. Las cifras usan una carga hipotética, no tráfico medido ni facturación personal. El modelo permite comparar alternativas y no garantiza ahorro.
 
-| Supuesto mensual | Bajo | Mayor uso |
-| --- | --- | --- |
-| Solicitudes totales N | 10.000 | 1.000.000 |
-| Chat que llama al proveedor | 20% = 2.000 | 20% = 200.000 |
-| Duración chat / otras | 5 s / 0,15 s | 5 s / 0,15 s |
-| Duración media ponderada | 1,12 s | 1,12 s |
-| Memoria x86 | 512 MiB | 512 MiB |
-| GB-s = N × 0,5 × 1,12 | 5.600 | 560.000 |
-| Logs totales por request | 2 KiB | 2 KiB |
+| Supuesto mensual                                | Bajo          | Mayor uso     |
+| ----------------------------------------------- | ------------- | ------------- |
+| Solicitudes totales N                           | 10.000        | 1.000.000     |
+| Chat que llama al proveedor                     | 20% = 2.000   | 20% = 200.000 |
+| Duración chat / otras                           | 5 s / 0,15 s  | 5 s / 0,15 s  |
+| Duración media ponderada                        | 1,12 s        | 1,12 s        |
+| Memoria x86                                     | 512 MiB       | 512 MiB       |
+| GB-s = N × 0,5 × 1,12                           | 5.600         | 560.000       |
+| Logs totales por request                        | 2 KiB         | 2 KiB         |
 | Salida total supuesta, incluye HTTP/proveedores | 7 KiB/request | 7 KiB/request |
-| Lecturas del secreto agrupado por mes | 100 | 10.000 |
+| Lecturas del secreto agrupado por mes           | 100           | 10.000        |
 
 Los 5 s incluyen espera externa; son hipótesis, no p95. Cada segundo medio adicional cuesta N×0,5×0,0000166667. A 1 M de requests, +1 s agrega ~USD 8,33 sin beneficios. Probar 1024 MiB: duplica tarifa por segundo, pero puede reducir duración/cold start. INIT facturado y refresh de secretos deben entrar en las mediciones.
 
@@ -24,19 +24,19 @@ Los 5 s incluyen espera externa; son hipótesis, no p95. Cada segundo medio adic
 
 Tarifas de referencia: Lambda x86 USD 0,0000166667/GB-s y 0,20/M requests; HTTP API USD 1/M; logs estándar 0,50/GB ingerido y 0,03/GB-mes almacenado; cuatro alarmas estándar a 0,10. Se estima un secreto JSON a 0,40/mes y lecturas a 0,05/10.000. Limiter: hasta dos WRU y dos RRU no transaccionales por request, items pequeños, 0,625/M WRU y 0,125/M RRU. Ajustar al algoritmo definitivo: condiciones fallidas/transacciones pueden cambiar el consumo.
 
-| Componente | Bajo | Mayor uso |
-| --- | ---: | ---: |
-| Lambda cómputo | 0,093 | 9,333 |
-| Lambda requests | 0,002 | 0,200 |
-| Entrada HTTP API | 0,010 | 1,000 |
-| Limiter DynamoDB requests | 0,015 | 1,500 |
-| Reserva almacenamiento contadores | 0,010 | 0,010 |
-| Secreto agrupado + lecturas | 0,401 | 0,450 |
-| Logs ingestión + almacenamiento 14 días, estimado conservador | 0,010 | 0,981 |
-| Cuatro alarmas | 0,400 | 0,400 |
-| Reserva assets/requests S3 de despliegue | 0,050 | 0,100 |
-| Salida a Internet a 0,09/GB, sin franquicia | 0,006 | 0,601 |
-| **Subtotal candidato, aproximado** | **1,00** | **14,58** |
+| Componente                                                    |     Bajo | Mayor uso |
+| ------------------------------------------------------------- | -------: | --------: |
+| Lambda cómputo                                                |    0,093 |     9,333 |
+| Lambda requests                                               |    0,002 |     0,200 |
+| Entrada HTTP API                                              |    0,010 |     1,000 |
+| Limiter DynamoDB requests                                     |    0,015 |     1,500 |
+| Reserva almacenamiento contadores                             |    0,010 |     0,010 |
+| Secreto agrupado + lecturas                                   |    0,401 |     0,450 |
+| Logs ingestión + almacenamiento 14 días, estimado conservador |    0,010 |     0,981 |
+| Cuatro alarmas                                                |    0,400 |     0,400 |
+| Reserva assets/requests S3 de despliegue                      |    0,050 |     0,100 |
+| Salida a Internet a 0,09/GB, sin franquicia                   |    0,006 |     0,601 |
+| **Subtotal candidato, aproximado**                            | **1,00** | **14,58** |
 
 Tarifas oficiales: [Lambda](https://aws.amazon.com/lambda/pricing/), [HTTP API](https://aws.amazon.com/api-gateway/pricing/), [CloudWatch](https://aws.amazon.com/cloudwatch/pricing/), [secrets](https://aws.amazon.com/secrets-manager/pricing/), [DynamoDB](https://aws.amazon.com/dynamodb/pricing/).
 
@@ -80,13 +80,13 @@ El piso operativo mínimo pesa más que una preferencia de framework. Nest adapt
 
 Sumando los supuestos anteriores, el escenario bajo da **USD 2,44/mes + P** (1,00 infraestructura + 1,44 IA); mayor uso **158,58 + P** (14,58 + 144). Con la franquicia Lambda íntegra supuesta serían **2,34 + P** y **151,71 + P**. P incluye los cargos efectivos de Resend, R2, Firebase, dominio, portfolio-cloud y CI/retención que no estén incluidos arriba. P es desconocido: estas expresiones no son un total final ni una factura. No se presume que planes gratuitos cubran el consumo ni que cada ambiente reciba toda la franquicia.
 
-| Alternativa | Costo total a comparar | Piso/condición |
-| --- | --- | --- |
-| EC2 compartida | instancia + IPv4 + EBS + observabilidad + proveedores | cómputo/red continuos; ejemplo de lista anterior, no costo exclusivo de Portfolio |
+| Alternativa                    | Costo total a comparar                                                 | Piso/condición                                                                                     |
+| ------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| EC2 compartida                 | instancia + IPv4 + EBS + observabilidad + proveedores                  | cómputo/red continuos; ejemplo de lista anterior, no costo exclusivo de Portfolio                  |
 | Event Function + HTTP API, A/B | invocaciones/duración + limiter + logs + assets + secretos/alarmas + P | menor piso propuesto; secreto y alarmas aportan ~0,80/mes por ambiente en este modelo antes de uso |
-| App Runner | memoria continua + CPU activa + logs/red + P | mínimo provisionado aun con poco tráfico |
-| Fargate + ALB | cómputo continuo + balanceador/red + observabilidad + P | piso desproporcionado para la carga demo supuesta |
-| Convivencia | EC2 actual + nueva infraestructura y proveedores incrementales | ahorro fijo nulo mientras EC2 permanece activa |
+| App Runner                     | memoria continua + CPU activa + logs/red + P                           | mínimo provisionado aun con poco tráfico                                                           |
+| Fargate + ALB                  | cómputo continuo + balanceador/red + observabilidad + P                | piso desproporcionado para la carga demo supuesta                                                  |
+| Convivencia                    | EC2 actual + nueva infraestructura y proveedores incrementales         | ahorro fijo nulo mientras EC2 permanece activa                                                     |
 
 La resta correcta al finalizar es costo fijo evitable de EC2 menos costo incremental de **todas** las APIs migradas y recursos retenidos. EBS/snapshots pueden continuar cobrando. Foodly Notes y Modo Playa aún no tienen estimaciones cerradas en este repo. Apagar EC2 conservando instancia y backup depende de migrarlas y validar recuperación; migrar solo Portfolio no produce ese ahorro.
 

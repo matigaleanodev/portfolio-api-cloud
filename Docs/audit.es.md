@@ -6,11 +6,11 @@
 
 La auditoría fija los commits inspeccionados para mantener trazabilidad de los contratos y las dependencias.
 
-| Repo | HEAD local inspeccionado | Rama local | `main` verificado en GitHub |
-| --- | --- | --- | --- |
-| portfolio-api | `a0ef80fa9f82d1cea5a31425a63ab0a344338c56` | fix/aws-deployment-identity | `7d535b5713807a28081523c573445320bf1ad42e` |
-| portfolio | `c1eac3492a54933f5c99540a3b4f61d0e70938cd` | fix/aws-deployment-identity | `34856adee211f57ddb32a8573b9af9578d73235b` |
-| portfolio-cloud | `4c0b1735dde0759a9dbef5625aae7788386e9210` | feat/aws-oidc-migration | `bdc1510dbc8dca8765a69d278f65aa3ce6e7902b` |
+| Repo            | HEAD local inspeccionado                   | Rama local                  | `main` verificado en GitHub                |
+| --------------- | ------------------------------------------ | --------------------------- | ------------------------------------------ |
+| portfolio-api   | `a0ef80fa9f82d1cea5a31425a63ab0a344338c56` | fix/aws-deployment-identity | `7d535b5713807a28081523c573445320bf1ad42e` |
+| portfolio       | `c1eac3492a54933f5c99540a3b4f61d0e70938cd` | fix/aws-deployment-identity | `34856adee211f57ddb32a8573b9af9578d73235b` |
+| portfolio-cloud | `4c0b1735dde0759a9dbef5625aae7788386e9210` | feat/aws-oidc-migration     | `bdc1510dbc8dca8765a69d278f65aa3ce6e7902b` |
 
 Las referencias locales `origin/main` estaban desactualizadas. Se consultó `main` por GitHub sin fetch ni modificación. La comparación remota local-HEAD→main mostró solo workflows en API/frontend y workflows/README/template en cloud. La evidencia siguiente referencia el HEAD realmente leído. El SHA desplegado en EC2 no se verificó.
 
@@ -24,14 +24,14 @@ Prefijo global `/api`, JSON/urlencoded de 16 KiB, DTOs con whitelist, rechazo de
 
 Fuentes: [bootstrap](https://github.com/matigaleanodev/portfolio-api/blob/a0ef80fa9f82d1cea5a31425a63ab0a344338c56/src/main.ts#L12), [módulos y guard global](https://github.com/matigaleanodev/portfolio-api/blob/a0ef80fa9f82d1cea5a31425a63ab0a344338c56/src/app.module.ts#L10).
 
-| Método y ruta | Entrada → salida | Protección actual | Consumidor y validación futura |
-| --- | --- | --- | --- |
-| GET /api/health | sin body → 200 `{status:"ok"}` | sin throttling | deploy/operación; contrato y fallo real de inicialización |
-| POST /api/contact | name 2–100, email ≤150, message 10–5000, company opcional ≤200 → 204 vacío | 5/h/IP; honeypot company omite envío | formulario; proveedor mock, errores 400/429/500, nunca enviar email real por auditoría |
-| GET /api/chat/starters | sin body → 200 `{suggestedQuestions:string[]}` | guard chat 20/min/IP | widget; conservar contenido/forma y CORS |
-| POST /api/chat | message no blanco ≤500, sessionId opcional ≤100, history opcional ≤6 turnos user/assistant ≤1500 cada uno → **201** `{answer,suggestedQuestions,source}` | chat 20/min/IP | widget; historial, FAQ/AI/fallback, 400/413/429/503 y status 201 |
-| POST /api/subscriptions | email normalizado trim/lowercase ≤320 → 200 `{message,email?}` | 10/h/IP | formulario blog; mock upstream, errores y email normalizado |
-| DELETE /api/subscriptions | mismo JSON **en body** → 200 `{message,email?}` | 10/h/IP | UI de baja; preservar body DELETE y errores |
+| Método y ruta             | Entrada → salida                                                                                                                                         | Protección actual                    | Consumidor y validación futura                                                         |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------- |
+| GET /api/health           | sin body → 200 `{status:"ok"}`                                                                                                                           | sin throttling                       | deploy/operación; contrato y fallo real de inicialización                              |
+| POST /api/contact         | name 2–100, email ≤150, message 10–5000, company opcional ≤200 → 204 vacío                                                                               | 5/h/IP; honeypot company omite envío | formulario; proveedor mock, errores 400/429/500, nunca enviar email real por auditoría |
+| GET /api/chat/starters    | sin body → 200 `{suggestedQuestions:string[]}`                                                                                                           | guard chat 20/min/IP                 | widget; conservar contenido/forma y CORS                                               |
+| POST /api/chat            | message no blanco ≤500, sessionId opcional ≤100, history opcional ≤6 turnos user/assistant ≤1500 cada uno → **201** `{answer,suggestedQuestions,source}` | chat 20/min/IP                       | widget; historial, FAQ/AI/fallback, 400/413/429/503 y status 201                       |
+| POST /api/subscriptions   | email normalizado trim/lowercase ≤320 → 200 `{message,email?}`                                                                                           | 10/h/IP                              | formulario blog; mock upstream, errores y email normalizado                            |
+| DELETE /api/subscriptions | mismo JSON **en body** → 200 `{message,email?}`                                                                                                          | 10/h/IP                              | UI de baja; preservar body DELETE y errores                                            |
 
 Los overrides de `@Throttle` reemplazan la configuración default para esas rutas; no sumar 60/min como una segunda cuota independiente. El storage de Throttler es local al proceso. CORS y honeypot no bloquean clientes fuera del navegador.
 
@@ -39,17 +39,17 @@ Fuentes: [health](https://github.com/matigaleanodev/portfolio-api/blob/a0ef80fa9
 
 ## Inventario por funcionalidad
 
-| Funcionalidad y código | Dependencias y comportamiento comprobado | Conservar / riesgo de migración / verificación |
-| --- | --- | --- |
-| ContactService, `src/contact/contact.service.ts:15` | SDK Resend; envío esperado antes de terminar; fecha Argentina; error del SDK o excepción → 500 controlado | conservar texto y 204; no hay timeout explícito de aplicación ni clave de idempotencia. Probar timeout/resultado ambiguo con mock; no repetir automáticamente envíos |
-| ChatService, `src/chat/chat.service.ts:63` | filtra fuera de alcance, FAQ sin historial, selección de contexto, reformulación con IA opcional, fallback | una FAQ puede consumir IA; `source=faq` no implica costo cero. No cambiar contratos ni adjudicar éxito solo por HTTP 201 |
-| OpenAiService, `src/chat/openai.service.ts:87` | `fetch` nativo a `/v1/responses`, sin SDK OpenAI; default gpt-4.1-mini, configurable; timeout 15 s, max_output_tokens 300, JSON | sin tools/function calling, embeddings, vector DB ni streaming; preservar prompts/contexto/historial y fallback; probar parseo y fallo con fetch mock |
-| ChatKnowledgeRepository, `src/chat/chat-knowledge.repository.ts:112` | SDK S3 contra Cloudflare R2; envelope v1/checksum SHA-256 o artifact local validado; single-flight por proceso | TTL remoto default 5 min; ante error usa stale sin edad máxima, luego filesystem. En instancia nueva no hay stale; empaquetar fallback válido y probar corrupción/R2 caído |
-| KnowledgeService y publication, `src/chat/knowledge.service.ts:60` | perfil/FAQ/cloud curados y artifact editorial; selección por intención, hasta unos cuatro items; filtra fechas futuras/inválidas con día Argentina | perfil profesional puede responder sin R2; conservar aislamiento de proyectos, fecha, links e integridad. Probar frío/caliente y cambios de publicación |
-| Caché IA, `src/chat/openai.service.ts:170` | Map hasta 200 entradas, TTL 24 h; hash de mensaje/contexto/historial/links/sugerencias | efímera y por entorno; no persistencia conversacional. Menor hit rate en Lambda puede aumentar gasto OpenAI; medir sin introducir Redis |
-| FaqService, `src/chat/faq.service.ts:66` | datos versionados; incrementUsage es no-op | no hay contador que migrar. Conservar matching y sugerencias; tests existentes |
-| SubscriptionsService, `src/subscriptions/subscriptions.service.ts:37` | HTTP a PORTFOLIO_CLOUD_API_URL + /subscriptions; timeout 8 s; 4xx→400, 5xx/éxito inválido→502, red→503 | conservar semántica incluso pérdida de 429 upstream como 400; no crear persistencia nueva; probar sin llamar upstream productivo |
-| Observabilidad, `src/chat/chat-metrics.ts:34` | Nest Logger stdout, JSON con duración/outcome/tokens, sin texto o identidad del visitante para métricas chat | no hay exporter Prometheus ni alarmas versionadas para esta API; trasladar stdout a CloudWatch, correlación y retención limitada; revisar otros errores para evitar PII |
+| Funcionalidad y código                                                | Dependencias y comportamiento comprobado                                                                                                           | Conservar / riesgo de migración / verificación                                                                                                                             |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ContactService, `src/contact/contact.service.ts:15`                   | SDK Resend; envío esperado antes de terminar; fecha Argentina; error del SDK o excepción → 500 controlado                                          | conservar texto y 204; no hay timeout explícito de aplicación ni clave de idempotencia. Probar timeout/resultado ambiguo con mock; no repetir automáticamente envíos       |
+| ChatService, `src/chat/chat.service.ts:63`                            | filtra fuera de alcance, FAQ sin historial, selección de contexto, reformulación con IA opcional, fallback                                         | una FAQ puede consumir IA; `source=faq` no implica costo cero. No cambiar contratos ni adjudicar éxito solo por HTTP 201                                                   |
+| OpenAiService, `src/chat/openai.service.ts:87`                        | `fetch` nativo a `/v1/responses`, sin SDK OpenAI; default gpt-4.1-mini, configurable; timeout 15 s, max_output_tokens 300, JSON                    | sin tools/function calling, embeddings, vector DB ni streaming; preservar prompts/contexto/historial y fallback; probar parseo y fallo con fetch mock                      |
+| ChatKnowledgeRepository, `src/chat/chat-knowledge.repository.ts:112`  | SDK S3 contra Cloudflare R2; envelope v1/checksum SHA-256 o artifact local validado; single-flight por proceso                                     | TTL remoto default 5 min; ante error usa stale sin edad máxima, luego filesystem. En instancia nueva no hay stale; empaquetar fallback válido y probar corrupción/R2 caído |
+| KnowledgeService y publication, `src/chat/knowledge.service.ts:60`    | perfil/FAQ/cloud curados y artifact editorial; selección por intención, hasta unos cuatro items; filtra fechas futuras/inválidas con día Argentina | perfil profesional puede responder sin R2; conservar aislamiento de proyectos, fecha, links e integridad. Probar frío/caliente y cambios de publicación                    |
+| Caché IA, `src/chat/openai.service.ts:170`                            | Map hasta 200 entradas, TTL 24 h; hash de mensaje/contexto/historial/links/sugerencias                                                             | efímera y por entorno; no persistencia conversacional. Menor hit rate en Lambda puede aumentar gasto OpenAI; medir sin introducir Redis                                    |
+| FaqService, `src/chat/faq.service.ts:66`                              | datos versionados; incrementUsage es no-op                                                                                                         | no hay contador que migrar. Conservar matching y sugerencias; tests existentes                                                                                             |
+| SubscriptionsService, `src/subscriptions/subscriptions.service.ts:37` | HTTP a PORTFOLIO_CLOUD_API_URL + /subscriptions; timeout 8 s; 4xx→400, 5xx/éxito inválido→502, red→503                                             | conservar semántica incluso pérdida de 429 upstream como 400; no crear persistencia nueva; probar sin llamar upstream productivo                                           |
+| Observabilidad, `src/chat/chat-metrics.ts:34`                         | Nest Logger stdout, JSON con duración/outcome/tokens, sin texto o identidad del visitante para métricas chat                                       | no hay exporter Prometheus ni alarmas versionadas para esta API; trasladar stdout a CloudWatch, correlación y retención limitada; revisar otros errores para evitar PII    |
 
 [Árbol completo de fuentes](https://github.com/matigaleanodev/portfolio-api/tree/a0ef80fa9f82d1cea5a31425a63ab0a344338c56/src).
 
@@ -75,14 +75,14 @@ La aplicación no guarda conversaciones en DB ni usa previous_response_id, pero 
 
 ## Variables, sin valores secretos
 
-| Grupo | Nombres de variables o referencias | Carácter |
-| --- | --- | --- |
-| HTTP/runtime | NODE_ENV, PORT, CORS_ORIGIN, TRUST_PROXY | configuración; cambiar origen/IP exige validación |
-| Contacto | RESEND_API_KEY; CONTACT_FROM_EMAIL, CONTACT_TO_EMAIL | API key secreta; direcciones no requieren publicarse |
-| IA | OPENAI_API_KEY, OPENAI_CHAT_MODEL | key secreta; modelo default en código, override efectivo no verificado |
-| Integración | PORTFOLIO_CLOUD_API_URL | URL de configuración |
-| Knowledge | R2_ENDPOINT, R2_REGION, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, CHAT_KNOWLEDGE_OBJECT_KEY, CHAT_KNOWLEDGE_CACHE_TTL_MS | credenciales R2 secretas; resto configuración |
-| CI actual API | AWS_REGION, AWS_ROLE_ARN, EC2_INSTANCE_ID; GHCR_TOKEN, DEV_SYNC_PAT | variables AWS y referencias a tokens GitHub; no valores |
+| Grupo         | Nombres de variables o referencias                                                                                                | Carácter                                                               |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| HTTP/runtime  | NODE_ENV, PORT, CORS_ORIGIN, TRUST_PROXY                                                                                          | configuración; cambiar origen/IP exige validación                      |
+| Contacto      | RESEND_API_KEY; CONTACT_FROM_EMAIL, CONTACT_TO_EMAIL                                                                              | API key secreta; direcciones no requieren publicarse                   |
+| IA            | OPENAI_API_KEY, OPENAI_CHAT_MODEL                                                                                                 | key secreta; modelo default en código, override efectivo no verificado |
+| Integración   | PORTFOLIO_CLOUD_API_URL                                                                                                           | URL de configuración                                                   |
+| Knowledge     | R2_ENDPOINT, R2_REGION, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, CHAT_KNOWLEDGE_OBJECT_KEY, CHAT_KNOWLEDGE_CACHE_TTL_MS | credenciales R2 secretas; resto configuración                          |
+| CI actual API | AWS_REGION, AWS_ROLE_ARN, EC2_INSTANCE_ID; GHCR_TOKEN, DEV_SYNC_PAT                                                               | variables AWS y referencias a tokens GitHub; no valores                |
 
 `runtime.config.ts:143` exige contacto y URL cloud en startup; OpenAI es opcional. Producción exige configuración R2 completa o artifact local en la ruta primaria. No se comprobó qué alternativa está configurada realmente.
 
@@ -98,16 +98,16 @@ Pruebas existentes inspeccionadas: DTO/config, contacto con Resend mock, suscrip
 
 ## Riesgos ordenados
 
-| Impacto | Hallazgo | Tratamiento y evidencia necesaria |
-| --- | --- | --- |
-| Alto | cuotas por IP en memoria no sobreviven distribución/reinicio; CORS no autentica | límite compartido antes de salida pública; IP de evento confiable, pruebas de bypass/concurrencia; revisar upstream con su owner |
-| Alto | pruebas de contacto o suscripciones reales duplican efectos | mocks por defecto; test aislado y sin retries automáticos de POST; no shadow writes |
-| Alto | timeouts no acotan todo el chat/R2/contacto | deadline total menor que entrada HTTP, abort real del SDK/body, revisar Resend/reintentos y probar resultados ambiguos |
-| Alto | fallback inexistente en entorno frío + R2 caído | empaquetar artifact versionado, checksum y fecha; probar error cold y definir staleness máximo |
-| Medio | IAM/bootstrap nuevo sin diseño final; límites existentes son por proyecto | roles acotados y boundaries nuevas revisadas; no reutilizar roles SAM/SSM ni defaults admin |
-| Medio | caché IA fragmentada aumenta costo/proveedor y cold start | medir hit rate, billed duration y tokens; no garantizar ahorro ni agregar Redis anticipadamente |
-| Medio | salud superficial y métricas de API por ruta ausentes | logs sin cuerpos, latencia/error/timeout/429/fallback, costo; umbrales en entorno test |
-| Medio | recuperación depende de artifacts/imagen/config y EC2 compartida | pin de imagen y documentación de restore; no apagar al terminar solo Portfolio |
+| Impacto | Hallazgo                                                                        | Tratamiento y evidencia necesaria                                                                                                |
+| ------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Alto    | cuotas por IP en memoria no sobreviven distribución/reinicio; CORS no autentica | límite compartido antes de salida pública; IP de evento confiable, pruebas de bypass/concurrencia; revisar upstream con su owner |
+| Alto    | pruebas de contacto o suscripciones reales duplican efectos                     | mocks por defecto; test aislado y sin retries automáticos de POST; no shadow writes                                              |
+| Alto    | timeouts no acotan todo el chat/R2/contacto                                     | deadline total menor que entrada HTTP, abort real del SDK/body, revisar Resend/reintentos y probar resultados ambiguos           |
+| Alto    | fallback inexistente en entorno frío + R2 caído                                 | empaquetar artifact versionado, checksum y fecha; probar error cold y definir staleness máximo                                   |
+| Medio   | IAM/bootstrap nuevo sin diseño final; límites existentes son por proyecto       | roles acotados y boundaries nuevas revisadas; no reutilizar roles SAM/SSM ni defaults admin                                      |
+| Medio   | caché IA fragmentada aumenta costo/proveedor y cold start                       | medir hit rate, billed duration y tokens; no garantizar ahorro ni agregar Redis anticipadamente                                  |
+| Medio   | salud superficial y métricas de API por ruta ausentes                           | logs sin cuerpos, latencia/error/timeout/429/fallback, costo; umbrales en entorno test                                           |
+| Medio   | recuperación depende de artifacts/imagen/config y EC2 compartida                | pin de imagen y documentación de restore; no apagar al terminar solo Portfolio                                                   |
 
 ## Evidencia posterior de implementación local
 
