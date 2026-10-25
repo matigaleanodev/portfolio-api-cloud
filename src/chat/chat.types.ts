@@ -43,6 +43,7 @@ export type KnowledgeContextItem =
   | CloudKnowledgeContextItem;
 
 export interface ChatCompletionPayload {
+  sessionId?: string | null;
   userMessage: string;
   contextItems: KnowledgeContextItem[];
   suggestedSeedQuestions?: string[];

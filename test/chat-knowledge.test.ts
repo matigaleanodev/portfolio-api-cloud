@@ -1,5 +1,6 @@
 import { beforeEach, describe, it, afterEach, expect, vi } from 'vitest';
 import { KnowledgeService } from '../src/chat/knowledge.service.js';
+import { FaqService } from '../src/chat/faq.service.js';
 import type { ChatKnowledgeRepository } from '../src/chat/chat-knowledge.repository.js';
 
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => undefined));
@@ -286,6 +287,10 @@ describe('KnowledgeService', () => {
     );
     expect(result[0]?.sourceId).toBe('main-contact');
     expect(result[0]?.text).toContain('formulario');
+    expect(result[0]?.text).toContain('contacto@matiasgaleano.dev');
+    const faq = await new FaqService().findBestMatch('¿Cómo puedo contactarte?');
+    expect(faq?.answer).toContain('contacto@matiasgaleano.dev');
+    expect(result[0]?.text).toContain(faq?.answer);
   });
   it.each([
     'Compará Foodly y ModoPlaya: stack y publicación',

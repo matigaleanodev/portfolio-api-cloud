@@ -110,7 +110,7 @@ test('Dado un perfil y R2 caído, cuando se consulta empleo y luego proyectos, e
   const { app, repository, request } = compose();
   repository.getKnowledge.mockRejectedValue(new Error('fallo privado'));
   expect((await app(event('¿En qué empresa trabajás hoy?'))).statusCode).toBe(201);
-  expect(request.mock.calls[0]?.[1]?.body).toContain('Banco Comafi a través de Boreal IT');
+  expect(request).not.toHaveBeenCalled();
   expect(repository.getKnowledge).not.toHaveBeenCalled();
   const response = await app(event());
   expect(response.statusCode).toBe(503);
@@ -123,7 +123,7 @@ test('Dado un perfil y R2 caído, cuando se consulta empleo y luego proyectos, e
   expect(response.headers?.['access-control-allow-origin']).toBe(
     'https://frontend.example.invalid',
   );
-  expect(request).toHaveBeenCalledTimes(1);
+  expect(request).not.toHaveBeenCalled();
 });
 test('Dado OpenAI caído, cuando hay FAQ o contexto, entonces conserva source y distingue fallo técnico de dato no confirmado', async () => {
   const { app, request } = compose();
@@ -137,7 +137,7 @@ test('Dado OpenAI caído, cuando hay FAQ o contexto, entonces conserva source y 
   expect(response.statusCode).toBe(201);
   expect(JSON.parse(response.body ?? '')).toMatchObject({
     source: 'fallback',
-    answer: expect.stringContaining('No pude generar'),
+    answer: expect.stringContaining('contacto@matiasgaleano.dev'),
   });
 });
 test('Dado un historial explícito, cuando se usa otro sessionId, entonces no persiste ni mezcla conversaciones', async () => {

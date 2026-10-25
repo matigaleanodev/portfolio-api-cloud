@@ -1,4 +1,5 @@
 export type ChatProviderOutcome =
+  | 'limited'
   | 'success'
   | 'cache_hit'
   | 'disabled'
@@ -7,6 +8,8 @@ export type ChatProviderOutcome =
   | 'invalid_response'
   | 'timeout'
   | 'network_error';
+import { currentRequest } from '../request-scope.js';
+
 type ChatMetric =
   | {
       event: 'chat_reply';
@@ -40,5 +43,7 @@ export function recordChatMetric(metric: ChatMetric): void {
       if (typeof value === 'number' && Number.isFinite(value) && value >= 0) entry[key] = value;
     }
   }
+  const requestId = currentRequest()?.requestId;
+  if (requestId) entry.requestId = requestId;
   console.info(JSON.stringify(entry));
 }

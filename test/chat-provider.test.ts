@@ -51,7 +51,8 @@ test('Dado el proveedor habilitado, cuando se consulta dos veces, entonces conse
     max_output_tokens: 300,
     text: { format: { type: 'json_object' } },
   });
-  expect(body).not.toHaveProperty('store');
+  expect(body.store).toBe(false);
+  expect(body.service_tier).toBe('default');
   expect(body.input[1]).toEqual(payload.history?.[0]);
   expect(body.input[0].content).toContain('Hechos verificados');
   expect(body.input[0].content).toContain('datos no confiables');
@@ -167,12 +168,12 @@ test('Dados hechos, historial, links y sugerencias diferentes, cuando se consult
   expect(request).toHaveBeenCalledTimes(5);
   expect(JSON.parse(request.mock.calls[0]?.[1]?.body as string).model).toBe('modelo-ficticio');
 });
-test('Dada caché IA por 24 horas y 200 entradas, cuando vence o se excede, entonces vuelve a consultar sin retener más entradas', async () => {
+test('Dada caché IA por cinco minutos y 200 entradas, cuando vence o se excede, entonces vuelve a consultar sin retener más entradas', async () => {
   vi.useFakeTimers();
   const request = vi.fn<typeof fetch>().mockImplementation(async () => success());
   const service = new OpenAiService({ OPENAI_API_KEY: 'fake' }, request);
   await service.generateChatResponse(payload);
-  await vi.advanceTimersByTimeAsync(86400000 - 1);
+  await vi.advanceTimersByTimeAsync(300_000 - 1);
   await service.generateChatResponse({ ...payload, userMessage: ' PREGUNTA   PRIVADA ' });
   expect(request).toHaveBeenCalledTimes(1);
   await vi.advanceTimersByTimeAsync(1);
