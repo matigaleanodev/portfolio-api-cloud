@@ -126,3 +126,11 @@ Status: **implemented locally; not deployed**. DynamoDB CAS for quotas and a tra
 Status: **locally implemented and verified; managed preparation pending**.
 
 I kept one grouped function and the existing CDK. The assembly is retained with a hash inventory and revision, without rebuilding during recovery. I separated trust/PassRole/boundaries by responsibility in the [delivery design](deployment-design.md). Final administrative policies are materialized and verified in phase 7; production, secrets and shared controls are not restored from the bundle.
+
+## ADR-017 — Preparation from a promoted artifact and scoped foundation
+
+Status: **reviewable local implementation; managed activation pending**.
+
+Pinned runner/actions with Node24 while retaining PR/verify/human merge. Preparation uses an integrated CI artifact with verified digest and a SHA promoted to main, without rebuilding. Materialized responsibility-specific roles/boundaries/bootstrap with V2 API administration disabled by default: initial regional scope does not establish isolation from the existing production API. [Audit, alternatives and pending criteria](test-operations.md). Verified local recovery does not close the managed rehearsal or production return.
+
+One AWS installation retains existing test names and starts validation with simulated providers; no parallel production stack or local AWS deployment emulation is added. Regional API Gateway scope is chosen for the personal account, with effects on existing APIs explicit in [operations](test-operations.md). main and v0.1.0 do not automatically deploy.

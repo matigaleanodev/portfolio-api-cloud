@@ -47,7 +47,7 @@ actionlint
 npm audit
 ```
 
-**513 pruebas de aplicación aprobadas**, incluidas 82 nuevas pruebas de suscripciones (36 referencias DTO, 28 upstream y 18 adicionales), 69 referencias DTO/controlador (66 coincidentes, 3 diferencias explícitas al usar validadores directos) y 36 de parser; 27 de tooling (5 scope CI, 7 workflow de merge, 2 preparación y 13 bundle). Tipos, build, smoke ESM separado, pares/enlaces documentales y actionlint aprobados en Node 24.22.1. npm audit del lock actual: **0 vulnerabilidades reportadas**, incluido desarrollo; no garantiza ausencia de problemas futuros.
+**513 pruebas de aplicación aprobadas**, incluidas 82 nuevas pruebas de suscripciones (36 referencias DTO, 28 upstream y 18 adicionales), 69 referencias DTO/controlador (66 coincidentes, 3 diferencias explícitas al usar validadores directos) y 36 de parser; 49 de tooling (5 scope CI, 7 workflow de merge, 2 preparación y 13 bundle, 7 de fundación y 15 de recuperación). Tipos, build, smoke ESM separado, pares/enlaces documentales y actionlint aprobados en Node 24.22.1. npm audit del lock actual: **0 vulnerabilidades reportadas**, incluido desarrollo; no garantiza ausencia de problemas futuros.
 
 La suite limpia el ambiente heredado y carga el cerco de red antes de importar la aplicación. Bloquea fetch/WebSocket, HTTP(S), conexión de sockets/TLS/UDP, DNS y procesos hijos. Se crean streams en memoria para parsing, sin escuchar puertos. Los proveedores son funciones explícitas simuladas; no se envían emails. El cerco evita llamadas accidentales, no constituye sandbox de código hostil.
 
@@ -85,7 +85,7 @@ El incremento de contacto agrega [procedencia por blob y paquetes de referencia]
 
 ## Vitest e infraestructura local
 
-La suite completa usa Vitest 5.0.5: 513 casos de aplicación, 27 de tooling y 18 de infraestructura, **558 aprobados**. El smoke de paquete es un verificador Node sin devDependencies. Títulos en español Dado/Cuando/Entonces y [formato de casos de prueba](testing.es.md). CDK v2 está instalado y la stack de test se sintetiza sin lookups; [recursos y límites](infrastructure.es.md). El typecheck de infraestructura desactiva solo exactOptionalPropertyTypes por incompatibilidad de declaraciones CDK; aplicación conserva esa opción. Sin despliegue.
+La suite completa usa Vitest 5.0.5: 513 casos de aplicación, 49 de tooling y 18 de infraestructura, **580 aprobados**. El smoke de paquete es un verificador Node sin devDependencies. Títulos en español Dado/Cuando/Entonces y [formato de casos de prueba](testing.es.md). CDK v2 está instalado y la stack de test se sintetiza sin lookups; [recursos y límites](infrastructure.es.md). El typecheck de infraestructura desactiva solo exactOptionalPropertyTypes por incompatibilidad de declaraciones CDK; aplicación conserva esa opción. Sin despliegue.
 
 ## Formato de código
 

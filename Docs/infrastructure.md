@@ -41,3 +41,9 @@ RuntimeSecretArn is mandatory without a default, restricted to portfolio-api-clo
 ## Phase 5 local completion
 
 Table named portfolio-api-cloud-test-control and alarms portfolio-api-cloud-test-errors/throttles/duration scope the IAM design. The 18 assertions cover resources, exact runtime trust, allowed actions, invocation scope and absent additional resources. [External roles/bootstrap and preservation design](deployment-design.md). No external roles are provisioned or effective permissions established.
+
+## Test preparation
+
+[Audit, reviewable external foundation and phases 6–10 runbook](test-operations.md). Roles/bootstrap/secret provisioning, deployment, managed validation and recovery remain unexecuted.
+
+One AWS installation retains existing test names and starts validation with simulated providers; no parallel production stack or local AWS deployment emulation is added. Regional API Gateway scope is chosen for the personal account, with effects on existing APIs explicit in [operations](test-operations.md). main and v0.1.0 do not automatically deploy.

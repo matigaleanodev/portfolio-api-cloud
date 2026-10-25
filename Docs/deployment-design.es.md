@@ -6,7 +6,7 @@
 
 CDK TypeScript ya estaba elegido y la stack agrupada ya existía. Conservé HTTP API v2 con IAM, una Lambda fuera de VPC, la tabla de control, los secretos externos y los límites del runtime. Completé nombres acotables de tabla/alarmas, assertions de identidad e invocación y conservación del assembly. No agregué una stack de provisioning ni una segunda API.
 
-La etapa 5 queda cubierta como diseño e implementación local revisable. La etapa 6 conserva el merge humano protegido existente y agrega pruebas del plan y retención en CI. La preparación AWS, el despliegue y la validación administrada siguen separados. Las definiciones de permisos siguientes son el contrato de diseño para la etapa 7, no políticas instaladas ni permisos efectivos comprobados.
+La etapa 5 queda cubierta como diseño e implementación local revisable. La etapa 6 conserva el merge humano protegido existente y agrega pruebas del plan y retención en CI. La preparación AWS, el despliegue y la validación administrada siguen separados. Las matrices siguientes conservan el contrato de diseño inicial. La propuesta local materializada y sus ajustes actuales están en [operación test](test-operations.es.md); no son políticas instaladas ni permisos efectivos comprobados.
 
 ## Configuración y separación por ambiente
 
@@ -115,3 +115,7 @@ Retención diseñada del bucket: al menos 90 días para assets corrientes y vers
 En etapa 9 empezar con destinos/proveedores simulados, sin envíos reales ni generación paga. Medir INIT, latencias por ruta, duración facturada, errores, throttling y costos auxiliares. Establecer umbrales con esas muestras antes de exposición; no inventar valores de aceptación o RTO/RPO. Las alarmas actuales no tienen acciones: su existencia no demuestra una notificación operativa.
 
 La recuperación de tráfico debe mantener un solo destino de escritura por request, sin replay de POST/DELETE. Volver a EC2 no deshace emails o suscripciones aceptadas. La renovación editorial general y la revisión de modelo/tarifas permanecen en sus pasos previstos.
+
+## Preparación local posterior de etapas 6–10
+
+[Operación test](test-operations.es.md) y [plantilla de fundación](../infra/test-foundation.template.json) materializan las policies/boundaries y el bootstrap mínimo. Incluyen GetEncryptionConfiguration y GetParameters requeridos por las lecturas de la CLI, así como administración API V2 deshabilitada por defecto. El plan recupera el artifact revisado por run/digest y comprueba promoción a main sin recompilar. Auditoría Observer realizada; no hay recursos test provisionados. Dobles administrados, ejecución del changeset, recuperación test y retorno productivo siguen pendientes según ese runbook.

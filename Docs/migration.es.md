@@ -83,3 +83,9 @@ El handler administrado usa cuotas compartidas, configuración de Secrets Manage
 ## Cierre local de infraestructura y preparación posterior
 
 Etapa 5 completa como implementación/diseño local, con retención de assembly y ampliación local de etapa 6. Las etapas 7–10 tienen [prerrequisitos y criterios documentados](deployment-design.es.md), sin provisioning, despliegue, validación administrada ni ensayo remoto de recuperación. La etapa 11 mantiene su lugar inmediatamente antes de producción.
+
+## Preparación de test
+
+[Auditoría, fundación externa revisable y runbook de etapas 6–10](test-operations.es.md). Roles/bootstrap/secreto, despliegue, validación y recuperación administrada siguen sin ejecutarse.
+
+Una sola instalación AWS conserva los nombres test existentes y se valida inicialmente con proveedores simulados; no se agrega una stack productiva paralela ni emulación local de AWS. El alcance regional API Gateway está elegido para la cuenta personal, con su efecto sobre APIs existentes explícito en [operación](test-operations.es.md). main y v0.1.0 no ejecutan el despliegue automáticamente.

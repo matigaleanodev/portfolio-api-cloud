@@ -83,3 +83,9 @@ The managed handler uses shared quotas, Secrets Manager configuration validated 
 ## Local infrastructure completion and subsequent preparation
 
 Phase 5 complete as local implementation/design, with assembly retention and local phase 6 additions. Phases 7–10 have [documented prerequisites and criteria](deployment-design.md), without provisioning, deployment, managed validation or remote recovery rehearsal. Phase 11 remains immediately before production.
+
+## Test preparation
+
+[Audit, reviewable external foundation and phases 6–10 runbook](test-operations.md). Roles/bootstrap/secret provisioning, deployment, managed validation and recovery remain unexecuted.
+
+One AWS installation retains existing test names and starts validation with simulated providers; no parallel production stack or local AWS deployment emulation is added. Regional API Gateway scope is chosen for the personal account, with effects on existing APIs explicit in [operations](test-operations.md). main and v0.1.0 do not automatically deploy.

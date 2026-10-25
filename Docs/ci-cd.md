@@ -10,7 +10,7 @@
 
 The documentation job validates language pairs/links and detects application/infrastructure separately. package.json requires lock, tsconfig and a real entry; orphan application files fail. cdk.json enables infrastructure and requires its scripts.
 
-Application runs `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` and `test:package` on Node 24.22.1. Vitest runs 513 application cases and 27 tooling cases (12 migrated from unittest and 15 new). No fixing lint/source mutation. The network guard loads before application imports with no inherited credentials. [Coverage and cases](testing.md).
+Application runs `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` and `test:package` on Node 24.22.1. Vitest runs 513 application cases and 49 tooling cases. No fixing lint/source mutation. The network guard loads before application imports with no inherited credentials. [Coverage and cases](testing.md).
 
 Infrastructure is active because cdk.json exists; it runs 18 `test:infra` cases and `cdk -- synth --no-lookups --context stage=test`, without AWS credentials. [Local stack and prerequisites](infrastructure.md).
 
@@ -31,7 +31,7 @@ Environment setup must protect the environment and restrict OIDC to `repo:matiga
 
 The synthesizer configures cloudFormationExecutionRole and deployRoleArn separately. The workflow asserts cloudFormationExecutionRoleArn/assumeRoleArn in the manifest rather than passing the service execution role as CLI --role-arn. Asset-publishing roles and bootstrap trust require separate review before activation.
 
-The workflow checks files/scripts/tests/offline synth before authentication, verifies the assembly and exact identity, then uses `cdk deploy --method prepare-change-set` with a unique SHA/run name. **This is a future mutation:** it can publish S3/ECR assets/create a change set or preparatory stack even without executing infrastructure. It is not read-only and was not run. `--require-approval never` removes the CLI prompt; review is enforced through the environment and the change set.
+The workflow recovers the CI artifact by run/ID/SHA/digest, requires promotion to main and validates lock, manifest and destinations before authentication. It does not rebuild or synthesize the recovered assembly; it then verifies the exact identity, then uses `cdk deploy --method prepare-change-set` with a unique SHA/run name. **This is a future mutation:** it can publish S3/ECR assets/create a change set or preparatory stack even without executing infrastructure. It is not read-only and was not run. `--require-approval never` removes the CLI prompt; review is enforced through the environment and the change set.
 
 There is no execute-change-set, direct deploy, bootstrap, destroy, existing-cloud import or generic role. Executing the reviewed change set needs an execution step binding exact ARN/stack/SHA/assets/review. Default CDK diff can also create a change set; do not assume it is read-only in audits.
 
@@ -63,4 +63,12 @@ Future preparation also requires TEST_RUNTIME_SECRET_ARN, restricted to the port
 
 ## Retained assembly and plan tests
 
-CI builds a bundle after test:infra/synth; deploy-test retains its own before OIDC. SHA/run/attempt artifacts, 30 days, missing files fail. review_bundle.py preserves assembly, lock, revision/Node and hashes; verify rejects altered, missing or extra files and different revisions. Two cases test actual prerequisites and workflow barriers; thirteen test bundle creation/recovery and rejection. [Retention, provenance, limitations and next steps](deployment-design.md). These changes remain local until the next integration.
+CI builds a bundle after test:infra/synth; deploy-test retains its own before OIDC. SHA/run/attempt artifacts, 30 days, missing files fail. review_bundle.py preserves assembly, lock, revision/Node and hashes; verify rejects altered, missing or extra files and different revisions. Two cases test actual prerequisites and workflow barriers; thirteen test bundle creation/recovery and rejection. [Retention, provenance, limitations and next steps](deployment-design.md). Earlier retention is integrated through PR #10; run/digest recovery and the current increment remain local.
+
+## Local phase 6 update and preparation for 7–10
+
+Ubuntu 24.04 and actions checkout/setup-node/upload-artifact are pinned to 7.0.1/7.1.0/7.0.2, all using Node24. merge.yml changes only its runner image, retaining controls and identity. The plan requires artifact_run_id, artifact_id, reviewed_revision and reviewed_digest. It recovers an integrated CI artifact, checks promotion to main and uses --app .tmp/recovered/cdk.out without rebuilding. GitHub actions:read is limited to preparation; CI still has no OIDC.
+
+[Test operations](test-operations.md) covers the effective audit, main initialization, external roles/boundaries/bootstrap proposal, disabled V2 API exception, changeset review/execution, doubles design and runbook. A remote run of this increment and plan activation remain pending.
+
+One AWS installation retains existing test names and starts validation with simulated providers; no parallel production stack or local AWS deployment emulation is added. Regional API Gateway scope is chosen for the personal account, with effects on existing APIs explicit in [operations](test-operations.md). main and v0.1.0 do not automatically deploy.
