@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-25T05:18:44Z",
+  "source": {
+    "repository": "matigaleanodev/portfolio-api@a0ef80fa9f82d1cea5a31425a63ab0a344338c56",
+    "artifactPath": "src/chat/content/chat-faq.data.ts"
+  },
+  "contentHash": "sha256:5c7c161c023a5e336a00c1c23b6d037265f1e32c85485abb9d2be44c43c888d2",
+  "knowledge": {
+    "generatedAt": "2026-10-25T05:18:44Z",
+    "projects": [
+      {
+        "slug": "foodly-notes",
+        "title": "Foodly Notes",
+        "excerpt": "Un recetario con Ionic + Angular y API NestJS publicado en Play Store."
+      },
+      {
+        "slug": "modo-playa",
+        "title": "Modo Playa",
+        "excerpt": "Un catálogo de alojamientos con backend multi-tenant en NestJS."
+      },
+      {
+        "slug": "portfolio",
+        "title": "Portfolio",
+        "excerpt": "Portfolio con arquitectura static-first, chatbot contextual y automatización serverless en AWS."
+      }
+    ],
+    "posts": []
+  }
+}

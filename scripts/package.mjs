@@ -4,7 +4,7 @@ import { join } from 'node:path';
 const root = new URL('../', import.meta.url);
 
 export function stageRuntimePackage(directory) {
-  for (const name of ['dist', 'package.json', 'LICENSE']) {
+  for (const name of ['dist', 'fallback', 'package.json', 'LICENSE']) {
     cpSync(new URL(name, root), join(directory, name), { recursive: true });
   }
 
