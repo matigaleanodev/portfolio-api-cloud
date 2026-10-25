@@ -157,6 +157,7 @@ jobs:
           aws-region: us-east-1
           role-to-assume: ${{ vars.TEST_CDK_DEPLOY_ROLE_ARN }}
           role-chaining: true
+          role-skip-session-tagging: true
           allowed-account-ids: '650387442642'
           role-session-name: PortfolioApiCloudTestReview-${{ github.run_id }}
       - name: Capture the exact prepared change set for separate review
