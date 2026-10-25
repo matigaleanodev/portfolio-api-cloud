@@ -23,7 +23,7 @@ npm run check
 
 `check` validates formatting and runs strict types, ESM build, network-blocked tests, an out-of-checkout smoke test and document validation. Verification commands do not fix sources. The package uses `dist/handler.js`, export `handler`, and requires `package.json` with `type: module`. Runtime requires production `node_modules` from the lock and `LICENSE`. It does not load `.env`; only the Lambda entry reads environment for CORS and contact (`RESEND_API_KEY`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`). Health remains available without these keys. [Contract, provenance and limits](Docs/contact.md).
 
-[Test stack and prerequisites](Docs/infrastructure.md) · [Spanish test cases](Docs/testing.md). Vitest runs 558 cases (513 application, 27 tooling, 18 infrastructure).
+[Test stack and prerequisites](Docs/infrastructure.md) · [Spanish test cases](Docs/testing.md). Vitest runs 580 cases (513 application, 49 tooling, 18 infrastructure).
 
 Readable formatting with Prettier **3.9.10** and explicit `.prettierrc.json` rules: two spaces, single quotes, semicolons, trailing commas and an advisory 100-column print width. Scripts separate preparation, execution and checks with blank lines preserved by Prettier. `npm run format` writes changes; `npm run format:check` checks without writing and is required in CI. `.gitignore` and `.prettierignore` exclude private/generated files, the lockfile and the pinned historical fixture.
 
@@ -66,8 +66,10 @@ Subscriptions uses PORTFOLIO_CLOUD_API_URL, read only when invoking that slice. 
 
 Chat professional location is corrected specifically to Posadas, Misiones, Argentina, with an explicit difference from the pinned SHA. FAQ and context also include the professional email contacto@matiasgaleano.dev from one shared fact. Other content retains its previous scope; general editorial renewal remains immediately before production. [Details and historical references](Docs/chat.md).
 
-Phase 4 implements shared control for the managed handler. The current suite has 558 tests: 513 application, 27 tooling and 18 infrastructure. [Configuration, global budget, sessions, fallback and validation limits](Docs/runtime-hardening.md).
+Phase 4 implements shared control for the managed handler. The current suite has 580 tests: 513 application, 49 tooling and 18 infrastructure. [Configuration, global budget, sessions, fallback and validation limits](Docs/runtime-hardening.md).
 
 ## Reviewable infrastructure and delivery
 
 Phase 5 is completed as local design; phase 6 adds assembly retention and plan tests. [Trust, PassRole, boundaries, minimum bootstrap and recovery](Docs/deployment-design.md). AWS preparation and managed validation remain pending.
+
+[Phases 6–10 preparation: Git controls, AWS audit, reviewable policies/bootstrap and runbook](Docs/test-operations.md). No provisioning or managed validation.

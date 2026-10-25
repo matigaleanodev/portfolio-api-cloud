@@ -126,3 +126,11 @@ Estado: **implementado localmente; sin despliegue**. DynamoDB con CAS para cuota
 Estado: **implementada y verificada localmente; preparación administrada pendiente**.
 
 Conservé una función agrupada y CDK existente. El assembly se retiene con inventario de hashes y revisión, sin recompilar al recuperar. Separé trust/PassRole/boundaries por responsabilidad en el [diseño de entrega](deployment-design.es.md). Las policies administrativas finales se materializan y verifican en etapa 7; producción, secretos y controles compartidos no se restauran desde el bundle.
+
+## ADR-017 — Preparación desde artifact promovido y fundación acotada
+
+Estado: **implementación local revisable; activación administrada pendiente**.
+
+Fijé runner/actions con Node24 y conservé PR/verify/merge humano. La preparación usa un artifact de CI integrada con digest contrastado y SHA promovido a main, sin recompilar. Materialicé roles/boundaries/bootstrap por responsabilidad con administración API V2 deshabilitada por defecto: el alcance regional inicial no acredita aislamiento frente a la API productiva existente. [Auditoría, alternativas y criterios pendientes](test-operations.es.md). La recuperación local comprobada no cierra el ensayo administrado ni el retorno productivo.
+
+Una sola instalación AWS conserva los nombres test existentes y se valida inicialmente con proveedores simulados; no se agrega una stack productiva paralela ni emulación local de AWS. El alcance regional API Gateway está elegido para la cuenta personal, con su efecto sobre APIs existentes explícito en [operación](test-operations.es.md). main y v0.1.0 no ejecutan el despliegue automáticamente.

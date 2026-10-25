@@ -10,7 +10,7 @@
 
 El job documentation valida pares/enlaces y detecta aplicación e infraestructura por separado. package.json exige lock, tsconfig y entrada real; restos de aplicación sin manifiesto fallan. cdk.json activa infraestructura y exige sus scripts específicos.
 
-Application ejecuta `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` y `test:package` en Node 24.22.1. Vitest ejecuta 513 casos de aplicación y 27 de tooling (12 migrados desde unittest y 15 nuevos). No hay lint con --fix ni modificación automática de fuentes. El cerco de red se carga antes de la aplicación, con ambiente sin credenciales heredadas. [Cobertura y casos](testing.es.md).
+Application ejecuta `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` y `test:package` en Node 24.22.1. Vitest ejecuta 513 casos de aplicación y 49 de tooling. No hay lint con --fix ni modificación automática de fuentes. El cerco de red se carga antes de la aplicación, con ambiente sin credenciales heredadas. [Cobertura y casos](testing.es.md).
 
 Infrastructure está activo porque ya existe cdk.json; ejecuta 18 casos en `test:infra` y `cdk -- synth --no-lookups --context stage=test`, sin credenciales AWS. [Stack local y prerrequisitos](infrastructure.es.md).
 
@@ -31,7 +31,7 @@ La configuración del ambiente requiere revisión del environment y OIDC limitad
 
 El synthesizer configura cloudFormationExecutionRole y deployRoleArn con esos roles distintos. El workflow valida cloudFormationExecutionRoleArn/assumeRoleArn en el manifest; no pasa el ejecutor como --role-arn de la CLI. Roles de publicación de assets y trust del bootstrap se revisan aparte antes de habilitar.
 
-El workflow comprueba archivos, scripts, tests y synth offline antes de autenticarse; revisa manifest y luego identidad exacta. El plan usa `cdk deploy --method prepare-change-set` con nombre SHA/run único. **Es una mutación futura:** puede publicar assets S3/ECR y crear changeset/stack preparatoria, aunque no ejecute infraestructura. No es una consulta read-only y no se ejecutó en esta auditoría. `--require-approval never` evita el prompt CLI; la revisión se aplica mediante el environment y el changeset.
+El workflow recupera el artifact de CI por run/ID/SHA/digest, exige que la revisión esté promovida a main y valida lock, manifest y destinos antes de autenticarse. No recompila ni sintetiza el assembly recuperado; luego comprueba identidad exacta. El plan usa `cdk deploy --method prepare-change-set` con nombre SHA/run único. **Es una mutación futura:** puede publicar assets S3/ECR y crear changeset/stack preparatoria, aunque no ejecute infraestructura. No es una consulta read-only y no se ejecutó en esta auditoría. `--require-approval never` evita el prompt CLI; la revisión se aplica mediante el environment y el changeset.
 
 No contiene execute-change-set, deploy directo, bootstrap, destroy, imports cloud existentes ni roles genéricos. Para ejecutar un changeset se necesita un paso de ejecución que vincule el ARN exacto a stack, SHA, assets y revisión. CDK `diff` por defecto también puede crear changesets; no usarlo como supuesto read-only durante auditorías.
 
@@ -53,7 +53,7 @@ Branches: solo feat/, fix/, release/; codex/ prohibido. main/dev se integran por
 
 ## Evidencia local separada
 
-Los cambios del experimento fueron descartados. Esta base incorpora una nueva detección aplicación/infraestructura con pruebas propias; no recupera los scripts comparativos. El plan test conserva sus restricciones de repo, rama, environment, roles, identidad y changeset. Sus comandos ahora coinciden con typecheck, build, test y test:package; test:infra y CDK ya ejecutan validación local; sus requisitos AWS siguen pendientes. [Base local](application.es.md).
+Los cambios del experimento fueron descartados. Esta base incorpora una nueva detección aplicación/infraestructura con pruebas propias; no recupera los scripts comparativos. El plan test conserva sus restricciones de repo, rama, environment, roles, identidad y changeset. La CI de origen ejecuta tipos/build/tests/paquete e infraestructura; el plan consume su assembly retenido, con los requisitos AWS todavía pendientes. [Base local](application.es.md).
 
 ## Recuperación del primer merge con App
 
@@ -63,4 +63,12 @@ La preparación futura exige también TEST_RUNTIME_SECRET_ARN, restringido al pr
 
 ## Assembly retenido y pruebas del plan
 
-CI genera un bundle después de test:infra/synth; deploy-test conserva el suyo antes de OIDC. Artifacts por SHA/run/intento, 30 días y fallo si faltan archivos. review_bundle.py conserva assembly, lock, revisión/Node y hashes; verify rechaza alteración, faltantes, extras y revisión distinta. Dos casos prueban los prerrequisitos reales y las barreras del workflow; trece prueban creación/recuperación y rechazos del bundle. [Retención, procedencia, limitaciones y pasos siguientes](deployment-design.es.md). Estos cambios permanecen locales hasta la siguiente integración.
+CI genera un bundle después de test:infra/synth; deploy-test conserva el suyo antes de OIDC. Artifacts por SHA/run/intento, 30 días y fallo si faltan archivos. review_bundle.py conserva assembly, lock, revisión/Node y hashes; verify rechaza alteración, faltantes, extras y revisión distinta. Dos casos prueban los prerrequisitos reales y las barreras del workflow; trece prueban creación/recuperación y rechazos del bundle. [Retención, procedencia, limitaciones y pasos siguientes](deployment-design.es.md). La retención anterior está integrada por PR #10; la recuperación por run/digest y el resto del incremento actual siguen locales.
+
+## Actualización local de etapa 6 y preparación 7–10
+
+Ubuntu 24.04 y actions checkout/setup-node/upload-artifact fijadas en 7.0.1/7.1.0/7.0.2, todas con Node24. merge.yml solo cambia la imagen del runner: conserva sus controles e identidad. El plan pide artifact_run_id, artifact_id, reviewed_revision y reviewed_digest. Recupera un artifact de CI integrada, comprueba su promoción a main y usa --app .tmp/recovered/cdk.out sin recompilar. GitHub actions:read se limita al job de preparación; CI sigue sin OIDC.
+
+[Operación test](test-operations.es.md): auditoría efectiva, inicialización de main, propuesta externa de roles/boundaries/bootstrap, excepción API V2 deshabilitada, revisión/ejecución del changeset, diseño de dobles y runbook. La ejecución remota del incremento y la activación del plan permanecen pendientes.
+
+Una sola instalación AWS conserva los nombres test existentes y se valida inicialmente con proveedores simulados; no se agrega una stack productiva paralela ni emulación local de AWS. El alcance regional API Gateway está elegido para la cuenta personal, con su efecto sobre APIs existentes explícito en [operación](test-operations.es.md). main y v0.1.0 no ejecutan el despliegue automáticamente.

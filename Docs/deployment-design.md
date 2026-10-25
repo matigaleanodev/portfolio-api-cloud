@@ -115,3 +115,7 @@ Designed bucket retention: at least 90 days for current assets and previous vers
 Start phase 9 with simulated providers/destinations, without real deliveries or paid generation. Measure INIT, per-route latency, billed duration, errors, throttling and auxiliary costs. Establish thresholds from those samples before exposure; do not invent acceptance values or RTO/RPO. Current alarms have no actions: their existence does not demonstrate an operational notification.
 
 Traffic recovery must preserve one write destination per request, without POST/DELETE replay. Returning to EC2 does not undo accepted emails or subscriptions. General editorial refresh and model/pricing review remain in their planned steps.
+
+## Subsequent local preparation for phases 6–10
+
+[Test operations](test-operations.md) and the [foundation template](../infra/test-foundation.template.json) materialize policies/boundaries and minimal bootstrap. They include GetEncryptionConfiguration/GetParameters for CLI reads and disable V2 API administration by default. The plan recovers the reviewed artifact by run/digest and checks promotion to main without rebuilding. Observer audit completed; no test resources provisioned. Managed doubles, changeset execution, test recovery and production return remain pending under that runbook.

@@ -47,7 +47,7 @@ actionlint
 npm audit
 ```
 
-**513 application tests passed**, including 82 new subscription tests (36 DTO references, 28 upstream and 18 additional cases), 69 DTO/controller references (66 unchanged, 3 explicit direct-validator differences) and 36 parser references; 27 tooling tests (5 CI scope, 7 merge workflow, 2 preparation workflow, 13 bundle). Types, build, separate ESM smoke, documentation pairs/links and actionlint passed on Node 24.22.1. npm audit of the current lock: **0 reported vulnerabilities**, including development; this does not guarantee freedom from future issues.
+**513 application tests passed**, including 82 new subscription tests (36 DTO references, 28 upstream and 18 additional cases), 69 DTO/controller references (66 unchanged, 3 explicit direct-validator differences) and 36 parser references; 49 tooling tests (5 CI scope, 7 merge workflow, 2 preparation workflow, 13 bundle, 7 foundation and 15 artifact recovery). Types, build, separate ESM smoke, documentation pairs/links and actionlint passed on Node 24.22.1. npm audit of the current lock: **0 reported vulnerabilities**, including development; this does not guarantee freedom from future issues.
 
 The suite clears inherited environment and loads the network guard before importing application code. It blocks fetch/WebSocket, HTTP(S), socket/TLS/UDP connections, DNS and child processes. Parsing uses in-memory streams without listening on ports. Providers are explicit mocks; no emails are sent. The guard prevents accidental calls, not hostile code.
 
@@ -85,7 +85,7 @@ The contact increment adds [per-blob and reference-package provenance](contact.m
 
 ## Vitest and local infrastructure
 
-All suites use Vitest 5.0.5: 513 application cases, 27 tooling cases and 18 infrastructure cases, **558 passing**. Package smoke remains a Node verifier without devDependencies. Spanish Given/When/Then titles and [test case format](testing.md). CDK v2 is installed and the test stack synthesizes without lookups; [resources and limits](infrastructure.md). Only infrastructure disables exactOptionalPropertyTypes due to CDK declaration incompatibility; application retains it. No deployment.
+All suites use Vitest 5.0.5: 513 application cases, 49 tooling cases and 18 infrastructure cases, **580 passing**. Package smoke remains a Node verifier without devDependencies. Spanish Given/When/Then titles and [test case format](testing.md). CDK v2 is installed and the test stack synthesizes without lookups; [resources and limits](infrastructure.md). Only infrastructure disables exactOptionalPropertyTypes due to CDK declaration incompatibility; application retains it. No deployment.
 
 ## Code formatting
 

@@ -53,3 +53,9 @@ RuntimeSecretArn es obligatorio, sin default, y restringido al secreto portfolio
 ## Cierre local de etapa 5
 
 Tabla con nombre portfolio-api-cloud-test-control y alarmas portfolio-api-cloud-test-errors/throttles/duration para acotar el diseño IAM. Las 18 assertions cubren recursos, trust runtime exacto, acciones permitidas, alcance de invocación y ausencia de recursos adicionales. [Diseño externo de roles/bootstrap y conservación](deployment-design.es.md). No se provisionan roles externos ni se comprueban permisos efectivos.
+
+## Preparación de test
+
+[Auditoría, fundación externa revisable y runbook de etapas 6–10](test-operations.es.md). Roles/bootstrap/secreto, despliegue, validación y recuperación administrada siguen sin ejecutarse.
+
+Una sola instalación AWS conserva los nombres test existentes y se valida inicialmente con proveedores simulados; no se agrega una stack productiva paralela ni emulación local de AWS. El alcance regional API Gateway está elegido para la cuenta personal, con su efecto sobre APIs existentes explícito en [operación](test-operations.es.md). main y v0.1.0 no ejecutan el despliegue automáticamente.

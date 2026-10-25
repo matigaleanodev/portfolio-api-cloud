@@ -16,13 +16,13 @@ concurrency:
 
 jobs:
   documentation:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       application: ${{ steps.scope.outputs.application }}
       infrastructure: ${{ steps.scope.outputs.infrastructure }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Validate documentation
@@ -34,16 +34,16 @@ jobs:
   application:
     needs: documentation
     if: needs.documentation.outputs.application == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
       NODE_ENV: test
       AWS_EC2_METADATA_DISABLED: 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: '24.22.1'
           cache: npm
@@ -58,7 +58,7 @@ jobs:
   infrastructure:
     needs: documentation
     if: needs.documentation.outputs.infrastructure == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       NODE_ENV: test
@@ -68,10 +68,10 @@ jobs:
       CDK_DEFAULT_ACCOUNT: '650387442642'
       CDK_DEFAULT_REGION: us-east-1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: '24.22.1'
           cache: npm
@@ -83,7 +83,7 @@ jobs:
         run: |
           python3 scripts/review_bundle.py create . .tmp/review-bundle "$GITHUB_SHA" "$(node --version)"
           python3 scripts/review_bundle.py verify .tmp/review-bundle "$GITHUB_SHA"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: test-assembly-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: .tmp/review-bundle/
@@ -95,7 +95,7 @@ jobs:
     name: verify
     if: always()
     needs: [documentation, application, infrastructure]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     env:
       DOC_RESULT: ${{ needs.documentation.result }}

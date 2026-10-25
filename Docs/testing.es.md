@@ -4,7 +4,7 @@
 
 **Estado vigente de fase 4:** [controles del runtime](runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
 
-Vitest **5.0.5** ejecuta toda la suite: **558 casos**, distribuidos en 513 de aplicación, 27 de tooling y 18 de infraestructura. Se migraron inicialmente 155 casos de node:test y los 12 de unittest; no se mantiene un segundo runner para esas suites. Los scripts productivos de CI siguen en Python y sus validaciones se ejercitan desde Vitest con fixtures locales. El smoke del paquete sigue siendo un verificador ejecutable con Node sin dependencias de desarrollo.
+Vitest **5.0.5** ejecuta toda la suite: **580 casos**, distribuidos en 513 de aplicación, 49 de tooling y 18 de infraestructura. Se migraron inicialmente 155 casos de node:test y los 12 de unittest; no se mantiene un segundo runner para esas suites. Los scripts productivos de CI siguen en Python y sus validaciones se ejercitan desde Vitest con fixtures locales. El smoke del paquete sigue siendo un verificador ejecutable con Node sin dependencias de desarrollo.
 
 Los títulos usan español y **Dado/Cuando/Entonces**. Expresan una condición, la acción y un resultado verificable. Los nombres de campos y contratos HTTP conservan sus identificadores técnicos. Los fixtures históricos no se reescriben: el título explica el escenario y las aserciones conservan sus valores originales.
 
@@ -26,7 +26,7 @@ Los comandos `npm run test:app`, `npm run test:tooling` y `npm run test:infra` e
 | Cuotas                    |     5 | ventana, bloqueo, vencimiento lógico y aislamiento de IP                              |
 | Aislamiento               |     5 | ambiente, composición y cerco de red                                                  |
 | Suscripciones             |    82 | alta/baja: DTO, upstream, timeout, transporte, cuotas y composición                   |
-| Tooling                   |    27 | detección de alcance y validaciones del workflow con respuestas ficticias             |
+| Tooling                   |    49 | detección de alcance y validaciones del workflow con respuestas ficticias             |
 | Endurecimiento            |    57 | concurrencia, presupuesto global, sesiones, startup, cancelación y fallback           |
 | Infraestructura           |    18 | recursos, IAM, payload v2, límites, logs, roles y asset                               |
 | Chat                      |   223 | DTO, FAQ, contexto/historial, publicación, IA, R2/local, cachés, cuotas y composición |
@@ -46,3 +46,5 @@ Chat agrega 223 pruebas: 59 referencias DTO, 18 de dominio/efectos, cinco hashes
 El handler administrado usa cuotas compartidas, configuración de Secrets Manager validada antes de negocio, deadline total y cancelación de proveedores. Las descripciones de memoria local, configuración lazy/500 y timeouts parciales corresponden al traslado inicial o al adaptador de composición local. Los controles actuales y diferencias están en [endurecimiento](runtime-hardening.es.md); permisos/proxies/proveedores reales siguen pendientes de validación administrada.
 
 La ampliación de etapa 5/6 agrega 19 pruebas: trece del bundle, dos del workflow de preparación y cuatro assertions de infraestructura. [Diseño y criterios posteriores](deployment-design.es.md).
+
+La preparación actual suma 22 casos: siete del techo IAM/fundación y quince de recuperación por run/digest, incluyendo CI fallida, artifact de PR, revisión/run/intento ajenos, vencimiento, ZIP inseguro y alteraciones. El total es 580 (513 aplicación, 49 tooling, 18 infraestructura). La plantilla también se comprobó con cfn-lint 1.57.2; esto no simula IAM ni prueba compatibilidad AWS efectiva.
