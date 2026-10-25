@@ -38,14 +38,14 @@ jobs:
     timeout-minutes: 10
     env:
       NODE_ENV: test
-      AWS_EC2_METADATA_DISABLED: "true"
+      AWS_EC2_METADATA_DISABLED: 'true'
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: "24.22.1"
+          node-version: '24.22.1'
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run format:check
@@ -64,8 +64,8 @@ jobs:
       NODE_ENV: test
       AWS_REGION: us-east-1
       AWS_DEFAULT_REGION: us-east-1
-      AWS_EC2_METADATA_DISABLED: "true"
-      CDK_DEFAULT_ACCOUNT: "650387442642"
+      AWS_EC2_METADATA_DISABLED: 'true'
+      CDK_DEFAULT_ACCOUNT: '650387442642'
       CDK_DEFAULT_REGION: us-east-1
     steps:
       - uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: "24.22.1"
+          node-version: '24.22.1'
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run test:infra
