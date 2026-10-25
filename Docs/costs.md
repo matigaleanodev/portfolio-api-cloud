@@ -6,17 +6,17 @@
 
 These calculations cover the candidate Lambda **Event Function**, not native Web Functions. Figures use hypothetical traffic rather than measured traffic or personal billing. The model compares alternatives without guaranteeing savings.
 
-| Monthly assumption | Low | Higher use |
-| --- | --- | --- |
-| Total requests N | 10,000 | 1,000,000 |
-| Chat calling provider | 20% = 2,000 | 20% = 200,000 |
-| Chat/other duration | 5 s / 0.15 s | 5 s / 0.15 s |
-| Weighted mean duration | 1.12 s | 1.12 s |
-| x86 memory | 512 MiB | 512 MiB |
-| GB-s = N × 0.5 × 1.12 | 5,600 | 560,000 |
-| Total logs/request | 2 KiB | 2 KiB |
+| Monthly assumption                | Low           | Higher use    |
+| --------------------------------- | ------------- | ------------- |
+| Total requests N                  | 10,000        | 1,000,000     |
+| Chat calling provider             | 20% = 2,000   | 20% = 200,000 |
+| Chat/other duration               | 5 s / 0.15 s  | 5 s / 0.15 s  |
+| Weighted mean duration            | 1.12 s        | 1.12 s        |
+| x86 memory                        | 512 MiB       | 512 MiB       |
+| GB-s = N × 0.5 × 1.12             | 5,600         | 560,000       |
+| Total logs/request                | 2 KiB         | 2 KiB         |
 | Total outbound HTTP/provider data | 7 KiB/request | 7 KiB/request |
-| Grouped secret reads/month | 100 | 10,000 |
+| Grouped secret reads/month        | 100           | 10,000        |
 
 Five seconds includes external waiting and is not a measured p95. Each additional average second costs N×0.5×0.0000166667; at 1 M requests that is ~USD 8.33 before benefits. Compare 1024 MiB: twice the per-second cost may be offset by shorter duration/cold starts. Include billed INIT and secret refresh in measurements.
 
@@ -24,19 +24,19 @@ Five seconds includes external waiting and is not a measured p95. Each additiona
 
 Reference rates: x86 Lambda 0.0000166667/GB-s and 0.20/M requests, HTTP API 1/M, standard logs 0.50/GB ingestion and 0.03/GB-month storage, four standard alarms at 0.10. One JSON secret at 0.40/month, 0.05/10,000 reads. Limiter assumes up to two nontransactional WRUs and two RRUs per request, small items, 0.625/M WRU and 0.125/M RRU. Recalculate for the final algorithm, failed conditions and transactional operations.
 
-| Component | Low | Higher use |
-| --- | ---: | ---: |
-| Lambda compute | 0.093 | 9.333 |
-| Lambda requests | 0.002 | 0.200 |
-| HTTP API | 0.010 | 1.000 |
-| DynamoDB limiter requests | 0.015 | 1.500 |
-| Counter-storage allowance | 0.010 | 0.010 |
-| Grouped secret + reads | 0.401 | 0.450 |
-| Log ingestion + conservative 14-day storage | 0.010 | 0.981 |
-| Four alarms | 0.400 | 0.400 |
-| Deployment S3 assets/requests allowance | 0.050 | 0.100 |
-| Internet egress at 0.09/GB without allowance | 0.006 | 0.601 |
-| **Approximate candidate subtotal** | **1.00** | **14.58** |
+| Component                                    |      Low | Higher use |
+| -------------------------------------------- | -------: | ---------: |
+| Lambda compute                               |    0.093 |      9.333 |
+| Lambda requests                              |    0.002 |      0.200 |
+| HTTP API                                     |    0.010 |      1.000 |
+| DynamoDB limiter requests                    |    0.015 |      1.500 |
+| Counter-storage allowance                    |    0.010 |      0.010 |
+| Grouped secret + reads                       |    0.401 |      0.450 |
+| Log ingestion + conservative 14-day storage  |    0.010 |      0.981 |
+| Four alarms                                  |    0.400 |      0.400 |
+| Deployment S3 assets/requests allowance      |    0.050 |      0.100 |
+| Internet egress at 0.09/GB without allowance |    0.006 |      0.601 |
+| **Approximate candidate subtotal**           | **1.00** |  **14.58** |
 
 Official rates: [Lambda](https://aws.amazon.com/lambda/pricing/), [HTTP API](https://aws.amazon.com/api-gateway/pricing/), [CloudWatch](https://aws.amazon.com/cloudwatch/pricing/), [secrets](https://aws.amazon.com/secrets-manager/pricing/), [DynamoDB](https://aws.amazon.com/dynamodb/pricing/).
 
@@ -80,13 +80,13 @@ Adapted Nest and handlers share infrastructure/providers; Lambda has no Nest-spe
 
 Adding the hypothetical assumptions above gives **USD 2.44/month + P** for low use (1.00 infrastructure + 1.44 AI) and **158.58 + P** for higher use (14.58 + 144). Assuming the entire stated Lambda allowance, these become **2.34 + P** and **151.71 + P**. P includes actual Resend, R2, Firebase, domain, portfolio-cloud and CI/retention charges not already counted. P is unknown: these expressions are not final totals or invoices. Free plans and full allowances for each environment are not assumed.
 
-| Alternative | Total cost to compare | Floor/condition |
-| --- | --- | --- |
-| Shared EC2 | instance + IPv4 + EBS + observability + providers | continuous compute/network; the list-price example is not Portfolio-only cost |
+| Alternative               | Total cost to compare                                            | Floor/condition                                                                                |
+| ------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Shared EC2                | instance + IPv4 + EBS + observability + providers                | continuous compute/network; the list-price example is not Portfolio-only cost                  |
 | Event Function + HTTP API | requests/duration + limiter + logs + assets + secrets/alarms + P | lower proposed floor; secret and alarms add ~0.80/month/environment before usage in this model |
-| App Runner | continuous memory + active CPU + logs/network + P | provisioned minimum even with little traffic |
-| Fargate + ALB | compute + load balancer/network + observability + P | disproportionate floor for assumed demo workload |
-| Coexistence | existing EC2 + new infrastructure and incremental providers | no fixed savings while EC2 remains running |
+| App Runner                | continuous memory + active CPU + logs/network + P                | provisioned minimum even with little traffic                                                   |
+| Fargate + ALB             | compute + load balancer/network + observability + P              | disproportionate floor for assumed demo workload                                               |
+| Coexistence               | existing EC2 + new infrastructure and incremental providers      | no fixed savings while EC2 remains running                                                     |
 
 Final savings must subtract the incremental cost of all three migrated APIs and retained resources from avoidable EC2 cost. Foodly Notes and Modo Playa have no closed estimates here. After all three migrate and recovery is verified, EC2 will be stopped and retained, without termination/dismantling and with a recoverable backup. Storage and backups may still be charged; zero spending is not assumed.
 

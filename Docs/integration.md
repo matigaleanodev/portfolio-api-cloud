@@ -14,11 +14,11 @@ The mechanism is installed on dev after PR #5. [Updates](https://github.com/mati
 
 The following alternatives attribute activity to a human account:
 
-| Alternative | Scope and maintenance |
-| --- | --- |
-| Existing user OAuth credential — current configuration | GitHub CLI credential with broad repo and workflow scopes; its configuration is preserved and it is stored only as an environment secret. It does not change the account's ruleset access. |
-| Fine-grained PAT belonging to matigaleanodev | Select only portfolio-api-cloud and a short expiry. Contents write for merge, Pull requests read for PR verification and Workflows write for this delivery modifying workflows; implicit Metadata read. No Administration write or access to other repositories required. |
-| Dedicated App user access token | Requires explicit OAuth authorization by the account. Permissions intersect user and App access; installation-token bypass must not be assumed to transfer. Default expiry is 8 hours; renewal requires a protected refresh token. |
+| Alternative                                            | Scope and maintenance                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Existing user OAuth credential — current configuration | GitHub CLI credential with broad repo and workflow scopes; its configuration is preserved and it is stored only as an environment secret. It does not change the account's ruleset access.                                                                                |
+| Fine-grained PAT belonging to matigaleanodev           | Select only portfolio-api-cloud and a short expiry. Contents write for merge, Pull requests read for PR verification and Workflows write for this delivery modifying workflows; implicit Metadata read. No Administration write or access to other repositories required. |
+| Dedicated App user access token                        | Requires explicit OAuth authorization by the account. Permissions intersect user and App access; installation-token bypass must not be assumed to transfer. Default expiry is 8 hours; renewal requires a protected refresh token.                                        |
 
 Current configuration reuses user OAuth; a dedicated granular PAT remains an alternative to reduce scope without adding an App OAuth renewal service. MERGE_USER_TOKEN stays in the protected environment, with no value in documentation, conversation, arguments or logs. An installation private key is not converted into human identity. The read-only GITHUB_TOKEN retains check validation, so the merge credential needs no additional Checks access.
 

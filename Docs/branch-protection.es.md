@@ -6,11 +6,11 @@
 
 Las ramas de trabajo usan `feat/`, `fix/` o `release/`. `codex/` y cualquier otro prefijo quedan bloqueados. `main` y `dev` requieren PR, CI y merge mediante automatización; no admiten push directo, borrado ni force.
 
-| Ruleset | Reglas | Bypass estable |
-| --- | --- | --- |
-| [main-dev-workflow-merges-only](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) | Restrict updates sobre main/dev | Usuario 99203645 (matigaleanodev), solo `pull_request` |
-| [main-dev-required-pr-and-ci](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799502) | PR, check verify de GitHub Actions, rama actualizada, conversaciones resueltas, solo merge commits; no delete/force | ninguno, tampoco administradores |
-| [allowed-branch-prefixes](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799503) | restringe creación fuera de main/dev/feat/**/fix/**/release/** | ninguno |
+| Ruleset                                                                                               | Reglas                                                                                                              | Bypass estable                                         |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| [main-dev-workflow-merges-only](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) | Restrict updates sobre main/dev                                                                                     | Usuario 99203645 (matigaleanodev), solo `pull_request` |
+| [main-dev-required-pr-and-ci](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799502)   | PR, check verify de GitHub Actions, rama actualizada, conversaciones resueltas, solo merge commits; no delete/force | ninguno, tampoco administradores                       |
+| [allowed-branch-prefixes](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799503)       | restringe creación fuera de main/dev/feat/**/fix/**/release/**                                                      | ninguno                                                |
 
 La revisión de reglas por nombre confirmó protección de main/dev, bloqueo de codex/example y feature/example, y creación permitida para feat/example, fix/example y release/example. No se crearon ramas de prueba para esta verificación. Las aprobaciones de review requeridas son cero, por tratarse de un repositorio de mantenimiento individual; PR y CI siguen siendo obligatorios.
 

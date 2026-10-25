@@ -6,23 +6,23 @@ La migración a serverless está decidida. Este plan corresponde a Portfolio; Fo
 
 ## Etapas y criterios de salida
 
-| Etapa | Entrega | Criterio de salida |
-| --- | --- | --- |
-| 0. Evidencia documental | auditoría, procedencia, comparación local, decisiones y costos hipotéticos | documentación bilingüe y enlaces verificables desde un checkout sin código experimental |
-| 1. Estructura inicial | handlers TypeScript, composición mínima, configuración explícita, scripts y tests locales | build y tipos correctos; red/proveedores reales bloqueados en pruebas; sin stack o abstracciones ficticias |
-| 2. Lógica reutilizada | recuperar solo fuentes necesarias del SHA fijado y registrar procedencia | dominio, contenido y DTOs conservados; imports transitivos Nest eliminados del runtime de handlers |
-| 3. Contratos completos | seis rutas y casos de error, validación, headers y límites | 201 chat, 204 contacto, body DELETE y 400/413/429/500/502/503; efectos simulados, sin duplicados ni tráfico de negocio |
-| 4. Endurecimiento | IP confiable, cuotas compartidas, deadline/cancelación, fallback íntegro y logs acotados | pruebas de concurrencia, expiración, spoofing, corrupción, proveedor caído y resultado ambiguo |
-| 5. Infraestructura local | cerrar herramienta y definir test aislado, IAM/red/retención/rutas | synth sin lookups y assertions; revisar boundaries y separación pipeline/publicación/ejecutor/runtime |
-| 6. Entrega protegida | App dedicada, environments y workflows compatibles con el nuevo runner | PR/CI/merge por workflow sin excepciones nuevas al bloqueo; no confundir documentación con aplicación validada |
-| 7. Preparación AWS de test | identidad, roles, bootstrap y datos/proveedores aislados | configuración revisada, recursos y costos previstos, sin acceso a datos o destinos productivos |
-| 8. Despliegue test | artefacto inmutable y endpoint independiente | changeset exacto revisado y ejecución trazable; el workflow inicial solo prepara, no ejecuta el despliegue |
-| 9. Validación administrada | contratos/e2e/seguridad/observabilidad y mediciones reales | frío demostrado con telemetría, latencia/error/costo por ruta, cuota IA y alertas; proveedores simulados primero |
-| 10. Corte y recuperación preparados | URL/routing, runbook, imagen/config original y ensayo de retorno | un solo destino de escritura por request; retorno probado con EC2 operativa y artefactos retenidos |
-| 11. Renovación final del conocimiento del bot | actualizar perfil profesional y proyectos, fuentes curadas/editoriales y fallback | procedencia, checksum, fechas, enlaces y respuestas representativas verificados en el paquete final; versión previa recuperable |
-| 12. Puesta en producción | publicar el paquete final y conmutar según el runbook | smoke controlado, monitoreo y reversión operativa; EC2 sigue encendida |
-| 13. Estabilización | observar comportamiento, costos y efectos reales | criterios de estabilidad cumplidos y recuperación vigente; duración según evidencia |
-| 14. Conservación de EC2 | completar también las otras dos migraciones y verificar backup/restauración | apagar la instancia y conservarla detenida, sin terminarla ni desmantelarla |
+| Etapa                                         | Entrega                                                                                   | Criterio de salida                                                                                                              |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 0. Evidencia documental                       | auditoría, procedencia, comparación local, decisiones y costos hipotéticos                | documentación bilingüe y enlaces verificables desde un checkout sin código experimental                                         |
+| 1. Estructura inicial                         | handlers TypeScript, composición mínima, configuración explícita, scripts y tests locales | build y tipos correctos; red/proveedores reales bloqueados en pruebas; sin stack o abstracciones ficticias                      |
+| 2. Lógica reutilizada                         | recuperar solo fuentes necesarias del SHA fijado y registrar procedencia                  | dominio, contenido y DTOs conservados; imports transitivos Nest eliminados del runtime de handlers                              |
+| 3. Contratos completos                        | seis rutas y casos de error, validación, headers y límites                                | 201 chat, 204 contacto, body DELETE y 400/413/429/500/502/503; efectos simulados, sin duplicados ni tráfico de negocio          |
+| 4. Endurecimiento                             | IP confiable, cuotas compartidas, deadline/cancelación, fallback íntegro y logs acotados  | pruebas de concurrencia, expiración, spoofing, corrupción, proveedor caído y resultado ambiguo                                  |
+| 5. Infraestructura local                      | cerrar herramienta y definir test aislado, IAM/red/retención/rutas                        | synth sin lookups y assertions; revisar boundaries y separación pipeline/publicación/ejecutor/runtime                           |
+| 6. Entrega protegida                          | App dedicada, environments y workflows compatibles con el nuevo runner                    | PR/CI/merge por workflow sin excepciones nuevas al bloqueo; no confundir documentación con aplicación validada                  |
+| 7. Preparación AWS de test                    | identidad, roles, bootstrap y datos/proveedores aislados                                  | configuración revisada, recursos y costos previstos, sin acceso a datos o destinos productivos                                  |
+| 8. Despliegue test                            | artefacto inmutable y endpoint independiente                                              | changeset exacto revisado y ejecución trazable; el workflow inicial solo prepara, no ejecuta el despliegue                      |
+| 9. Validación administrada                    | contratos/e2e/seguridad/observabilidad y mediciones reales                                | frío demostrado con telemetría, latencia/error/costo por ruta, cuota IA y alertas; proveedores simulados primero                |
+| 10. Corte y recuperación preparados           | URL/routing, runbook, imagen/config original y ensayo de retorno                          | un solo destino de escritura por request; retorno probado con EC2 operativa y artefactos retenidos                              |
+| 11. Renovación final del conocimiento del bot | actualizar perfil profesional y proyectos, fuentes curadas/editoriales y fallback         | procedencia, checksum, fechas, enlaces y respuestas representativas verificados en el paquete final; versión previa recuperable |
+| 12. Puesta en producción                      | publicar el paquete final y conmutar según el runbook                                     | smoke controlado, monitoreo y reversión operativa; EC2 sigue encendida                                                          |
+| 13. Estabilización                            | observar comportamiento, costos y efectos reales                                          | criterios de estabilidad cumplidos y recuperación vigente; duración según evidencia                                             |
+| 14. Conservación de EC2                       | completar también las otras dos migraciones y verificar backup/restauración               | apagar la instancia y conservarla detenida, sin terminarla ni desmantelarla                                                     |
 
 La etapa 11 es el último paso antes del despliegue productivo. Las comprobaciones del conocimiento y del paquete final pertenecen a esa misma etapa; no se intercala otra entrega entre su cierre y producción.
 

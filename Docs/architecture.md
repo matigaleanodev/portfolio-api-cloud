@@ -21,18 +21,18 @@ Preserve `/api/*`, status codes, DELETE bodies and errors. Own CORS in one layer
 
 ## Runtime and ingress alternatives
 
-| Option | Concrete advantage | Tradeoff | Proposed position |
-| --- | --- | --- | --- |
-| Full Nest + Event Function + HTTP API | high reuse, inexpensive ingress, route/global throttling, familiar IAM | cold start, paid external waiting time, adapter and 30 s timeout | comparison baseline, gated by packaging/latency/abuse tests |
-| Grouped lightweight Node.js handlers | fewer imports/DI/server layers and potentially faster startup | preserve validation/errors/quotas/composition/contracts | initial-structure baseline; preserve the domain |
-| Two functions: chat and everything else | separate concurrency/memory/secrets; chat cannot consume all contact slots | two packages/cold starts; shared limiter still required | split only if measured contention or permission needs justify it |
-| One function per endpoint | fine isolation | six deployments without independent domains/traffic needs | reject initially |
-| Regional REST API + Lambda | native WAF integration, extra controls and current response streaming | more expensive ingress and different timeout/quota behavior | choose if native WAF/streaming becomes a requirement |
-| Classic Function URL | no separate gateway fee, streaming support | fewer ingress/protection/routing capabilities; still needs limiter | not first public option for paid-provider routes |
-| Native Lambda Web Functions | direct HTTP server, multi-request environments, active CPU charging | Node 24, different memory/billing/resources; validate tooling/IAM/region | a real alternative to measure before final implementation selection |
-| App Runner container | server/container reuse and less host administration | provisioned-memory floor plus active CPU | fallback if adaptation/cold latency fails; recheck current account eligibility |
-| ECS Fargate + ALB | container/network control | continuous floor, ALB/network and additional operations | disproportionate to current requirements |
-| Mixed runtime | targeted isolation | two operating models | only for a demonstrated incompatibility |
+| Option                                  | Concrete advantage                                                         | Tradeoff                                                                 | Proposed position                                                              |
+| --------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Full Nest + Event Function + HTTP API   | high reuse, inexpensive ingress, route/global throttling, familiar IAM     | cold start, paid external waiting time, adapter and 30 s timeout         | comparison baseline, gated by packaging/latency/abuse tests                    |
+| Grouped lightweight Node.js handlers    | fewer imports/DI/server layers and potentially faster startup              | preserve validation/errors/quotas/composition/contracts                  | initial-structure baseline; preserve the domain                                |
+| Two functions: chat and everything else | separate concurrency/memory/secrets; chat cannot consume all contact slots | two packages/cold starts; shared limiter still required                  | split only if measured contention or permission needs justify it               |
+| One function per endpoint               | fine isolation                                                             | six deployments without independent domains/traffic needs                | reject initially                                                               |
+| Regional REST API + Lambda              | native WAF integration, extra controls and current response streaming      | more expensive ingress and different timeout/quota behavior              | choose if native WAF/streaming becomes a requirement                           |
+| Classic Function URL                    | no separate gateway fee, streaming support                                 | fewer ingress/protection/routing capabilities; still needs limiter       | not first public option for paid-provider routes                               |
+| Native Lambda Web Functions             | direct HTTP server, multi-request environments, active CPU charging        | Node 24, different memory/billing/resources; validate tooling/IAM/region | a real alternative to measure before final implementation selection            |
+| App Runner container                    | server/container reuse and less host administration                        | provisioned-memory floor plus active CPU                                 | fallback if adaptation/cold latency fails; recheck current account eligibility |
+| ECS Fargate + ALB                       | container/network control                                                  | continuous floor, ALB/network and additional operations                  | disproportionate to current requirements                                       |
+| Mixed runtime                           | targeted isolation                                                         | two operating models                                                     | only for a demonstrated incompatibility                                        |
 
 HTTP API has a 30 s integration maximum and 10 MB payload; synchronous buffered Lambda invocation is limited to 6 MB. Keep the application's tighter 16 KiB body cap. Event Function's 15-minute runtime limit does not extend HTTP API. REST API **currently supports response streaming**, while HTTP API does not. [HTTP quotas](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-quotas.html), [Lambda quotas](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html), [REST streaming](https://docs.aws.amazon.com/apigateway/latest/developerguide/response-transfer-mode.html).
 
@@ -42,17 +42,17 @@ No private database/internal service currently requires VPC connectivity. Public
 
 ## Tool comparison
 
-| Criterion | TypeScript CDK | SAM | Serverless Framework v4 | Current SST |
-| --- | --- | --- | --- | --- |
-| Definition/state | TypeScript→CloudFormation; no separate state file | YAML transform→CloudFormation | serverless.yml→CloudFormation | TypeScript, Pulumi engine/providers, state in own bucket |
-| Nest reuse | package/adapter; no Nest rewrite | same runtime/tests | same runtime; review plugins/versions | server support still needs validation |
-| Local development | tests/synth without lookups; SAM local for compatible assembly | integrated sam build/local, Docker | invoke local/offline plugins; not full parity | useful live dev may use real cloud resources |
-| CI/OIDC | explicit bootstrap/publishing/execution/runtime identities | existing portfolio-cloud convention | viable OIDC plus CLI authentication/licensing | viable OIDC plus different state/backend permissions |
-| IAM/config | constructs/assertions, scoped roles, separate secrets | explicit roles/boundaries already familiar | review generated/plugin IAM | review components/backend privileges |
-| Environments/recovery | separate stacks/names, versions/change sets; resource-supported drift | separate stacks/change sets | stages/stacks, optional plugins/dashboard | stages/state/locks/encryption secret/refresh |
-| Observability | chosen AWS services, no mandatory SaaS | same AWS foundation | optional separately priced Dashboard | optional separately priced Console |
-| License/tool cost | Apache-2.0, no framework license fee | Apache-2.0, no framework license fee | v4 terms, free under USD 2 M threshold, paid above; CLI login/license in CI | MIT, no Pulumi account required; Console free tier/resource pricing |
-| Personal fit | operational CDK experience, explicit IAM, shared TypeScript | one fewer ecosystem toolchain | insufficient advantage over finalists | new state/operating model for a small API |
+| Criterion             | TypeScript CDK                                                        | SAM                                        | Serverless Framework v4                                                     | Current SST                                                         |
+| --------------------- | --------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Definition/state      | TypeScript→CloudFormation; no separate state file                     | YAML transform→CloudFormation              | serverless.yml→CloudFormation                                               | TypeScript, Pulumi engine/providers, state in own bucket            |
+| Nest reuse            | package/adapter; no Nest rewrite                                      | same runtime/tests                         | same runtime; review plugins/versions                                       | server support still needs validation                               |
+| Local development     | tests/synth without lookups; SAM local for compatible assembly        | integrated sam build/local, Docker         | invoke local/offline plugins; not full parity                               | useful live dev may use real cloud resources                        |
+| CI/OIDC               | explicit bootstrap/publishing/execution/runtime identities            | existing portfolio-cloud convention        | viable OIDC plus CLI authentication/licensing                               | viable OIDC plus different state/backend permissions                |
+| IAM/config            | constructs/assertions, scoped roles, separate secrets                 | explicit roles/boundaries already familiar | review generated/plugin IAM                                                 | review components/backend privileges                                |
+| Environments/recovery | separate stacks/names, versions/change sets; resource-supported drift | separate stacks/change sets                | stages/stacks, optional plugins/dashboard                                   | stages/state/locks/encryption secret/refresh                        |
+| Observability         | chosen AWS services, no mandatory SaaS                                | same AWS foundation                        | optional separately priced Dashboard                                        | optional separately priced Console                                  |
+| License/tool cost     | Apache-2.0, no framework license fee                                  | Apache-2.0, no framework license fee       | v4 terms, free under USD 2 M threshold, paid above; CLI login/license in CI | MIT, no Pulumi account required; Console free tier/resource pricing |
+| Personal fit          | operational CDK experience, explicit IAM, shared TypeScript           | one fewer ecosystem toolchain              | insufficient advantage over finalists                                       | new state/operating model for a small API                           |
 
 Tool choice does not remove AWS service charges. CDK is not a local AWS emulator. CloudFormation drift detection covers supported properties/resources, not all drift or external R2 data; stack rollback does not restore deleted data.
 

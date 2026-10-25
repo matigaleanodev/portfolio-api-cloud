@@ -6,11 +6,11 @@
 
 Work branches use `feat/`, `fix/` or `release/`. `codex/` and other prefixes are blocked. `main` and `dev` require PRs, CI and automated merges; direct pushes, deletion and force are prohibited.
 
-| Ruleset | Rules | Steady-state bypass |
-| --- | --- | --- |
-| [main-dev-workflow-merges-only](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) | Restrict main/dev updates | User 99203645 (matigaleanodev), `pull_request` only |
-| [main-dev-required-pr-and-ci](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799502) | PR, GitHub Actions verify check, current branch, resolved conversations, merge commits only; no deletion/force | none, including administrators |
-| [allowed-branch-prefixes](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799503) | restrict creation outside main/dev/feat/**/fix/**/release/** | none |
+| Ruleset                                                                                               | Rules                                                                                                          | Steady-state bypass                                 |
+| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| [main-dev-workflow-merges-only](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799501) | Restrict main/dev updates                                                                                      | User 99203645 (matigaleanodev), `pull_request` only |
+| [main-dev-required-pr-and-ci](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799502)   | PR, GitHub Actions verify check, current branch, resolved conversations, merge commits only; no deletion/force | none, including administrators                      |
+| [allowed-branch-prefixes](https://github.com/matigaleanodev/portfolio-api-cloud/rules/25799503)       | restrict creation outside main/dev/feat/**/fix/**/release/**                                                   | none                                                |
 
 Branch-name rule queries confirmed main/dev protection, creation blocking for codex/example and feature/example, and permitted creation for feat/example, fix/example and release/example. No test branches were created. Required review approvals are zero for solo maintenance; PR and CI remain mandatory.
 

@@ -14,11 +14,11 @@ La [guía oficial Nest serverless](https://docs.nestjs.com/faq/serverless) muest
 
 ## Comparación técnica documentada
 
-| Candidata | Qué reutiliza | Trabajo/riesgo | Hipótesis a verificar |
-| --- | --- | --- | --- |
-| A. Nest/Express adaptado | servicios, DTOs, validación, errores y tests | bootstrap/adapter/paquete; cuotas y timeouts igual requieren cambios | menor migración; más inicialización/imports |
-| B. Handler Node.js compacto por responsabilidad | dominio/contenido/SDKs y casos contractuales | composición explícita, parser/validación/error mapper, IP/límites/headers; reaprovechar class-validator si reduce cambios | menos dependencias/bootstrap; costo de migración aceptable |
-| C. Servidor en Web Functions | servidor/framework elegido | Node 24, endpoint/roles/cobro diferentes | beneficio de concurrencia/CPU activa compensa memoria residente |
+| Candidata                                       | Qué reutiliza                                | Trabajo/riesgo                                                                                                            | Hipótesis a verificar                                           |
+| ----------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| A. Nest/Express adaptado                        | servicios, DTOs, validación, errores y tests | bootstrap/adapter/paquete; cuotas y timeouts igual requieren cambios                                                      | menor migración; más inicialización/imports                     |
+| B. Handler Node.js compacto por responsabilidad | dominio/contenido/SDKs y casos contractuales | composición explícita, parser/validación/error mapper, IP/límites/headers; reaprovechar class-validator si reduce cambios | menos dependencias/bootstrap; costo de migración aceptable      |
+| C. Servidor en Web Functions                    | servidor/framework elegido                   | Node 24, endpoint/roles/cobro diferentes                                                                                  | beneficio de concurrencia/CPU activa compensa memoria residente |
 
 No agregar otro framework HTTP, librería de validación o una arquitectura de ports/adapters por defecto. Empezar B con la menor superficie de composición/ruteo suficiente, sin reescribir el conocimiento. A es control comparativo real, no implementación descartada de antemano.
 

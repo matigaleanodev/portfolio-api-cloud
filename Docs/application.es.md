@@ -40,14 +40,14 @@ El smoke copia dist y manifiesto fuera del checkout, sin node_modules, crea un .
 
 ## Cobertura contractual parcial
 
-| Cubierto | Evidencia |
-| --- | --- |
-| GET /api/health | 200, JSON exacto, headers funcionales, sin cuota ni proveedores |
-| Transporte de health | rawPath independiente de stage/query, barra final/mayúsculas, HEAD sin body |
-| CORS | origen listado/no listado/wildcard, preflight y headers en error 404 |
-| Body básico | límite 16 KiB, UTF-8/base64, urlencoded y rechazo 400 de JSON inválido/primitivo |
-| Rutas pendientes | 404 explícito, sin éxitos simulados |
-| Aislamiento | configuraciones independientes, sin credenciales, ambiente limpio y red bloqueada |
+| Cubierto             | Evidencia                                                                         |
+| -------------------- | --------------------------------------------------------------------------------- |
+| GET /api/health      | 200, JSON exacto, headers funcionales, sin cuota ni proveedores                   |
+| Transporte de health | rawPath independiente de stage/query, barra final/mayúsculas, HEAD sin body       |
+| CORS                 | origen listado/no listado/wildcard, preflight y headers en error 404              |
+| Body básico          | límite 16 KiB, UTF-8/base64, urlencoded y rechazo 400 de JSON inválido/primitivo  |
+| Rutas pendientes     | 404 explícito, sin éxitos simulados                                               |
+| Aislamiento          | configuraciones independientes, sin credenciales, ambiente limpio y red bloqueada |
 
 Los textos exactos de errores de parsing originales, compresión/content-encoding, charsets, validación DTO y parsing urlencoded anidado todavía no tienen paridad demostrada. El 400 actual usa un mensaje controlado; no se presenta como equivalencia diferencial del original. Tampoco se cubren cuotas distribuidas, timers Throttler, cinco contratos de negocio, proveedores, fallback/editorial, IAM o transporte AWS real. La salud sin configuración de negocio es deliberada para esta sección; la validación de startup completa llegará al componer esas rutas.
 
@@ -55,12 +55,12 @@ Los textos exactos de errores de parsing originales, compresión/content-encodin
 
 Referencia: [portfolio-api](https://github.com/matigaleanodev/portfolio-api/tree/a0ef80fa9f82d1cea5a31425a63ab0a344338c56), commit `a0ef80fa9f82d1cea5a31425a63ab0a344338c56`. Solo se leyeron blobs fijados; no se recuperó el prototipo ni se modificó el origen.
 
-| Blob consultado | SHA-256 | Uso |
-| --- | --- | --- |
-| src/app.controller.ts | 4c590447c3a5451e12ee62392ed42f3858fb9d551a330032f99d36448ff8c59a | contrato health; función sin decoradores |
-| src/main.ts | c8aff3128c62d1c6c4925d34d494aac053748f10d68e7d8b0cb41c04424ca1f7 | rutas, límite, CORS y headers; adaptación a evento |
-| src/config/runtime.config.ts | 366b7c532275fda3aaee639db60884999e3a0ee8f268b4a983124f6f6f672890 | semántica CORS; configuración explícita mínima |
-| package.json | 38599e23e6b9910f24f157ae19a55c30dcbf5e9e3d179d9dcdb4ab2f275e3961 | licencia y comparación de dependencias |
+| Blob consultado              | SHA-256                                                          | Uso                                                |
+| ---------------------------- | ---------------------------------------------------------------- | -------------------------------------------------- |
+| src/app.controller.ts        | 4c590447c3a5451e12ee62392ed42f3858fb9d551a330032f99d36448ff8c59a | contrato health; función sin decoradores           |
+| src/main.ts                  | c8aff3128c62d1c6c4925d34d494aac053748f10d68e7d8b0cb41c04424ca1f7 | rutas, límite, CORS y headers; adaptación a evento |
+| src/config/runtime.config.ts | 366b7c532275fda3aaee639db60884999e3a0ee8f268b4a983124f6f6f672890 | semántica CORS; configuración explícita mínima     |
+| package.json                 | 38599e23e6b9910f24f157ae19a55c30dcbf5e9e3d179d9dcdb4ab2f275e3961 | licencia y comparación de dependencias             |
 
 Ambos repos son mantenidos por matigaleanodev. El origen declara UNLICENSED y no tiene LICENSE/ LICENSE.md en ese SHA; este manifiesto conserva UNLICENSED. Repositorio público no implica concesión de licencia a terceros. TypeScript declara Apache-2.0; los paquetes de tipos declaran MIT. No se copia toda la API ni contenido profesional/editorial.
 

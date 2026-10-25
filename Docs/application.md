@@ -40,14 +40,14 @@ The smoke copies dist and manifest outside the checkout without node_modules, cr
 
 ## Partial contract coverage
 
-| Covered | Evidence |
-| --- | --- |
-| GET /api/health | 200, exact JSON, functional headers, no quota or providers |
-| Health transport | rawPath independent of stage/query, trailing slash/case, bodyless HEAD |
-| CORS | listed/unlisted/wildcard origins, preflight and headers on 404 |
-| Basic body handling | 16 KiB limit, UTF-8/base64, urlencoded and 400 for invalid/primitive JSON |
-| Pending routes | explicit 404 without simulated success |
-| Isolation | independent configurations, no credentials, clean environment and blocked network |
+| Covered             | Evidence                                                                          |
+| ------------------- | --------------------------------------------------------------------------------- |
+| GET /api/health     | 200, exact JSON, functional headers, no quota or providers                        |
+| Health transport    | rawPath independent of stage/query, trailing slash/case, bodyless HEAD            |
+| CORS                | listed/unlisted/wildcard origins, preflight and headers on 404                    |
+| Basic body handling | 16 KiB limit, UTF-8/base64, urlencoded and 400 for invalid/primitive JSON         |
+| Pending routes      | explicit 404 without simulated success                                            |
+| Isolation           | independent configurations, no credentials, clean environment and blocked network |
 
 Exact original parsing error text, compression/content-encoding, charsets, DTO validation and nested urlencoded parsing do not yet have demonstrated parity. Current 400 uses a controlled message and is not claimed as differential equivalence with the original. Distributed quotas, Throttler timers, five business contracts, providers, fallback/editorial behavior, IAM and actual AWS transport are also uncovered. Health without business configuration is deliberate for this slice; full startup validation will arrive when composing those routes.
 
@@ -55,12 +55,12 @@ Exact original parsing error text, compression/content-encoding, charsets, DTO v
 
 Reference: [portfolio-api](https://github.com/matigaleanodev/portfolio-api/tree/a0ef80fa9f82d1cea5a31425a63ab0a344338c56), commit `a0ef80fa9f82d1cea5a31425a63ab0a344338c56`. Only pinned blobs were read; no prototype recovery or source repository modifications.
 
-| Consulted blob | SHA-256 | Use |
-| --- | --- | --- |
-| src/app.controller.ts | 4c590447c3a5451e12ee62392ed42f3858fb9d551a330032f99d36448ff8c59a | health contract; function without decorators |
-| src/main.ts | c8aff3128c62d1c6c4925d34d494aac053748f10d68e7d8b0cb41c04424ca1f7 | routes, limit, CORS and headers; event adaptation |
-| src/config/runtime.config.ts | 366b7c532275fda3aaee639db60884999e3a0ee8f268b4a983124f6f6f672890 | CORS semantics; minimal explicit configuration |
-| package.json | 38599e23e6b9910f24f157ae19a55c30dcbf5e9e3d179d9dcdb4ab2f275e3961 | license and dependency comparison |
+| Consulted blob               | SHA-256                                                          | Use                                               |
+| ---------------------------- | ---------------------------------------------------------------- | ------------------------------------------------- |
+| src/app.controller.ts        | 4c590447c3a5451e12ee62392ed42f3858fb9d551a330032f99d36448ff8c59a | health contract; function without decorators      |
+| src/main.ts                  | c8aff3128c62d1c6c4925d34d494aac053748f10d68e7d8b0cb41c04424ca1f7 | routes, limit, CORS and headers; event adaptation |
+| src/config/runtime.config.ts | 366b7c532275fda3aaee639db60884999e3a0ee8f268b4a983124f6f6f672890 | CORS semantics; minimal explicit configuration    |
+| package.json                 | 38599e23e6b9910f24f157ae19a55c30dcbf5e9e3d179d9dcdb4ab2f275e3961 | license and dependency comparison                 |
 
 Both repositories are maintained by matigaleanodev. The source declares UNLICENSED and has no LICENSE/LICENSE.md at that SHA; this manifest retains UNLICENSED. A public repository does not imply a third-party license grant. TypeScript declares Apache-2.0; type packages declare MIT. No wholesale API or professional/editorial content copy.
 
