@@ -12,7 +12,7 @@ Runtime logs retain for 14 days and survive stack deletion/replacement. The runt
 
 This IAM-isolated test endpoint is not the public frontend contract: even health requires a signed request. Distributed quota/deadline remain prerequisites for public business exposure. Gateway throttles and concurrency are not per-IP quotas or spending caps.
 
-No DB, NAT, VPC, domain, frontend, alarms or new providers are introduced. Health works; contact has no AWS secret configuration and returns controlled 500 when sending without it. Secure secret retrieval and permissions remain pending. No keys enter parameters/context/templates/outputs. Four other business routes remain 404.
+No DB, NAT, VPC, domain, frontend, alarms or new providers are introduced. Health works; contact has no AWS secret configuration and returns controlled 500 when sending without it. Secure secret retrieval and permissions remain pending. No keys enter parameters/context/templates/outputs. Starters/chat remain 404. Subscriptions without PORTFOLIO_CLOUD_API_URL yields controlled 500 on invocation; that configuration is not added to the stack. [Local contract](subscriptions.md).
 
 ```bash
 npm ci --ignore-scripts

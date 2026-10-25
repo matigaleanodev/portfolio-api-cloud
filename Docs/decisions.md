@@ -96,3 +96,7 @@ This selection does not solve quota sharing across Lambda environments: distribu
 ## ADR-011 — Vitest and local test stack
 
 Status: **implemented and locally verified**. Vitest 5.0.5 replaces node:test/unittest suites with Spanish Given/When/Then QA titles. CDK CLI 2.1146.1, library 2.274.0 and constructs 10.8.1 are development-only. One IAM-isolated test stack, external boundary and separate roles; synth without lookups. [Tests](testing.md), [stack](infrastructure.md). Bootstrap, role/secret provisioning and deployment were not executed.
+
+## ADR-012 — Subscriptions with native HTTP
+
+Status: **local slice implemented; managed integration pending**. POST/DELETE retain JSON bodies, normalization, 200 responses and exact error mappings from the pinned source. Explicit native fetch and AbortSignal.timeout(8000), no new dependency. Independent 10/h/IP quotas reuse RateLimiterMemory; contact remains 5/h/IP. The three accepted contact validation differences are declared here too. Lazy configuration/500 and omitted free-form logs are explicit differences; total deadline/distribution remain pending. [Contract, evidence and provenance](subscriptions.md).

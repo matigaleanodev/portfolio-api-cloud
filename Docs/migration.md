@@ -32,7 +32,7 @@ The foundation is implemented with health, explicit configuration/composition, s
 
 Review local files before reuse. Recover only necessary source files with commit, paths and hashes. Keep runtime free of transitive Nest/Express dependencies; retain class-validator/class-transformer or existing utilities when they reduce contract risk. Do not introduce a new framework, generic platform or multicloud layer.
 
-Stages 2/3 progressed with [contact](contact.md): pinned logic/DTO/cases, provenance, mocked provider and local quota. Four routes remain 404. The next slice completes another contract with mocks; full compatibility and hardening remain required before exposure.
+Stages 2/3 progressed with [contact](contact.md): pinned logic/DTO/cases, provenance, mocked provider and local quota. Starters/chat remain 404. The [subscription slice](subscriptions.md) completes subscribe/unsubscribe with independent quotas and a mocked HTTP provider. The next slice completes another contract with mocks; full compatibility and hardening remain required before exposure.
 
 ## Data, effects and coexistence
 

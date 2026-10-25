@@ -110,3 +110,7 @@ Versions verified in npm and installed in the lock: Vitest 5.0.5, aws-cdk 2.1146
 - [DefaultStackSynthesizer](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.DefaultStackSynthesizer.html).
 - [CDK assertions](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.assertions-readme.html).
 - [CDK bootstrap](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html).
+
+## Subscriptions — 2026-10-25
+
+[Pinned blobs, hashes, reference versions and results](subscriptions.md). Integration uses Node 24 fetch and AbortSignal.timeout without a new dependency. The [official release index](https://nodejs.org/en/blog/release) reconfirmed 24.22.1 as latest LTS; Node 26 remains Current.

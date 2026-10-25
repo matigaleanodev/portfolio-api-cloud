@@ -66,8 +66,10 @@ Free Serverless CLI does not imply free Dashboard. SST Console is optional: curr
 
 ## Status and transition
 
-A local comparison of handlers and adapted Nest was completed using pinned logic, mocks and differential contracts. This publication contains its documentation, not experiment sources or tooling. The local application implements health and contact with explicit composition, validation/mocked provider and local quota; the other four business routes remain pending. [Contact slice and limits](contact.md). [Implementation and partial coverage](application.md). [Evidence](local-runtime.md).
+A local comparison of handlers and adapted Nest was completed using pinned logic, mocks and differential contracts. This publication contains its documentation, not experiment sources or tooling. The local application implements health, contact and subscriptions with explicit composition, validation/mocked provider and local quota; the two chat routes remain pending. [Contact slice and limits](contact.md). [Implementation and partial coverage](application.md). [Evidence](local-runtime.md).
 
 All three current APIs remain operational throughout migration. After completion and verified recovery, EC2 will be stopped and retained without termination or dismantling, together with a recoverable backup. Traffic switching and restoration must be verified before shutdown.
 
 Refreshing profile/project data used by the bot is the final step before production deployment. [Stages and recovery](migration.md).
+
+[Subscribe/unsubscribe, HTTP composition and limits](subscriptions.md).
