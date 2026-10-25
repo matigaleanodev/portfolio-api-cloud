@@ -116,7 +116,7 @@ export class PortfolioApiStack extends Stack {
       logGroup: logs,
       memorySize: 512,
       timeout: Duration.seconds(28),
-      reservedConcurrentExecutions: 5,
+      reservedConcurrentExecutions: scenario ? undefined : 5,
       environment: {
         NODE_ENV: 'production',
         CORS_ORIGIN: cors.valueAsString,

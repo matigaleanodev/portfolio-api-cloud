@@ -108,11 +108,31 @@ test('Dado un ID generado, cuando no se eligió excepción regional ni ID concre
   expect(foundation.Parameters.AllowRegionalApiBootstrap.Default).toBe('false');
   expect(foundation.Parameters.TestApiId.Default).toBe('unassigned');
   const api = statements('ExecutionBoundary').filter((s: Record<string, unknown>) => 'Fn::If' in s);
-  expect(api).toHaveLength(2);
+  expect(api).toHaveLength(3);
   for (const statement of api) expect(statement['Fn::If'][2]).toEqual({ Ref: 'AWS::NoValue' });
   expect(api[0]['Fn::If'][1].Condition).toEqual({
     StringEquals: { 'apigateway:Request/ApiName': 'portfolio-api-cloud-test' },
   });
+  expect(api[2]['Fn::If'][1].Sid).toBe('ManageApiTags');
+  expect(api[2]['Fn::If'][1].Action).toEqual([
+    'apigateway:GET',
+    'apigateway:POST',
+    'apigateway:PATCH',
+    'apigateway:PUT',
+    'apigateway:DELETE',
+  ]);
+  const tags = api[2]['Fn::If'][1].Resource['Fn::If'];
+  expect(tags[0]).toBe('HasApiId');
+  expect(tags[1]).toHaveLength(8);
+  expect(
+    tags[1].every((item: Record<string, string>) => item['Fn::Sub']!.includes('${TestApiId}')),
+  ).toBe(true);
+  expect(tags[2]).toEqual([
+    'arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/*',
+    'arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/*',
+    'arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F*',
+    'arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F*',
+  ]);
   expect(api[1]['Fn::If'][1].Resource['Fn::If']).toEqual([
     'HasApiId',
     [
@@ -169,7 +189,11 @@ test('Dadas las policies revisables, cuando se comprueba tamaño y excepciones, 
     for (const statement of statements(name)) {
       expect(statement.Action ?? []).not.toContain('*');
       if (statement.Resource?.includes('*')) {
-        expect(statement.Action).toEqual(['logs:DescribeLogGroups']);
+        expect(statement.Action).toEqual([
+          'logs:DescribeLogGroups',
+          'logs:DescribeResourcePolicies',
+          'logs:DescribeIndexPolicies',
+        ]);
         expect(statement.Condition.StringEquals['aws:RequestedRegion']).toBe('us-east-1');
       }
     }
