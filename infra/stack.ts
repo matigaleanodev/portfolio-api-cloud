@@ -47,7 +47,7 @@ export class PortfolioApiStack extends Stack {
     const cors = new CfnParameter(this, 'CorsOrigin', {
       type: 'String',
       default: '',
-      description: 'Origen de pruebas; vacío deshabilita CORS.',
+      description: 'Origen de pruebas; CORS se deshabilita si no se define.',
     });
 
     const secretArn = new CfnParameter(this, 'RuntimeSecretArn', {
