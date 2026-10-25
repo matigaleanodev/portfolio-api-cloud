@@ -355,7 +355,7 @@ test('Dada la cuota de cinco intentos por hora e IP, cuando hay validaciones, tr
   for (let index = 0; index < 20; index++) {
     assert.equal((await app(httpEvent())).statusCode, 200);
     assert.equal((await app(httpEvent('DELETE', '/api/contact'))).statusCode, 404);
-    assert.equal((await app(httpEvent('POST', '/api/chat'))).statusCode, 404);
+    assert.equal((await app(httpEvent('POST', '/api/chat'))).statusCode, 400);
   }
   for (let index = 0; index < 5; index++) {
     const event = contactEvent(index % 2 ? { ...valid, name: '' } : { ...valid, company: 'bot' });

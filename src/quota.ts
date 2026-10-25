@@ -1,13 +1,11 @@
 import { RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
 
-const DURATION_SECONDS = 3600;
-
-export function createQuota(limit: number, keyPrefix: string) {
+export function createQuota(limit: number, keyPrefix: string, durationSeconds = 3600) {
   const limiter = new RateLimiterMemory({
     keyPrefix,
     points: limit,
-    duration: DURATION_SECONDS,
-    blockDuration: DURATION_SECONDS,
+    duration: durationSeconds,
+    blockDuration: durationSeconds,
   });
 
   return async (ip: string): Promise<{ blocked: boolean; headers: Record<string, string> }> => {
