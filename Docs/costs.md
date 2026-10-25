@@ -48,7 +48,7 @@ OpenAI waiting time creates Lambda duration charges in addition to token charges
 
 ## External services and shared responsibilities
 
-Official gpt-4.1-mini model docs list 0.40/M input tokens, 0.10/M cached input and 1.60/M output. At 1,000 uncached input + 200 output tokens, one call costs 0.00072: **USD 1.44** or **144** for 2,000/200,000 calls. The actual production model override is unverified. No free calls/cache/tool use assumed. [Model/pricing](https://developers.openai.com/api/docs/models/gpt-4.1-mini).
+GPT-6 Luna Standard rates are USD 0.10/M input, 0.01/M cached input, up to 0.125/M cache writes and 0.50/M output including invisible tokens. At 1,000 uncached input + 200 output tokens, one call costs USD 0.00020: USD 0.40 or 40 for 2,000/200,000 calls. These are arithmetic scenarios subject to admission, not spending targets. Conservative reservation, output cap and explicit reasoning are documented in [production configuration](production.md). [Pricing](https://developers.openai.com/api/docs/pricing).
 
 Resend contact/newsletters, R2 knowledge/media/subscribers, Firebase, domain and portfolio-cloud **continue**. Their plans/bills were not audited and are not treated as zero. Each subscription still creates cloud HTTP/Lambda/R2 usage. The new API needs artifact reads, not duplicated publication/storage. Release idempotency remains cloud-owned.
 

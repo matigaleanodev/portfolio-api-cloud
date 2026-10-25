@@ -20,6 +20,15 @@ on:
         type: string
         required: true
 
+      public_access:
+        description: Exposicion publica tras validar candidata
+        type: boolean
+        default: false
+      cors_origin:
+        description: Origenes HTTPS permitidos separados por coma
+        type: string
+        default: ''
+
 permissions:
   contents: read
 
@@ -43,6 +52,8 @@ jobs:
       actions: read
       id-token: write
     env:
+      PUBLIC_ACCESS: ${{ inputs.public_access }}
+      CORS_ORIGIN: ${{ inputs.cors_origin }}
       ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id }}
       ARTIFACT_ID: ${{ inputs.artifact_id }}
       REVIEWED_REVISION: ${{ inputs.reviewed_revision }}
@@ -110,7 +121,7 @@ jobs:
           assert review['nodeVersion'] == 'v24.22.1'
           template = json.loads(Path('.tmp/recovered/cdk.out/' + stack['properties']['templateFile']).read_text())
           functions = [r['Properties'] for r in template['Resources'].values() if r['Type'] == 'AWS::Lambda::Function']
-          assert len(functions) == 1 and functions[0]['Handler'] == 'dist/validation/handler.handler', 'Se requiere el asset de validación'
+          assert len(functions) == 1 and functions[0]['Handler'] == 'dist/handler.handler', 'Se requiere el paquete productivo sin dobles'
           assets = json.loads(Path('.tmp/recovered/cdk.out/PortfolioApiCloudTest.assets.json').read_text())
           assert not assets.get('dockerImages')
           assert assets['files']
@@ -149,7 +160,7 @@ jobs:
         run: |
           set -euo pipefail
           change_set="portfolio-api-cloud-test-${REVIEWED_REVISION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          npm run cdk -- deploy PortfolioApiCloudTest --app .tmp/recovered/cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never --parameters RuntimePermissionsBoundaryArn=arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary --parameters "RuntimeSecretArn=$TEST_RUNTIME_SECRET_ARN"
+          npm run cdk -- deploy PortfolioApiCloudTest --app .tmp/recovered/cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never --parameters RuntimePermissionsBoundaryArn=arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary --parameters "RuntimeSecretArn=$TEST_RUNTIME_SECRET_ARN" --parameters "PublicAccess=$PUBLIC_ACCESS" --parameters "CorsOrigin=$CORS_ORIGIN"
           echo "Changeset test preparado: $change_set. No se ejecutó el despliegue." >> "$GITHUB_STEP_SUMMARY"
 
       - uses: aws-actions/configure-aws-credentials@v6.2.3

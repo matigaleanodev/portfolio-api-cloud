@@ -6,9 +6,9 @@ export const CLOUD_KNOWLEDGE_ITEMS: readonly KnowledgeContextItem[] = [
     sourceId: 'cloud-ecosystem',
     title: 'Arquitectura del ecosistema portfolio',
     text: [
-      'El ecosistema actual está dividido en tres repositorios con responsabilidades claras.',
+      'El ecosistema actual está dividido en cuatro repositorios con responsabilidades claras.',
       '`portfolio` concentra frontend estático, contenido y prerender.',
-      '`portfolio-api` conserva contacto, chatbot y la fachada HTTP de suscripciones.',
+      '`portfolio-api-cloud` implementa contacto, chatbot y la fachada HTTP de suscripciones con TypeScript, Lambda y HTTP API Gateway. `portfolio-api` conserva la implementación NestJS en EC2 para recuperación.',
       '`portfolio-cloud` concentra automatización serverless, OpenGraph, suscripciones y procesamiento post-publicación.',
     ].join(' '),
     tags: ['cloud', 'architecture', 'portfolio', 'portfolio-cloud', 'serverless'],
@@ -50,7 +50,7 @@ export const CLOUD_KNOWLEDGE_ITEMS: readonly KnowledgeContextItem[] = [
     sourceId: 'cloud-operational-criteria',
     title: 'Criterio técnico cloud y deploy',
     text: [
-      'El backend principal sigue desplegado en EC2 con Docker por simplicidad operativa.',
+      'La API alternativa usa una Lambda ARM64, DynamoDB para cuotas compartidas y Secrets Manager; la implementación NestJS y EC2 se conservan para recuperación.',
       'La automatización nueva del blog se mueve a AWS Lambda y servicios event-driven porque encaja mejor con tareas discretas como procesar releases, generar assets y notificar.',
       'La separación busca balancear pragmatismo, costo y claridad de responsabilidades.',
     ].join(' '),

@@ -183,14 +183,18 @@ const chat = createChat(
     chatCalls++;
     assert.equal(url, 'https://api.openai.com/v1/responses');
     const payload = JSON.parse(options.body);
-    assert.equal(payload.model, 'gpt-4.1-mini');
+    assert.equal(payload.model, 'gpt-6-luna');
     assert.ok(payload.input[0].content.includes('Alojamientos de prueba.'));
     return new Response(
       JSON.stringify({
+        status: 'completed',
+        model: 'gpt-6-luna',
         output: [
           {
+            type: 'message',
             content: [
               {
+                type: 'output_text',
                 text: JSON.stringify({
                   answer: 'Respuesta de prueba',
                   suggestedQuestions: ['Primera', 'Segunda'],
@@ -273,5 +277,5 @@ const packagedKnowledge = await new ChatKnowledgeRepository(
 ).getKnowledge();
 assert.ok(packagedKnowledge.projects.some((project) => project.slug === 'foodly-notes'));
 assert.ok(packagedKnowledge.projects.some((project) => project.slug === 'modo-playa'));
-assert.deepEqual(packagedKnowledge.posts, []);
+assert.ok(packagedKnowledge.posts.length > 0);
 console.log('Fallback real versionado, integridad y lectura en frío verificados desde el paquete.');

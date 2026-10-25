@@ -51,10 +51,14 @@ function modelRequest() {
           String(url).endsWith('/input_tokens')
             ? { input_tokens: 100 }
             : {
+                status: 'completed',
+                model: 'gpt-6-luna',
                 output: [
                   {
+                    type: 'message',
                     content: [
                       {
+                        type: 'output_text',
                         text: JSON.stringify({
                           answer: 'Respuesta de IA simulada',
                           suggestedQuestions: [],
@@ -122,7 +126,7 @@ test('Dado almacenamiento caído o conflicto persistente, cuando se solicita cuo
 });
 test('Dado un presupuesto GLOBAL, cuando veinte personas reservan en paralelo, entonces todas comparten exactamente el mismo contador monetario', async () => {
   const store = new SimulatedControlStore();
-  const budget = 1_040_000;
+  const budget = 325_000;
   const admission = createAiAdmission(store, secret, budget);
   const results = await Promise.all(
     Array.from({ length: 20 }, (_, index) =>
@@ -156,7 +160,7 @@ test('Dada medianoche argentina, cuando cambia el día, entonces renueva el pres
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-10-25T02:59:59Z'));
   const store = new SimulatedControlStore();
-  const admission = createAiAdmission(store, secret, 2000);
+  const admission = createAiAdmission(store, secret, 625);
   expect(await within('ip', () => admission.reserve(1, 1))).toBe(true);
   expect(await within('other', () => admission.reserve(1, 1))).toBe(false);
   vi.setSystemTime(new Date('2026-10-25T03:00:00Z'));
@@ -182,7 +186,7 @@ test.each([
 );
 test('Dada reserva confirmada o de resultado ambiguo, cuando no llega respuesta del proveedor, entonces no se libera presupuesto', async () => {
   const store = new SimulatedControlStore();
-  const admission = createAiAdmission(store, secret, 2000);
+  const admission = createAiAdmission(store, secret, 625);
   expect(await within('ip', () => admission.reserve(1, 1))).toBe(true);
   expect(await within('other', () => admission.reserve(1, 1))).toBe(false);
   store.unavailable = true;
@@ -273,7 +277,7 @@ test('Dado el handler administrado, cuando llega una FAQ o se agota la sesión, 
 test('Dadas dos composiciones administradas, cuando cambia la IP pero se agota el presupuesto GLOBAL, entonces ambas dejan de generar', async () => {
   const store = new SimulatedControlStore();
   const request = modelRequest();
-  const config = { ...runtimeSecret(), AI_DAILY_BUDGET_MICROUSD: '520' };
+  const config = { ...runtimeSecret(), AI_DAILY_BUDGET_MICROUSD: '313' };
   const deps = { store, request, readSecret: async () => JSON.stringify(config) };
   const first = createManagedHandler(managedEnvironment, deps);
   const second = createManagedHandler(managedEnvironment, deps);
@@ -281,7 +285,7 @@ test('Dadas dos composiciones administradas, cuando cambia la IP pero se agota e
   expect(
     JSON.parse((await second(managedEvent(undefined, '192.0.2.99', 'new-person'))).body!).source,
   ).toBe('fallback');
-  expect(request).toHaveBeenCalledTimes(2);
+  expect(request).toHaveBeenCalledTimes(3);
 });
 test('Dado un ingress desconocido o IP inválida, cuando llega un evento, entonces no carga secretos ni proveedores', async () => {
   const readSecret = vi.fn();
@@ -420,7 +424,7 @@ test('Dada caché IA, cuando se reutiliza una respuesta, entonces consume cupo d
     expect(JSON.parse((await handler(managedEvent())).body!).source).toBe('ai');
   expect(JSON.parse((await handler(managedEvent())).body!).source).toBe('fallback');
   expect(request).toHaveBeenCalledTimes(2);
-  expect(store.reservations.map((reservation) => reservation.cost)).toEqual([520000, 0, 0, 0, 0]);
+  expect(store.reservations.map((reservation) => reservation.cost)).toEqual([312_500, 0, 0, 0, 0]);
 });
 test('Dada IA deshabilitada por configuración, cuando se pregunta por el perfil o proyectos, entonces mantiene FAQ y contacto sin usar el proveedor', async () => {
   const store = new SimulatedControlStore();

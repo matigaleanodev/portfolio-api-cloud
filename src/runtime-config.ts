@@ -44,9 +44,8 @@ export function validateRuntimeSecret(raw: string): RuntimeEnvironment {
       throw new Error('Invalid R2 endpoint');
   }
   if (env.OPENAI_API_KEY) {
-    const model = env.OPENAI_CHAT_MODEL ?? 'gpt-4.1-mini-2025-04-14';
-    if (!['gpt-4.1-mini', 'gpt-4.1-mini-2025-04-14'].includes(model))
-      throw new Error('Unpriced AI model');
+    const model = env.OPENAI_CHAT_MODEL ?? 'gpt-6-luna';
+    if (model !== 'gpt-6-luna') throw new Error('Unpriced AI model');
     const budget = Number(env.AI_DAILY_BUDGET_MICROUSD);
     if (
       !/^\d+$/.test(env.AI_DAILY_BUDGET_MICROUSD ?? '') ||

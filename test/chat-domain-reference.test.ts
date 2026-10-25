@@ -53,10 +53,14 @@ for (const scenario of reference.cases) {
         requests.push({ url: String(url), body: JSON.parse(options?.body as string) });
         return new Response(
           JSON.stringify({
+            status: 'completed',
+            model: 'gpt-6-luna',
             output: [
               {
+                type: 'message',
                 content: [
                   {
+                    type: 'output_text',
                     text: JSON.stringify({
                       answer: 'Respuesta simulada',
                       suggestedQuestions: [' Primera ', 'primera', 'Segunda', 'Tercera'],
@@ -94,10 +98,30 @@ for (const scenario of reference.cases) {
         expect(await service.reply(scenario.dto)).toEqual(expected);
         expect(repository.getKnowledge).toHaveBeenCalledTimes(scenario.reads);
         expect(requests).toEqual(
-          withCurrentContent(scenario.requests).map((entry) => ({
-            ...entry,
-            body: { ...(entry.body as object), store: false, service_tier: 'default' },
-          })),
+          withCurrentContent(scenario.requests).map((entry) => {
+            const previous = entry.body as { input: Array<{ role: string; content: string }> };
+            return {
+              ...entry,
+              body: Object.fromEntries(
+                Object.entries({
+                  ...(entry.body as object),
+                  model: 'gpt-6-luna',
+                  reasoning: { effort: 'none' },
+                  max_output_tokens: 600,
+                  input: previous.input.map((item) =>
+                    item.role === 'system'
+                      ? {
+                          ...item,
+                          content: expect.stringContaining('Hechos verificados del portfolio'),
+                        }
+                      : item,
+                  ),
+                  store: false,
+                  service_tier: 'default',
+                }).filter(([key]) => key !== 'temperature'),
+              ),
+            };
+          }),
         );
       }
     },
@@ -114,7 +138,7 @@ for (const [name, module] of Object.entries(modules)) {
   test(
     'Dado el contenido de ' +
       name +
-      ', cuando se calcula su hash, entonces conserva los valores del SHA auditado salvo la ubicación y el contacto actualizados',
+      ', cuando se calcula su hash, entonces conserva los valores del SHA auditado salvo ubicación, contacto y contexto cloud renovados',
     () => {
       const sorted = Object.fromEntries(
         Object.entries(module).sort(([left], [right]) => left.localeCompare(right)),
@@ -141,7 +165,11 @@ for (const [name, module] of Object.entries(modules)) {
         normalized = normalized.replaceAll(currentContact, originalProfileContact);
       }
       const hash = createHash('sha256').update(normalized).digest('hex');
-      expect(hash).toBe(reference.content[name]);
+      expect(hash).toBe(
+        name === 'knowledge/cloud.knowledge'
+          ? '26729dc5db46c526059130841ce0ebef5e4196e5fedf9bb7d6205e811a1ac305'
+          : reference.content[name],
+      );
     },
   );
 }
