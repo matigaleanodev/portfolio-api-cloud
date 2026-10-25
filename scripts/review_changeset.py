@@ -63,8 +63,8 @@ def validate(change, stack_data, template, stack, changeset, kind):
             raise ValueError('El control compartido no se elimina ni reemplaza')
     if kind=='application':
         functions=[v['Properties'] for v in template['Resources'].values() if v['Type']=='AWS::Lambda::Function']
-        if len(functions)!=1 or functions[0]['FunctionName']!='portfolio-api-cloud-test' or functions[0]['Handler']!='dist/validation/handler.handler':
-            raise ValueError('La primera instalación requiere el paquete de validación')
+        if len(functions)!=1 or functions[0]['FunctionName']!='portfolio-api-cloud-test' or functions[0]['Handler'] not in ('dist/validation/handler.handler', 'dist/handler.handler'):
+            raise ValueError('Paquete de aplicación inesperado')
     return {key:change[key] for key in ('StackId','StackName','ChangeSetId','ChangeSetName','Changes','Parameters','Capabilities') if key in change}
 
 def aws(*args):

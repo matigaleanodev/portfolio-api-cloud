@@ -17,7 +17,8 @@ export class OpenAiService {
     private readonly admission?: AiAdmission,
   ) {
     this.apiKey = env.OPENAI_API_KEY;
-    this.model = env.OPENAI_CHAT_MODEL ?? 'gpt-4.1-mini';
+    this.model = env.OPENAI_CHAT_MODEL ?? 'gpt-6-luna';
+    if (this.model !== 'gpt-6-luna') throw new Error('Unsupported AI model');
   }
   private readonly responseCache = new Map<
     string,
@@ -36,7 +37,8 @@ export class OpenAiService {
       usage?: {
         input_tokens?: number;
         output_tokens?: number;
-        input_tokens_details?: { cached_tokens?: number };
+        input_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number };
+        output_tokens_details?: { reasoning_tokens?: number };
       },
     ): ChatCompletionResult | null => {
       recordChatMetric({
@@ -46,6 +48,8 @@ export class OpenAiService {
         inputTokens: usage?.input_tokens,
         outputTokens: usage?.output_tokens,
         cachedInputTokens: usage?.input_tokens_details?.cached_tokens,
+        cacheWriteTokens: usage?.input_tokens_details?.cache_write_tokens,
+        reasoningTokens: usage?.output_tokens_details?.reasoning_tokens,
       });
       return result;
     };
@@ -97,8 +101,8 @@ export class OpenAiService {
     try {
       const body = {
         model: this.model,
-        temperature: 0.3,
-        max_output_tokens: 300,
+        reasoning: { effort: 'none' },
+        max_output_tokens: 600,
         text: { format: { type: 'json_object' } },
         input: [
           {
@@ -122,7 +126,12 @@ export class OpenAiService {
             redirect: 'error',
             headers,
             signal,
-            body: JSON.stringify({ model: body.model, input: body.input, text: body.text }),
+            body: JSON.stringify({
+              model: body.model,
+              input: body.input,
+              text: body.text,
+              reasoning: body.reasoning,
+            }),
           });
           if (!counted.ok) return null;
           const usage: unknown = await counted.json();
@@ -132,6 +141,7 @@ export class OpenAiService {
             !('input_tokens' in usage) ||
             !Number.isSafeInteger(usage.input_tokens) ||
             Number(usage.input_tokens) < 0 ||
+            Number(usage.input_tokens) > 272_000 ||
             !(await this.admission.reserve(
               Number(usage.input_tokens),
               body.max_output_tokens,
@@ -156,14 +166,24 @@ export class OpenAiService {
       }
 
       const data = (await abortable(signal, () => response.json())) as {
-        output?: Array<{ content?: Array<{ text?: string }> }>;
+        status?: string;
+        model?: string;
+        output?: Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }>;
         usage?: {
           input_tokens?: number;
           output_tokens?: number;
-          input_tokens_details?: { cached_tokens?: number };
+          input_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number };
+          output_tokens_details?: { reasoning_tokens?: number };
         };
       };
-      const rawContent = data.output?.[0]?.content?.[0]?.text;
+      if (data.status !== 'completed' || data.model !== this.model)
+        return finish(null, 'invalid_response', data.usage);
+      const rawContent = data.output
+        ?.filter((item) => item.type === 'message')
+        .flatMap((item) => item.content ?? [])
+        .filter((item) => item.type === 'output_text')
+        .map((item) => item.text ?? '')
+        .join('');
       if (!rawContent) {
         return finish(null, 'invalid_response', data.usage);
       }

@@ -1,6 +1,8 @@
 import { Alarm, ComparisonOperator, TreatMissingData } from 'aws-cdk-lib/aws-cloudwatch';
 import { AttributeType, BillingMode, Table } from 'aws-cdk-lib/aws-dynamodb';
 import {
+  CfnCondition,
+  Fn,
   CfnOutput,
   CfnParameter,
   DefaultStackSynthesizer,
@@ -8,7 +10,13 @@ import {
   RemovalPolicy,
   Stack,
 } from 'aws-cdk-lib';
-import { HttpApi, HttpMethod, HttpNoneAuthorizer, HttpStage } from 'aws-cdk-lib/aws-apigatewayv2';
+import {
+  CfnRoute,
+  HttpApi,
+  HttpMethod,
+  HttpNoneAuthorizer,
+  HttpStage,
+} from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpIamAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { ManagedPolicy, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
@@ -48,6 +56,16 @@ export class PortfolioApiStack extends Stack {
       type: 'String',
       default: '',
       description: 'Origen de pruebas; CORS se deshabilita si no se define.',
+    });
+
+    const publicAccess = new CfnParameter(this, 'PublicAccess', {
+      type: 'String',
+      default: 'false',
+      allowedValues: ['false', 'true'],
+      description: 'Public business routes only after candidate validation.',
+    });
+    const publicCondition = new CfnCondition(this, 'PublicIngress', {
+      expression: Fn.conditionEquals(publicAccess.valueAsString, 'true'),
     });
 
     const secretArn = new CfnParameter(this, 'RuntimeSecretArn', {
@@ -116,7 +134,8 @@ export class PortfolioApiStack extends Stack {
       logGroup: logs,
       memorySize: 512,
       timeout: Duration.seconds(28),
-      reservedConcurrentExecutions: scenario ? undefined : 5,
+      // Cuota regional 10: no hay reserva compatible sin ampliar la cuota a más de 100.
+      // El gateway y DynamoDB limitan el ingreso y el gasto compartido.
       environment: {
         NODE_ENV: 'production',
         CORS_ORIGIN: cors.valueAsString,
@@ -154,6 +173,12 @@ export class PortfolioApiStack extends Stack {
       defaultIntegration: integration,
       defaultAuthorizer: new HttpIamAuthorizer(),
     });
+
+    const defaultRoute = api.node.findChild('DefaultRoute').node.defaultChild as CfnRoute;
+    defaultRoute.addPropertyOverride(
+      'AuthorizationType',
+      Fn.conditionIf(publicCondition.logicalId, 'NONE', 'AWS_IAM'),
+    );
 
     handler.addEnvironment('TRUSTED_API_ID', api.apiId);
 

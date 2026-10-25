@@ -48,7 +48,7 @@ La espera OpenAI se paga dos veces en conceptos diferentes: tokens al proveedor 
 
 ## Proveedores y responsabilidades compartidas
 
-Para gpt-4.1-mini default, la documentación oficial consultada lista USD 0,40/M tokens input, 0,10/M cached input y 1,60/M output. Con 1.000 tokens entrada + 200 salida sin descuento, cada llamada cuesta 0,00072: **USD 1,44** o **144** para 2.000/200.000 llamadas. No se validó el override productivo de modelo. No se asumen hits de caché, herramientas ni llamadas gratuitas. [Modelo/precio](https://developers.openai.com/api/docs/models/gpt-4.1-mini).
+GPT-6 Luna usa tarifas Standard de USD 0,10/M entrada, 0,01/M entrada cacheada, hasta 0,125/M escritura y 0,50/M salida, incluidos tokens no visibles. Con 1.000 tokens entrada + 200 salida sin caché, cada llamada cuesta USD 0,00020: USD 0,40 o 40 para 2.000/200.000 llamadas. Son escenarios aritméticos sujetos a admisión, no objetivos de gasto. Reserva conservadora, límite de salida y reasoning explícito en [configuración productiva](production.es.md). [Tarifas](https://developers.openai.com/api/docs/pricing).
 
 Resend (contacto y newsletters), R2 (knowledge/medios/suscriptores), Firebase, dominio y `portfolio-cloud` **continúan**. No se auditaron sus planes/facturas ni se cuentan como cero. El upstream cloud añade sus propias invocaciones HTTP/Lambda/R2 por suscripción. El API nuevo solo necesita lectura de knowledge, no duplicar su publicación o storage. Uso e idempotencia de publicación permanecen en cloud.
 

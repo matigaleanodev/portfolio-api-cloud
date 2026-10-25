@@ -28,6 +28,8 @@ type ChatMetric =
       inputTokens?: number | undefined;
       outputTokens?: number | undefined;
       cachedInputTokens?: number | undefined;
+      cacheWriteTokens?: number | undefined;
+      reasoningTokens?: number | undefined;
     };
 
 /** Eventos acotados para agregación en logs, sin texto, identidad ni etiquetas del visitante. */
@@ -38,7 +40,13 @@ export function recordChatMetric(metric: ChatMetric): void {
     durationMs: Math.max(0, Math.round(metric.durationMs)),
   };
   if (metric.event === 'chat_provider') {
-    for (const key of ['inputTokens', 'outputTokens', 'cachedInputTokens'] as const) {
+    for (const key of [
+      'inputTokens',
+      'outputTokens',
+      'cachedInputTokens',
+      'cacheWriteTokens',
+      'reasoningTokens',
+    ] as const) {
       const value = metric[key];
       if (typeof value === 'number' && Number.isFinite(value) && value >= 0) entry[key] = value;
     }

@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ChatKnowledgeRepository } from '../src/chat/chat-knowledge.repository.js';
 import { getChatKnowledgeR2Config } from '../src/chat/chat.config.js';
-import { CHAT_FAQ_ITEMS } from '../src/chat/content/chat-faq.data.js';
 let directory: string;
 const config = getChatKnowledgeR2Config({
   R2_ENDPOINT: 'https://r2.example.invalid',
@@ -33,22 +32,28 @@ async function writeLocal(value: unknown) {
 const remote = (payload: unknown) => ({
   Body: { transformToString: async () => JSON.stringify(payload) },
 });
-test('Dado el fallback versionado, cuando se comprueba su procedencia, entonces contiene solo hechos curados del SHA fijado y checksum reproducible', async () => {
+test('Dado el fallback editorial versionado, cuando se comprueba procedencia, entonces coincide con el objeto canónico y excluye posts futuros', async () => {
   const envelope = await snapshot();
   const provenance = JSON.parse(await readFile('fallback/provenance.json', 'utf8'));
   expect(envelope.contentHash).toBe(
     'sha256:' + createHash('sha256').update(JSON.stringify(envelope.knowledge)).digest('hex'),
   );
   expect(provenance.contentHash).toBe(envelope.contentHash);
-  expect(provenance.sourceCommit).toBe('a0ef80fa9f82d1cea5a31425a63ab0a344338c56');
-  expect(provenance.sourceSha256).toMatch(/^[a-f0-9]{64}$/);
-  expect(envelope.knowledge.posts).toEqual([]);
-  const curated = CHAT_FAQ_ITEMS.find(
-    (item) => item.question === '¿Qué proyecto destacás?',
-  )!.answer.toLowerCase();
-  for (const project of envelope.knowledge.projects)
-    expect(curated).toContain(project.excerpt.replace(/\.$/, '').toLowerCase());
+  expect(provenance.sourceRepository).toBe(envelope.source.repository);
+  expect(provenance.sourcePath).toBe(envelope.source.artifactPath);
+  expect(provenance.sourceSha256).toBe(
+    createHash('sha256').update(JSON.stringify(envelope)).digest('hex'),
+  );
+  expect(envelope.knowledge.projects.map((project: { slug: string }) => project.slug)).toEqual([
+    'foodly-notes',
+    'modo-playa',
+    'portfolio',
+  ]);
+  expect(envelope.knowledge.posts.length).toBeGreaterThan(0);
+  for (const post of envelope.knowledge.posts)
+    expect(Date.parse(post.date)).toBeLessThanOrEqual(Date.parse(envelope.generatedAt));
 });
+
 test('Dado R2 caído y paquete frío, cuando se solicita conocimiento, entonces usa el fallback real empaquetado sin un directorio hermano', async () => {
   const envelope = await snapshot();
   await writeLocal(envelope);

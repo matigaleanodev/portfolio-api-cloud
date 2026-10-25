@@ -2,80 +2,50 @@
 
 [Español](README.es.md)
 
-**Current increment:** [first installation with doubles and Actions delivery](Docs/managed-validation.md), deployed and verified on AWS with simulated providers. [First private deployment result](Docs/first-private-deploy.md). Design and audit sections retain their earlier context.
+![Node.js 24](https://img.shields.io/badge/Node.js-24-5FA04E?logo=nodedotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white) ![AWS Lambda](https://img.shields.io/badge/AWS-Lambda-FF9900) ![AWS CDK](https://img.shields.io/badge/IaC-AWS_CDK-FF9900) ![Vitest](https://img.shields.io/badge/tests-Vitest-6E9F18?logo=vitest&logoColor=white) ![MIT](https://img.shields.io/badge/license-MIT-blue)
 
-**Current phase 4 status:** [runtime controls](Docs/runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
+Serverless API for my portfolio, written in TypeScript with AWS Lambda handlers. It handles contact, chat and the subscriptions facade while preserving the NestJS implementation contracts.
 
-Alternative implementation of Portfolio's public API using TypeScript handlers. Serverless migration is decided; the original NestJS API remains an independent implementation.
+## Stack and architecture
 
-## Current status
+Node.js 24, strict TypeScript and ESM; HTTP API Gateway v2, ARM64 Lambda, DynamoDB for shared quotas and Secrets Manager for configuration. AWS CDK infrastructure and GitHub Actions delivery use OIDC, verified artifacts and reviewed change sets. Vitest covers contracts and runtime controls.
 
-Local application with explicit composition and HTTP API v2 events: `GET /api/health` → 200 `{"status":"ok"}` and `POST /api/contact` → empty 204, with validation, honeypot, a mocked provider in tests and local 5/h/IP quota. POST and DELETE /api/subscriptions return 200 with email normalization, an HTTP provider and independent local 10/h/IP quotas. GET /api/chat/starters returns 200 and POST /api/chat returns 201 with FAQ/AI/fallback, history and independent 20/min/IP quotas. All six contracts have local coverage and a managed smoke check on the test stack with simulated providers. The stack is deployed with IAM access.
+Contact uses Resend. Chat combines local FAQ, editorial knowledge from Cloudflare R2 and OpenAI Responses with GPT-6 Luna as its only model. Subscriptions delegate to `portfolio-cloud`, which owns data, notifications and editorial publication. The Angular frontend, static content and Firebase Hosting belong to `portfolio`.
 
-The comparison prototype was discarded. Its [results](Docs/local-runtime.md) remain historical evidence, not measurements of this foundation, AWS cold starts or proof of monthly savings.
+## Endpoints
+
+| Method | Path                 | Response                   |
+| ------ | -------------------- | -------------------------- |
+| GET    | `/api/health`        | 200 · `{ "status": "ok" }` |
+| POST   | `/api/contact`       | 204                        |
+| GET    | `/api/chat/starters` | 200                        |
+| POST   | `/api/chat`          | 201                        |
+| POST   | `/api/subscriptions` | 200                        |
+| DELETE | `/api/subscriptions` | 200                        |
+
+JSON bodies, DTO validation, origin-based CORS and controlled errors. Contact applies a honeypot and 5/h/IP quota; subscribe and unsubscribe each allow 10/h/IP; chat and starters each allow 20/min/IP. FAQ never invokes AI. AI permits up to five replies per session and origin/day, with a global monetary reservation before generation and controlled behavior on limits or failures.
 
 ## Local development
-
-Ubuntu-26.04 on WSL. Target Node **24.22.1 LTS** (`.nvmrc`), the latest LTS as of 2026-10-25. Verified through isolated execution with no global installations.
 
 ```bash
 npm ci --ignore-scripts
 npm run check
 ```
 
-`check` validates formatting and runs strict types, ESM build, network-blocked tests, an out-of-checkout smoke test and document validation. Verification commands do not fix sources. The package uses `dist/handler.js`, export `handler`, and requires `package.json` with `type: module`. Runtime requires production `node_modules` from the lock and `LICENSE`. It does not load `.env`; only the Lambda entry reads environment for CORS and contact (`RESEND_API_KEY`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`). Health remains available without these keys. [Contract, provenance and limits](Docs/contact.md).
+Node 24.22.1 as pinned by `.nvmrc`, and Python 3 for documentation and delivery validation. `check` verifies formatting, types, tests, package, CDK synthesis without lookups and documentation links. Tests block network access and use simulated providers.
 
-[Test stack and prerequisites](Docs/infrastructure.md) · [Spanish test cases](Docs/testing.md). Vitest runs 617 cases (529 application, 69 tooling, 19 infrastructure).
-
-Readable formatting with Prettier **3.9.10** and explicit `.prettierrc.json` rules: two spaces, single quotes, semicolons, trailing commas and an advisory 100-column print width. Scripts separate preparation, execution and checks with blank lines preserved by Prettier. `npm run format` writes changes; `npm run format:check` checks without writing and is required in CI. `.gitignore` and `.prettierignore` exclude private/generated files, the lockfile and the pinned historical fixture.
-
-## Scope
-
-- Six planned contracts: health, contact, starters, chat and subscribe/unsubscribe.
-- portfolio retains frontend, static editorial content and hosting.
-- portfolio-cloud retains subscribers, notifications, OG, releases and knowledge publication.
-- Replacing this API's implementation preserves HTTP and behavior; URL/routing may require configuration.
-- All six contracts are implemented; full compatibility requires hardening and managed integration.
+The production package exports `dist/handler.handler`; it includes production dependencies and the versioned editorial fallback. Configuration loads from Secrets Manager, with no `.env` in Lambda.
 
 ## Documentation
 
-1. [Implemented foundation, tests and provenance](Docs/application.md)
-2. [Audit and contracts](Docs/audit.md)
-3. [Architecture](Docs/architecture.md)
-4. [Hypothetical costs and auxiliary services](Docs/costs.md)
-5. [Migration and recovery](Docs/migration.md)
-6. [Decisions](Docs/decisions.md)
-7. [CI/CD](Docs/ci-cd.md)
-8. [Runtime comparison](Docs/runtime-evaluation.md)
-9. [Historical results](Docs/local-runtime.md)
-10. [Experiment evidence](Docs/runtime-evidence.md)
-11. [Branch protection](Docs/branch-protection.md)
-12. [Sources](Docs/sources.md)
-
-## Transition
-
-All three current APIs remain operational throughout migration. After all three migrate, stabilize and pass recovery validation, EC2 will be stopped with its instance and recoverable backup retained. Retained resources belong in total cost.
-
-Refreshing bot profile/project data remains the final step before production deployment. main/dev require PRs, CI and workflow merges. [Integration attributed to matigaleanodev](Docs/integration.md) uses a user credential while retaining mandatory PRs and CI. TypeScript CDK is selected; test roles/bootstrap are installed; traffic switching remains pending.
+- [Architecture](Docs/architecture.md)
+- [HTTP contracts](Docs/audit.md)
+- [Contact](Docs/contact.md) · [Chat](Docs/chat.md) · [Subscriptions](Docs/subscriptions.md)
+- [Runtime controls](Docs/runtime-hardening.md)
+- [Delivery and recovery](Docs/deployment-design.md)
+- [Production configuration](Docs/production.md)
+- [Technical decisions](Docs/decisions.md)
 
 ## License
 
-[MIT](LICENSE). LICENSE covers the application's own implementation and Matias Galeano's authorship; no third-party attribution file is maintained. Dependencies retain their licenses within their packages.
-
-Subscriptions uses PORTFOLIO_CLOUD_API_URL, read only when invoking that slice. [Contracts, configuration, errors and provenance](Docs/subscriptions.md). Missing configuration yields controlled 500; health remains available.
-
-[Starters/chat: contracts, configuration, references, differences and provenance](Docs/chat.md). New dependencies: S3 SDK 3.1156.0 for R2 and reflect-metadata 0.2.2 for nested history. Profile/projects/prompts retain audited SHA content; editorial refresh remains pending.
-
-Chat professional location is corrected specifically to Posadas, Misiones, Argentina, with an explicit difference from the pinned SHA. FAQ and context also include the professional email contacto@matiasgaleano.dev from one shared fact. Other content retains its previous scope; general editorial renewal remains immediately before production. [Details and historical references](Docs/chat.md).
-
-Phase 4 implements shared control for the managed handler. The current suite has 617 tests: 529 application, 69 tooling and 19 infrastructure. [Configuration, global budget, sessions, fallback and validation limits](Docs/runtime-hardening.md).
-
-## Reviewable infrastructure and delivery
-
-Phase 5 is completed as local design; phase 6 adds assembly retention and plan tests. [Trust, PassRole, boundaries, minimum bootstrap and recovery](Docs/deployment-design.md). The first private AWS validation is complete with simulated providers.
-
-[Phases 6–10 preparation: Git controls, AWS audit, reviewable policies/bootstrap and runbook](Docs/test-operations.md). Design runbook; current results are recorded in the first private deployment log.
-
-## Versions
-
-[0.1.0 — first revision for main initialization](Docs/releases/v0.1.0.md). Historical evidence for the original release; the first private deployment uses a later artifact.
+[MIT](LICENSE) · Matias Galeano.
