@@ -149,6 +149,25 @@ test('Dadas identidades de arranque, cuando se inspeccionan las policies, entonc
     expect(role.Policies[0].PolicyDocument).toEqual(
       resources[name + 'Boundary'].Properties.PolicyDocument,
     );
+    if (name !== 'FoundationCloudFormation') {
+      const environment = name === 'FoundationPlan' ? 'test-foundation-plan' : 'test-execute';
+      expect(role.AssumeRolePolicyDocument.Statement).toEqual([
+        {
+          Effect: 'Allow',
+          Action: 'sts:AssumeRoleWithWebIdentity',
+          Principal: {
+            Federated:
+              'arn:aws:iam::650387442642:oidc-provider/token.actions.githubusercontent.com',
+          },
+          Condition: {
+            StringEquals: {
+              'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+              'token.actions.githubusercontent.com:sub': `repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186:environment:${environment}`,
+            },
+          },
+        },
+      ]);
+    }
   }
   const policy = JSON.stringify(
     resources.FoundationCloudFormationBoundary.Properties.PolicyDocument,

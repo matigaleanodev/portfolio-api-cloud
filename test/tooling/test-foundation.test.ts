@@ -28,7 +28,7 @@ test('Dados roles externos, cuando se revisa la delegación, entonces cada ident
   expect(oidc.Condition.StringEquals).toEqual({
     'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
     'token.actions.githubusercontent.com:sub':
-      'repo:matigaleanodev/portfolio-api-cloud:environment:test-plan',
+      'repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186:environment:test-plan',
   });
   for (const name of ['CdkDeployRole', 'FilePublishingRole']) {
     expect(resources[name].Properties.AssumeRolePolicyDocument.Statement[0].Principal).toEqual({

@@ -45,7 +45,7 @@ Expected OIDC trust for GitHubDeployRole:
       "Condition": {
         "StringEquals": {
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub": "repo:matigaleanodev/portfolio-api-cloud:environment:test-plan"
+          "token.actions.githubusercontent.com:sub": "repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186:environment:test-plan"
         }
       }
     }
@@ -121,3 +121,9 @@ Traffic recovery must preserve one write destination per request, without POST/D
 ## Subsequent local preparation for phases 6–10
 
 [Test operations](test-operations.md) and the [foundation template](../infra/test-foundation.template.json) materialize policies/boundaries and minimal bootstrap. They include GetEncryptionConfiguration/GetParameters for CLI reads and disable V2 API administration by default. The plan recovers the reviewed artifact by run/digest and checks promotion to main without rebuilding. Observer audit completed; no test resources provisioned. Managed doubles, changeset execution, test recovery and production return remain pending under that runbook.
+
+## Verified OIDC subject
+
+The repository's effective configuration returns `use_immutable_subject=true` and the prefix `repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186`. GitHub includes immutable owner and repository IDs for repositories created after July 15, 2026. Each trust pins this prefix and its exact environment with `StringEquals` and the `sts.amazonaws.com` audience; neither wildcards nor the previous name-only subject are accepted.
+
+The first fictitious-configuration authentication exposed the mismatch: initial access expected the previous subject and STS rejected `AssumeRoleWithWebIdentity` before secret creation. The correction aligns both access trusts and the foundation trust with the emitted identity, preserving policies, boundaries and main-only environments. [Current OIDC format](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims).

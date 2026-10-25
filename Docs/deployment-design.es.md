@@ -45,7 +45,7 @@ Trust OIDC previsto para GitHubDeployRole:
       "Condition": {
         "StringEquals": {
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub": "repo:matigaleanodev/portfolio-api-cloud:environment:test-plan"
+          "token.actions.githubusercontent.com:sub": "repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186:environment:test-plan"
         }
       }
     }
@@ -121,3 +121,9 @@ La recuperación de tráfico debe mantener un solo destino de escritura por requ
 ## Preparación local posterior de etapas 6–10
 
 [Operación test](test-operations.es.md) y [plantilla de fundación](../infra/test-foundation.template.json) materializan las policies/boundaries y el bootstrap mínimo. Incluyen GetEncryptionConfiguration y GetParameters requeridos por las lecturas de la CLI, así como administración API V2 deshabilitada por defecto. El plan recupera el artifact revisado por run/digest y comprueba promoción a main sin recompilar. Auditoría Observer realizada; no hay recursos test provisionados. Dobles administrados, ejecución del changeset, recuperación test y retorno productivo siguen pendientes según ese runbook.
+
+## Subject OIDC comprobado
+
+La configuración efectiva del repositorio devuelve `use_immutable_subject=true` y el prefijo `repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186`. GitHub incorpora los IDs inmutables del owner y del repositorio en los repos creados después del 15/07/2026. Cada trust fija ese prefijo y su environment exacto mediante `StringEquals`, con audiencia `sts.amazonaws.com`; no se admiten comodines ni el subject anterior basado solo en nombres.
+
+La primera autenticación de configuración ficticia detectó la diferencia: el acceso inicial esperaba el subject anterior y STS rechazó `AssumeRoleWithWebIdentity` antes de crear el secreto. La corrección alinea los dos trusts de acceso y el trust de fundación con la identidad emitida, conservando policies, boundaries y environments restringidos a main. [Formato OIDC vigente](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims).
