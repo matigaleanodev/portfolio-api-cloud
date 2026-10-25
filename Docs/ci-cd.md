@@ -47,7 +47,7 @@ To synchronize main→dev, retain a release/sync-main-to-dev branch based on dev
 
 ## Pending operational setup
 
-The repository uses dev as its default branch; main does not exist yet. The merge environment retains main/dev; the workflow uses user identity after the PR #5 transition. The first execution is tracked in PR #2; configuration alone does not demonstrate a successful merge. The test-plan environment, AWS roles/bootstrap remain pending. Deployment has not been validated end to end. Initial PR #1 integration consumed the temporary dev-only exception described in [branch protection](branch-protection.md).
+dev retains integration. Initial main uses the same dev commit identified by [v0.1.0](releases/v0.1.0.md), after successful CI; subsequent updates retain PR and workflow merge. The merge environment retains main/dev; the workflow uses user identity after the PR #5 transition. The first execution is tracked in PR #2; configuration alone does not demonstrate a successful merge. The test-plan environment, AWS roles/bootstrap remain pending. Deployment has not been validated end to end. Initial PR #1 integration consumed the temporary dev-only exception described in [branch protection](branch-protection.md).
 
 Only feat/, fix/, release/ work branches; codex/ forbidden. main/dev integrate through workflow-merged PRs. Preserve serial execution, scoped job permissions and immutable artifacts/versions. Production remains outside scope.
 

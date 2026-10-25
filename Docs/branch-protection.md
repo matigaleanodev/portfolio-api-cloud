@@ -16,7 +16,7 @@ Branch-name rule queries confirmed main/dev protection, creation blocking for co
 
 ## Initial integration
 
-`dev` was initialized with the root exclusions commit and is the default branch. `main` does not exist yet. [PR #1](https://github.com/matigaleanodev/portfolio-api-cloud/pull/1) integrated documentation and workflow preparation into dev.
+`dev` was initialized with the root exclusions commit and is the default branch. Initial `main` uses the [v0.1.0](releases/v0.1.0.md) revision without changing update rules. [PR #1](https://github.com/matigaleanodev/portfolio-api-cloud/pull/1) integrated documentation and workflow preparation into dev.
 
 Initial integration temporarily removed only dev from the update lock, preserved PR/CI, and restored the original ruleset condition with effective API verification. That exception is consumed and does not define the regular delivery process.
 

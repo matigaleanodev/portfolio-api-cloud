@@ -47,7 +47,7 @@ Para sincronizar main→dev, mantener una rama release/sync-main-to-dev basada e
 
 ## Pendientes operativos
 
-El repositorio tiene dev como rama predeterminada; main todavía no existe. El environment de merge conserva main/dev; el workflow usa identidad de usuario tras la transición del PR #5. La primera ejecución se registra en el PR #2; la configuración por sí sola no demuestra un merge exitoso. Siguen pendientes el environment test-plan, los roles/bootstrap. El despliegue no se validó end-to-end. La integración inicial del PR #1 consumió la excepción temporal limitada a dev descrita en [protección de ramas](branch-protection.es.md).
+dev conserva la integración. La primera main se inicializa en el mismo commit de dev identificado por [v0.1.0](releases/v0.1.0.es.md), después de su CI aprobada; las actualizaciones posteriores mantienen PR y merge por workflow. El environment de merge conserva main/dev; el workflow usa identidad de usuario tras la transición del PR #5. La primera ejecución se registra en el PR #2; la configuración por sí sola no demuestra un merge exitoso. Siguen pendientes el environment test-plan, los roles/bootstrap. El despliegue no se validó end-to-end. La integración inicial del PR #1 consumió la excepción temporal limitada a dev descrita en [protección de ramas](branch-protection.es.md).
 
 Branches: solo feat/, fix/, release/; codex/ prohibido. main/dev se integran por PR fusionado desde workflow. Mantener ejecución serial, permisos por job y artifacts/versiones inmutables. Producción continúa fuera del alcance.
 

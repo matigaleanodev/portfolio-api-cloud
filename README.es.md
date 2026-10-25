@@ -73,3 +73,7 @@ La fase 4 implementa el control compartido del handler administrado. La suite ac
 La etapa 5 se completa como diseño local; la etapa 6 incorpora retención del assembly y pruebas del plan. [Trust, PassRole, boundaries, bootstrap mínimo y recuperación](Docs/deployment-design.es.md). La preparación AWS y la validación administrada siguen pendientes.
 
 [Preparación de etapas 6–10: controles Git, auditoría AWS, policies/bootstrap revisables y runbook](Docs/test-operations.es.md). Sin provisioning ni validación administrada.
+
+## Versiones
+
+[0.1.0 — primera revisión para inicializar main](Docs/releases/v0.1.0.es.md). El despliegue y la validación administrada siguen pendientes.
