@@ -1,5 +1,6 @@
 # Generados y evidencia histórica con hash fijado.
 package-lock.json
 test/contact-reference.json
-
 test/subscriptions-reference.json
+test/chat-reference.json
+test/chat-domain-reference.json

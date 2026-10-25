@@ -1,0 +1,1030 @@
+{
+  "repository": "matigaleanodev/portfolio-api",
+  "commit": "a0ef80fa9f82d1cea5a31425a63ab0a344338c56",
+  "source": "src/chat/chat.dto.ts",
+  "sha256": "a81df32e362a49951d732f35dfcae8d09f5e00e7436d2d15af32805a725ee13a",
+  "versions": {
+    "@nestjs/common": "11.1.13",
+    "class-validator": "0.14.3",
+    "class-transformer": "0.5.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "cases": [
+    {
+      "name": "sin cuerpo",
+      "input": null,
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must be shorter than or equal to 500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      },
+      "absent": true
+    },
+    {
+      "name": "vacío",
+      "input": {},
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must be shorter than or equal to 500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "null",
+      "input": null,
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must be shorter than or equal to 500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "array vacío",
+      "input": [],
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must be shorter than or equal to 500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "array con mensaje",
+      "input": [
+        {
+          "message": "hola"
+        }
+      ],
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "property 0 should not exist",
+          "message must be shorter than or equal to 500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "message string 0",
+      "input": {
+        "message": ""
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must match /\\S/ regular expression"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "message string 1",
+      "input": {
+        "message": " "
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must match /\\S/ regular expression"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "message string 2",
+      "input": {
+        "message": "\n\t"
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must match /\\S/ regular expression"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "message string 3",
+      "input": {
+        "message": "hola"
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola"
+      }
+    },
+    {
+      "name": "message string 4",
+      "input": {
+        "message": " á "
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": " á "
+      }
+    },
+    {
+      "name": "message string 5",
+      "input": {
+        "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+    },
+    {
+      "name": "message string 6",
+      "input": {
+        "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must be shorter than or equal to 500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "message string 7",
+      "input": {
+        "message": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+      }
+    },
+    {
+      "name": "message string 8",
+      "input": {
+        "message": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+      }
+    },
+    {
+      "name": "message tipo 0",
+      "input": {
+        "message": null
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must be shorter than or equal to 500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "message tipo 1",
+      "input": {
+        "message": 10
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must be shorter than or equal to 500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "message tipo 2",
+      "input": {
+        "message": true
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must be shorter than or equal to 500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "message tipo 3",
+      "input": {
+        "message": {}
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must be shorter than or equal to 500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "message tipo 4",
+      "input": {
+        "message": []
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "message must be shorter than or equal to 500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "sessionId 0",
+      "input": {
+        "message": "hola"
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola"
+      }
+    },
+    {
+      "name": "sessionId 1",
+      "input": {
+        "message": "hola",
+        "sessionId": null
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "sessionId": null
+      }
+    },
+    {
+      "name": "sessionId 2",
+      "input": {
+        "message": "hola",
+        "sessionId": ""
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "sessionId": ""
+      }
+    },
+    {
+      "name": "sessionId 3",
+      "input": {
+        "message": "hola",
+        "sessionId": "                                                                                                    "
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "sessionId": "                                                                                                    "
+      }
+    },
+    {
+      "name": "sessionId 4",
+      "input": {
+        "message": "hola",
+        "sessionId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "sessionId must be shorter than or equal to 100 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "sessionId 5",
+      "input": {
+        "message": "hola",
+        "sessionId": 2
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "sessionId must be shorter than or equal to 100 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "sessionId 6",
+      "input": {
+        "message": "hola",
+        "sessionId": {}
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "sessionId must be shorter than or equal to 100 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "sessionId 7",
+      "input": {
+        "message": "hola",
+        "sessionId": []
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "sessionId must be shorter than or equal to 100 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "history 0",
+      "input": {
+        "message": "hola"
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola"
+      }
+    },
+    {
+      "name": "history 1",
+      "input": {
+        "message": "hola",
+        "history": null
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "history": null
+      }
+    },
+    {
+      "name": "history 2",
+      "input": {
+        "message": "hola",
+        "history": []
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "history": []
+      }
+    },
+    {
+      "name": "history 3",
+      "input": {
+        "message": "hola",
+        "history": {}
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history must contain no more than 6 elements"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "history 4",
+      "input": {
+        "message": "hola",
+        "history": "texto"
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history must contain no more than 6 elements"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "history 5",
+      "input": {
+        "message": "hola",
+        "history": 1
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history must contain no more than 6 elements"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "history 6",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "hola"
+          }
+        ]
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "hola"
+          }
+        ]
+      }
+    },
+    {
+      "name": "history 7",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "assistant",
+            "content": "hola"
+          }
+        ]
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "assistant",
+            "content": "hola"
+          }
+        ]
+      }
+    },
+    {
+      "name": "history 8",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "system",
+            "content": "hola"
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.0.role must be one of the following values: user, assistant"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "history 9",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "USER",
+            "content": "hola"
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.0.role must be one of the following values: user, assistant"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "history 10",
+      "input": {
+        "message": "hola",
+        "history": [
+          {}
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.0.role must be one of the following values: user, assistant",
+          "history.0.content must be shorter than or equal to 1500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "history 11",
+      "input": {
+        "message": "hola",
+        "history": [
+          null
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.each value in nested property history must be either object or array"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "history 12",
+      "input": {
+        "message": "hola",
+        "history": [
+          "texto"
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.each value in nested property history must be either object or array"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "history 13",
+      "input": {
+        "message": "hola",
+        "history": [
+          12
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.each value in nested property history must be either object or array"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "history 14",
+      "input": {
+        "message": "hola",
+        "history": [
+          [
+            {
+              "role": "user",
+              "content": "hola"
+            }
+          ]
+        ]
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "history": [
+          [
+            {
+              "role": "user",
+              "content": "hola"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "name": "content 0",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": ""
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.0.content must match /\\S/ regular expression"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "content 1",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": " "
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.0.content must match /\\S/ regular expression"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "content 2",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          }
+        ]
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          }
+        ]
+      }
+    },
+    {
+      "name": "content 3",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.0.content must be shorter than or equal to 1500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "content 4",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": null
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.0.content must be shorter than or equal to 1500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "content 5",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": 7
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.0.content must be shorter than or equal to 1500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "content 6",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": []
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.0.content must be shorter than or equal to 1500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "content 7",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": {}
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.0.content must be shorter than or equal to 1500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "history longitud 6",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          }
+        ]
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          }
+        ]
+      }
+    },
+    {
+      "name": "history longitud 7",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          },
+          {
+            "role": "user",
+            "content": "hola"
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history must contain no more than 6 elements"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "extra raíz",
+      "input": {
+        "message": "hola",
+        "extra": true
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "property extra should not exist"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "extra history",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "hola",
+            "extra": true
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "history.0.property extra should not exist"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    },
+    {
+      "name": "prototype raíz",
+      "input": {
+        "message": "hola",
+        "prototype": "extra"
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola"
+      }
+    },
+    {
+      "name": "prototype history",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "hola",
+            "prototype": "extra"
+          }
+        ]
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "hola"
+          }
+        ]
+      }
+    },
+    {
+      "name": "__proto__ raíz",
+      "input": {
+        "message": "hola",
+        "__proto__": {
+          "polluted": true
+        }
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola"
+      }
+    },
+    {
+      "name": "__proto__ history",
+      "input": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "hola",
+            "__proto__": {
+              "polluted": true
+            }
+          }
+        ]
+      },
+      "statusCode": 201,
+      "dto": {
+        "message": "hola",
+        "history": [
+          {
+            "role": "user",
+            "content": "hola"
+          }
+        ]
+      }
+    },
+    {
+      "name": "varios errores",
+      "input": {
+        "extra": 1,
+        "message": 9,
+        "sessionId": 0,
+        "history": [
+          {
+            "role": "system",
+            "content": "",
+            "extra": 1
+          },
+          {
+            "content": false
+          }
+        ]
+      },
+      "statusCode": 400,
+      "body": {
+        "message": [
+          "property extra should not exist",
+          "message must be shorter than or equal to 500 characters",
+          "sessionId must be shorter than or equal to 100 characters",
+          "history.0.property extra should not exist",
+          "history.0.role must be one of the following values: user, assistant",
+          "history.0.content must match /\\S/ regular expression",
+          "history.1.role must be one of the following values: user, assistant",
+          "history.1.content must be shorter than or equal to 1500 characters"
+        ],
+        "error": "Bad Request",
+        "statusCode": 400
+      }
+    }
+  ]
+}
