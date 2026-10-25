@@ -16,7 +16,7 @@ La revisión de reglas por nombre confirmó protección de main/dev, bloqueo de 
 
 ## Integración inicial
 
-`dev` se inicializó con el commit raíz de exclusiones y es la rama predeterminada. `main` todavía no existe. El [PR #1](https://github.com/matigaleanodev/portfolio-api-cloud/pull/1) integró la preparación documental y de workflows en dev.
+`dev` se inicializó con el commit raíz de exclusiones y es la rama predeterminada. La primera `main` se inicializa desde la revisión de [v0.1.0](releases/v0.1.0.es.md), sin alterar las reglas de actualización. El [PR #1](https://github.com/matigaleanodev/portfolio-api-cloud/pull/1) integró la preparación documental y de workflows en dev.
 
 La integración inicial retiró temporalmente solo dev del bloqueo de updates, conservó PR/CI y restauró el ruleset al finalizar, con verificación efectiva por API. Esa excepción quedó consumida; no define el flujo habitual de entrega.
 

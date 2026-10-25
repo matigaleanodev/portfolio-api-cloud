@@ -73,3 +73,7 @@ Phase 4 implements shared control for the managed handler. The current suite has
 Phase 5 is completed as local design; phase 6 adds assembly retention and plan tests. [Trust, PassRole, boundaries, minimum bootstrap and recovery](Docs/deployment-design.md). AWS preparation and managed validation remain pending.
 
 [Phases 6–10 preparation: Git controls, AWS audit, reviewable policies/bootstrap and runbook](Docs/test-operations.md). No provisioning or managed validation.
+
+## Versions
+
+[0.1.0 — first revision for main initialization](Docs/releases/v0.1.0.md). Deployment and managed validation remain pending.
