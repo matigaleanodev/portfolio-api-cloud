@@ -2,6 +2,8 @@
 
 [English](infrastructure.md) · 24/10/2026.
 
+**Estado vigente de fase 4:** [controles del runtime](runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
+
 AWS CDK v2 queda elegido para este repositorio. Dependencias locales de desarrollo fijadas: CLI **2.1146.1**, aws-cdk-lib **2.274.0**, constructs **10.8.1**. No se requiere instalación global. [Código](../infra/stack.ts), [entrada](../infra/app.ts) y [pruebas](../test/infra/stack.test.ts).
 
 ## Recursos definidos
@@ -11,12 +13,12 @@ Stack `PortfolioApiCloudTest`, nombre físico `portfolio-api-cloud-test`, cuenta
 - Una Lambda Event Function Node.js 24, ARM64, 512 MiB, 28 segundos y concurrencia reservada 5, fuera de VPC. Handler `dist/handler.handler`.
 - HTTP API v2 con integración AWS_PROXY, payload 2.0 y timeout de 29 segundos; stage `$default` para no introducir un prefijo en rawPath. Rate global 2/s, burst 5, sujeto a validación real.
 - `$default` exige firma IAM (SigV4) y delega las rutas al handler para conservar mayúsculas y errores. Solo `OPTIONS /{proxy+}` permite acceso anónimo para preflight. CORS sigue en la aplicación; gateway no lo duplica. No hay Function URL paralela.
-- Log group propio, retención de 14 días y conservación al borrar/reemplazar la stack. El rol runtime solo permite escribir streams/eventos de ese grupo y exige una permissions boundary externa.
+- Log group propio, retención de 14 días y conservación al borrar/reemplazar la stack. El rol runtime acota escritura de logs, operaciones de control sobre su tabla y lectura del ARN de secreto; exige una permissions boundary externa.
 - `NODE_ENV=production` evita logs detallados del SDK Resend. El parámetro no secreto `CorsOrigin` queda vacío por defecto.
 
-IAM es aislamiento de esta API de test; todavía no es el contrato público del frontend. Health también requiere firma. No se habilita negocio público mientras falten cuota compartida y deadline/cancelación. Los límites de gateway/concurrencia no reemplazan cuota por IP ni son un tope monetario.
+IAM es aislamiento de esta API de test; todavía no es el contrato público del frontend. Health también requiere firma. La implementación local de cuota/deadline no habilita negocio público antes de su validación administrada. Los límites de gateway/concurrencia no reemplazan cuota por IP ni son un tope monetario.
 
-La stack no introduce DB, NAT, VPC, dominio, frontend, alarmas ni proveedores nuevos. Health funciona; contacto no dispone de secretos en AWS y devuelve 500 controlado si se intenta enviar sin configuración. La recuperación segura de secretos y permisos correspondientes permanece pendiente; no se ingresan claves en parámetros, contextos, templates ni outputs. Starters devuelve 200; chat mantiene perfil/FAQ sin proveedores y 503 editorial sin knowledge. La stack no configura R2/OpenAI ni empaqueta un fallback editorial. [Contrato local](chat.es.md). Suscripciones sin PORTFOLIO_CLOUD_API_URL produce 500 controlado al invocar la ruta; no se agrega esa configuración a la stack. [Contrato local](subscriptions.es.md).
+La stack define una tabla DynamoDB de control on-demand con TTL y protección de borrado; no una DB de aplicación. Agrega lectura de un secreto externo por ARN y tres alarmas sin acciones. No agrega NAT, VPC, dominio ni frontend. El handler sin configuración de negocio válida devuelve 503 y el asset incluye fallback curado real versionado. [Controles y prerrequisitos](runtime-hardening.es.md).
 
 ## Paquete y síntesis local
 
@@ -44,4 +46,6 @@ El synthesizer usa qualifier `papiatest`, bucket esperado `cdk-papiatest-assets-
 
 La boundary obligatoria es `arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary`, recibida en `RuntimePermissionsBoundaryArn` sin default. Revisar su contenido y permisos/trust/PassRole/bootstrap antes de cualquier ejecución. No usar el bootstrap por defecto con AdministratorAccess. No se necesita rol de publicación Docker para este asset.
 
-El workflow de preparación permanece manual, con environment y activación explícita. El comando proporciona el ARN de boundary esperado; antes de habilitarlo se debe revisar/provisionar esa política, el bootstrap y los roles; no se ejecutó. [CI/CD](ci-cd.es.md). La síntesis y 11 assertions no demuestran permisos efectivos, ausencia de drift ni funcionamiento del servicio desplegado.
+El workflow de preparación permanece manual, con environment y activación explícita. El comando proporciona el ARN de boundary esperado; antes de habilitarlo se debe revisar/provisionar esa política, el bootstrap y los roles; no se ejecutó. [CI/CD](ci-cd.es.md). La síntesis y 14 assertions no demuestran permisos efectivos, ausencia de drift ni funcionamiento del servicio desplegado.
+
+RuntimeSecretArn es obligatorio, sin default, y restringido al secreto portfolio-api-cloud/test/ en la cuenta/región fijadas. La política runtime suma únicamente GetItem/PutItem/UpdateItem sobre su tabla y GetSecretValue sobre ese ARN. Ni la boundary ni el secreto se crean en la stack; sus permisos efectivos deben revisarse antes de preparar un changeset.

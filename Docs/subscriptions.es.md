@@ -2,6 +2,8 @@
 
 [English](subscriptions.md) · 25/10/2026.
 
+**Estado vigente de fase 4:** [controles del runtime](runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
+
 POST y DELETE /api/subscriptions devuelven **200** con el JSON validado del upstream: message string y email string opcional. DELETE conserva el correo en el body JSON; no lo obtiene del query. El proveedor se espera antes de responder. Health y contacto siguen disponibles; [starters/chat](chat.es.md) completan los seis contratos locales.
 
 ## Validación y transporte
@@ -86,3 +88,7 @@ Al cierre de este incremento de suscripciones: **258 pruebas aprobadas** (235 ap
 Esto no demuestra integración AWS, permisos efectivos, disponibilidad upstream o transporte administrado. Faltan cuota compartida/atómica, validación de proxies/IP administrados, deadline total, secretos/startup y recuperación. La stack sigue sin desplegar; no se habilita exposición pública. La renovación editorial permanece inmediatamente antes de producción.
 
 [Estado actual y suite de 479 casos](chat.es.md). Los 258 anteriores son el cierre histórico de suscripciones; el lock nuevo del incremento de chat se audita por separado.
+
+## Actualización de fase 4
+
+El handler administrado usa cuotas compartidas, configuración de Secrets Manager validada antes de negocio, deadline total y cancelación de proveedores. Las descripciones de memoria local, configuración lazy/500 y timeouts parciales corresponden al traslado inicial o al adaptador de composición local. Los controles actuales y diferencias están en [endurecimiento](runtime-hardening.es.md); permisos/proxies/proveedores reales siguen pendientes de validación administrada.

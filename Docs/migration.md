@@ -2,6 +2,8 @@
 
 [Español](migration.es.md) · 2026-10-24.
 
+**Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
+
 Serverless migration is decided. This plan covers Portfolio; Foodly Notes and Modo Playa retain their own domains and independent plans. All three current APIs remain operational throughout migration.
 
 ## Stages and exit criteria
@@ -73,3 +75,7 @@ Returning from a stopped instance requires startup and validation of network, vo
 ## Local infrastructure progress
 
 Stage 5 local definition was brought forward: CDK selected, IAM-isolated test stack, 11 assertions and synth without lookups. This does not waive stages 3/4 or enable AWS test/production. [Resources, package and prerequisites](infrastructure.md).
+
+## Phase 4 update
+
+The managed handler uses shared quotas, Secrets Manager configuration validated before business, a total deadline and provider cancellation. Descriptions of local memory, lazy configuration/500 and partial timeouts refer to the initial migration or local composition adapter. [Hardening](runtime-hardening.md) records current controls and differences; effective permissions/proxies/providers still require managed validation.

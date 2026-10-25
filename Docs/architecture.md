@@ -2,6 +2,8 @@
 
 [Español](architecture.es.md) · Proposal as of 2026-10-24. [Official sources](sources.md).
 
+**Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
+
 ## Recommendation
 
 Serverless migration is decided. Build the API with **TypeScript handlers**, preserving contracts, domain, content and providers. Adapted NestJS/Express remains the [local experiment](local-runtime.md) reference. **TypeScript AWS CDK v2** is selected; the [test stack](infrastructure.md) is defined and locally synthesized without bootstrap/deployment. Common infrastructure candidate: **one Lambda Event Function outside a VPC behind regional API Gateway HTTP API**, using a separate test endpoint. Six routes without a database/workers do not justify one function per endpoint.
@@ -13,7 +15,7 @@ Preserve `/api/*`, status codes, DELETE bodies and errors. Own CORS in one layer
 ## Required runtime protections
 
 - Shared Throttler storage (Nest) or an equivalent shared limiter (handlers) is necessary to preserve IP quotas across environments. A proportionate candidate is one DynamoDB on-demand table with atomic ephemeral counters and TTL, not an application database. Enforce logical expiration without relying on eventual TTL deletion. Keep 5/hour contact, 10/hour subscriptions and 20/minute chat. Use trustworthy event client IP rather than arbitrary X-Forwarded-For; derive stored identifiers and limit retention.
-- Gateway route rate/burst settings and conservative reserved concurrency (proposed test value 5, subject to measurement) bound global pressure. Neither replaces per-IP quotas or creates a monetary cap. Budgets/alerts do not automatically stop spending. Agree a daily AI call budget and operational cutoff before public release.
+- Gateway route rate/burst settings and conservative reserved concurrency (proposed test value 5, subject to measurement) bound global pressure. Neither replaces per-IP quotas or creates a monetary cap. Budgets/alerts do not automatically stop spending. The defined policy sets five AI answers per session and a private daily budget per environment, with atomic reservation before spending and FAQ/contact continuity; distributed enforcement and session identity/lifetime remain pending. [Decision](decisions.md).
 - Proposed total deadline ≤25 s, Lambda ≤28 s, HTTP integration ≤30 s. Existing OpenAI timeout is 15 s and cloud upstream 8 s; R2/body/retries and Resend still need real cancellation/deadlines. Include cold start, secret loading and knowledge in the budget. If margins fail, reconsider ingress/runtime.
 - Reuse clients/config per environment, but correctness must survive cold starts. Package an immutable traceable knowledge fallback and agree maximum stale age. Keep conversation history in requests/browser.
 - Stage-specific configuration; propose one Secrets Manager JSON secret per environment, read by the runtime role and cached with bounded refresh. Never put values in Git/synth/outputs/CI inputs. Secret creation and population belong to each environment setup. R2 needs its own artifact-read credential; AWS S3 IAM does not grant access to that external provider.
@@ -73,3 +75,7 @@ All three current APIs remain operational throughout migration. After completion
 Refreshing profile/project data used by the bot is the final step before production deployment. [Stages and recovery](migration.md).
 
 [Subscribe/unsubscribe, HTTP composition and limits](subscriptions.md).
+
+## Phase 4 update
+
+The managed handler uses shared quotas, Secrets Manager configuration validated before business, a total deadline and provider cancellation. Descriptions of local memory, lazy configuration/500 and partial timeouts refer to the initial migration or local composition adapter. [Hardening](runtime-hardening.md) records current controls and differences; effective permissions/proxies/providers still require managed validation.

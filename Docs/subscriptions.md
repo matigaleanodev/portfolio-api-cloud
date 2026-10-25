@@ -2,6 +2,8 @@
 
 [Español](subscriptions.es.md) · 2026-10-25.
 
+**Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
+
 POST and DELETE /api/subscriptions return **200** with validated upstream JSON: a string message and optional string email. DELETE retains JSON in the request body, never the query. The provider is awaited. Health and contact remain available; [starters/chat](chat.md) now complete all six local contracts.
 
 ## Validation and transport
@@ -86,3 +88,7 @@ At the subscription increment closure: **258 passing tests** (235 application, 1
 This does not establish AWS integration, effective permissions, upstream availability or managed transport. Shared atomic quotas, managed proxies/IP validation, total deadline, secrets/startup and recovery remain pending. The stack is still undeployed; public exposure is not enabled. Editorial renewal stays immediately before production.
 
 [Current state and 479-case suite](chat.md). The earlier 258 count is the historical subscription closure; the chat increment audits its new lock separately.
+
+## Phase 4 update
+
+The managed handler uses shared quotas, Secrets Manager configuration validated before business, a total deadline and provider cancellation. Descriptions of local memory, lazy configuration/500 and partial timeouts refer to the initial migration or local composition adapter. [Hardening](runtime-hardening.md) records current controls and differences; effective permissions/proxies/providers still require managed validation.

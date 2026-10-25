@@ -2,6 +2,8 @@
 
 [English](contact.md) · 24/10/2026.
 
+**Estado vigente de fase 4:** [controles del runtime](runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
+
 `POST /api/contact` devuelve **204 con body vacío** después de esperar al proveedor. Un honeypot válido con company truthy devuelve el mismo 204 sin envío. Alta/baja de suscripciones también están implementadas; [starters/chat](chat.es.md) completan ahora los seis contratos locales. Esta sección tiene pruebas locales; no demuestra paridad completa ni funcionamiento en AWS.
 
 ## Validadores usados directamente
@@ -102,3 +104,7 @@ Cuotas distribuidas, proxies/IP administrados, deadline/cancelación, políticas
 Suite migrada íntegramente a Vitest; se agregan 11 casos de infraestructura sin cambiar los 155 de aplicación. [Formato de casos QA](testing.es.md).
 
 Al 25/10/2026 la suite actual tiene 456 pruebas de aplicación, 12 tooling y 11 infraestructura (479). El conteo 155 anterior corresponde al incremento de contacto; dos expectativas de 404 se reemplazan y se agregan 82 pruebas de [suscripciones](subscriptions.es.md). El módulo de cuota ahora es src/quota.ts, sin cambiar la semántica de contacto.
+
+## Actualización de fase 4
+
+El handler administrado usa cuotas compartidas, configuración de Secrets Manager validada antes de negocio, deadline total y cancelación de proveedores. Las descripciones de memoria local, configuración lazy/500 y timeouts parciales corresponden al traslado inicial o al adaptador de composición local. Los controles actuales y diferencias están en [endurecimiento](runtime-hardening.es.md); permisos/proxies/proveedores reales siguen pendientes de validación administrada.

@@ -2,6 +2,8 @@
 
 [English](migration.md) · 24/10/2026.
 
+**Estado vigente de fase 4:** [controles del runtime](runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
+
 La migración a serverless está decidida. Este plan corresponde a Portfolio; Foodly Notes y Modo Playa conservan sus dominios y su planificación independiente. Las tres APIs actuales permanecen operativas durante la migración completa.
 
 ## Etapas y criterios de salida
@@ -73,3 +75,7 @@ El retorno desde una instancia detenida exige arranque y comprobación de red, v
 ## Avance local de infraestructura
 
 Se adelantó la definición local de la etapa 5: CDK elegido, stack de test con IAM y 11 assertions/synth sin lookups. No altera los requisitos de etapas 3/4 ni habilita test AWS o producción. [Recursos, paquete y prerrequisitos](infrastructure.es.md).
+
+## Actualización de fase 4
+
+El handler administrado usa cuotas compartidas, configuración de Secrets Manager validada antes de negocio, deadline total y cancelación de proveedores. Las descripciones de memoria local, configuración lazy/500 y timeouts parciales corresponden al traslado inicial o al adaptador de composición local. Los controles actuales y diferencias están en [endurecimiento](runtime-hardening.es.md); permisos/proxies/proveedores reales siguen pendientes de validación administrada.

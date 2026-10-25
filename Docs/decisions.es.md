@@ -51,7 +51,7 @@ La renovación de los datos del bot sobre el perfil profesional y los proyectos 
 
 ## Decisiones operativas abiertas
 
-Presupuesto y cuota diaria de IA; umbrales de latencia y costo; edad máxima stale y retención del proveedor; aislamiento de test; roles/bootstrap; retención de artefactos; URL/routing y runbook de corte. La factura y los planes privados no están verificados. Los escenarios públicos son hipotéticos.
+Impacto de identidad/NAT y presupuesto diario en AWS test, disponibilidad y revisión de tarifas del modelo; umbrales de latencia y costo; edad máxima stale y retención del proveedor; aislamiento de test; roles/bootstrap; retención de artefactos; URL/routing y runbook de corte. La factura y los planes privados no están verificados. Los escenarios públicos son hipotéticos.
 
 ## ADR-006 — Base local y validación independiente
 
@@ -105,4 +105,18 @@ Estado: **sección local implementada; integración administrada pendiente**. PO
 
 Estado: **implementado y verificado localmente**. Se conservan los módulos necesarios de a0ef80fa para starters/chat, contenido y prompts sin renovación. DTO directo/anidado con reflect-metadata; repositorio R2 mediante SDK S3 vigente fijado; fetch OpenAI conservado. Cuotas independientes 20/min/IP reutilizan la decisión de ventana/bloqueo local. Se mantienen y prueban límites originales de timeout R2, stale y retención IA; se omiten logs libres y se conservan métricas acotadas. [Contratos, diferencias, procedencia y requisitos de etapa 4](chat.es.md). Ninguna evidencia local equivale a despliegue/integración AWS.
 
-La ubicación profesional del chat se corrige puntualmente a Posadas, Misiones, Argentina, con diferencia explícita frente al SHA fijado. El resto del contenido conserva su alcance anterior y la renovación editorial general sigue inmediatamente antes de producción. [Detalle y referencias históricas](chat.es.md).
+La ubicación profesional del chat se corrige puntualmente a Posadas, Misiones, Argentina, con diferencia explícita frente al SHA fijado. FAQ y contexto también incluyen el correo profesional contacto@matiasgaleano.dev desde un único dato compartido. El resto del contenido conserva su alcance anterior y la renovación editorial general sigue inmediatamente antes de producción. [Detalle y referencias históricas](chat.es.md).
+
+## ADR-014 — Consumo acotado de IA y continuidad con FAQ
+
+Estado: **implementada localmente; validación administrada pendiente**.
+
+El chat priorizará FAQ sin reformulación por IA y permitirá como máximo cinco respuestas de IA por sesión. Al agotar el cupo de sesión o el presupuesto global diario, seguirá con FAQ pertinente; si no alcanza, responderá amablemente: «Para seguir con una consulta más específica, podés escribirme a contacto@matiasgaleano.dev». No expondrá importes ni detalles internos del límite al visitante.
+
+El presupuesto diario se configura por ambiente fuera del contenido público. Antes de cada llamada paga se deberá reservar atómicamente su costo máximo, considerando entrada, salida, modelo, tarifas y llamadas concurrentes. Una reserva con resultado ambiguo no se libera como si no hubiera consumo. Si el control compartido o la configuración no permiten demostrar disponibilidad, no se invoca IA. Los avisos de gasto no sustituyen este corte. [OpenAI Docs](https://developers.openai.com/api/docs/guides/terraform/rate-limits-and-spend).
+
+sessionId e history provienen del cliente y hoy no acreditan una sesión ni consumo. La vigencia queda acotada al día argentino y al origen derivado en servidor; un cupo adicional de cinco por IP/día impide renovar acceso cambiando sessionId. Personas detrás de NAT comparten esa protección; su impacto requiere validación administrada. Las cuotas por IP y el presupuesto global permanecen como controles independientes. El handler administrado implementa FAQ directa, cuotas compartidas y reservas atómicas globales/sesión/origen; los detalles y limitaciones están en [fase 4](runtime-hardening.es.md). El correo sí está incorporado al conocimiento curado y a la FAQ.
+
+## ADR-015 — Controles compartidos, deadline y fallback empaquetado
+
+Estado: **implementado localmente; sin despliegue**. DynamoDB con CAS para cuotas y transacción para admisión IA; plazo total de 25 s con cancelación; secreto validado y refresco acotado; fallback v1 con checksum y edad máxima; logs sin PII y alarmas sin acciones. Los SDK DynamoDB y Secrets Manager se fijan en 3.1156.0. Conservé el limiter en memoria solo como adaptador de composición local. [Decisiones, configuración y criterios de salida](runtime-hardening.es.md).

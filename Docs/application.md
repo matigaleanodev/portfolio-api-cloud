@@ -2,7 +2,13 @@
 
 [Español](application.es.md) · 2026-10-25.
 
+**Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
+
 ## Structure and configuration
+
+- src/shared-control.ts: quota CAS and GLOBAL/session/origin transactional reservation in DynamoDB.
+- src/runtime-config.ts: validated JSON secret, price review and bounded refresh.
+- src/request-scope.ts: per-request context, deadline, cancellation and filtered metrics.
 
 - src/handler.ts: Lambda entry; reads CORS at initialization, contact keys when sending, and the cloud URL for subscriptions. Never loads .env.
 - src/config.ts: explicit maps, frozen CORS and contact/subscription configuration validation.
@@ -41,7 +47,7 @@ actionlint
 npm audit
 ```
 
-**456 application tests passed**, including 82 new subscription tests (36 DTO references, 28 upstream and 18 additional cases), 69 DTO/controller references (66 unchanged, 3 explicit direct-validator differences) and 36 parser references; 12 tooling tests (5 CI scope, 7 merge workflow). Types, build, separate ESM smoke, documentation pairs/links and actionlint passed on Node 24.22.1. npm audit of the current lock: **0 reported vulnerabilities**, including development; this does not guarantee freedom from future issues.
+**513 application tests passed**, including 82 new subscription tests (36 DTO references, 28 upstream and 18 additional cases), 69 DTO/controller references (66 unchanged, 3 explicit direct-validator differences) and 36 parser references; 12 tooling tests (5 CI scope, 7 merge workflow). Types, build, separate ESM smoke, documentation pairs/links and actionlint passed on Node 24.22.1. npm audit of the current lock: **0 reported vulnerabilities**, including development; this does not guarantee freedom from future issues.
 
 The suite clears inherited environment and loads the network guard before importing application code. It blocks fetch/WebSocket, HTTP(S), socket/TLS/UDP connections, DNS and child processes. Parsing uses in-memory streams without listening on ports. Providers are explicit mocks; no emails are sent. The guard prevents accidental calls, not hostile code.
 
@@ -79,7 +85,7 @@ The contact increment adds [per-blob and reference-package provenance](contact.m
 
 ## Vitest and local infrastructure
 
-All suites use Vitest 5.0.5: 456 application cases, 12 tooling cases migrated from unittest and 11 infrastructure cases, **479 passing**. Package smoke remains a Node verifier without devDependencies. Spanish Given/When/Then titles and [test case format](testing.md). CDK v2 is installed and the test stack synthesizes without lookups; [resources and limits](infrastructure.md). Only infrastructure disables exactOptionalPropertyTypes due to CDK declaration incompatibility; application retains it. No deployment.
+All suites use Vitest 5.0.5: 513 application cases, 12 tooling cases migrated from unittest and 14 infrastructure cases, **539 passing**. Package smoke remains a Node verifier without devDependencies. Spanish Given/When/Then titles and [test case format](testing.md). CDK v2 is installed and the test stack synthesizes without lookups; [resources and limits](infrastructure.md). Only infrastructure disables exactOptionalPropertyTypes due to CDK declaration incompatibility; application retains it. No deployment.
 
 ## Code formatting
 
@@ -89,4 +95,8 @@ Prettier 3.9.10 is pinned as a development dependency, with explicit readability
 
 src/chat/ composes DTO, FAQ, context, AI and R2/local repository from the pinned SHA. S3 SDK 3.1156.0 and reflect-metadata 0.2.2 are new direct dependencies; bounded JSON metrics without Nest. handler.ts retains composition from the first valid POST. Smoke now exercises 201/503, quotas and synthetic local/remote knowledge. [223 new cases, differences and hashes](chat.md).
 
-Chat professional location is corrected specifically to Posadas, Misiones, Argentina, with an explicit difference from the pinned SHA. Other content retains its previous scope; general editorial renewal remains immediately before production. [Details and historical references](chat.md).
+Chat professional location is corrected specifically to Posadas, Misiones, Argentina, with an explicit difference from the pinned SHA. FAQ and context also include the professional email contacto@matiasgaleano.dev from one shared fact. Other content retains its previous scope; general editorial renewal remains immediately before production. [Details and historical references](chat.md).
+
+## Phase 4 update
+
+The managed handler uses shared quotas, Secrets Manager configuration validated before business, a total deadline and provider cancellation. Descriptions of local memory, lazy configuration/500 and partial timeouts refer to the initial migration or local composition adapter. [Hardening](runtime-hardening.md) records current controls and differences; effective permissions/proxies/providers still require managed validation.
