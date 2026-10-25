@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { createHash } from 'node:crypto';
+import { createChat } from './dist/chat/chat.providers.js';
 import { handler } from './dist/handler.js';
 import { createApplication } from './dist/application.js';
 import {
@@ -9,6 +12,9 @@ import {
 } from './dist/config.js';
 import { createContactSender, createResendProvider } from './dist/contact.js';
 import { createSubscriptionSender } from './dist/subscriptions.js';
+
+// Las métricas se prueban en Vitest; el smoke solo muestra su resultado final.
+console.info = () => undefined;
 
 assert.equal(existsSync('node_modules'), true);
 
@@ -136,4 +142,121 @@ await assert.rejects(fetch('https://example.invalid'), /Red y proveedores reales
 
 console.log(
   'Paquete ESM verificado fuera del checkout: dependencias de producción, health/contacto/suscripciones, cuotas, .env ignorado y red bloqueada.',
+);
+
+assert.equal(existsSync('node_modules/reflect-metadata'), true);
+assert.equal(existsSync('node_modules/@aws-sdk/client-s3'), true);
+
+const chatEvent = {
+  ...event,
+  rawPath: '/api/chat',
+  requestContext: { http: { method: 'POST', sourceIp: '192.0.2.3' } },
+  body: '{"message":"¿Qué hace Modo Playa?"}',
+};
+assert.equal(
+  (
+    await handler({
+      ...chatEvent,
+      rawPath: '/api/chat/starters',
+      requestContext: { http: { method: 'GET', sourceIp: '192.0.2.3' } },
+    })
+  ).statusCode,
+  200,
+);
+assert.equal((await handler(chatEvent)).statusCode, 503);
+
+const knowledge = {
+  generatedAt: '2026-10-09T00:00:00Z',
+  projects: [{ slug: 'modo-playa', title: 'Modo Playa', excerpt: 'Alojamientos de prueba.' }],
+  posts: [],
+};
+mkdirSync('.generated/chat', { recursive: true });
+writeFileSync('.generated/chat/knowledge.json', JSON.stringify(knowledge));
+
+let chatCalls = 0;
+const chat = createChat(
+  { OPENAI_API_KEY: 'fake' },
+  async (url, options) => {
+    chatCalls++;
+    assert.equal(url, 'https://api.openai.com/v1/responses');
+    const payload = JSON.parse(options.body);
+    assert.equal(payload.model, 'gpt-4.1-mini');
+    assert.ok(payload.input[0].content.includes('Alojamientos de prueba.'));
+    return new Response(
+      JSON.stringify({
+        output: [
+          {
+            content: [
+              {
+                text: JSON.stringify({
+                  answer: 'Respuesta de prueba',
+                  suggestedQuestions: ['Primera', 'Segunda'],
+                }),
+              },
+            ],
+          },
+        ],
+      }),
+    );
+  },
+  process.cwd(),
+);
+const chatApplication = createApplication(readConfiguration({}), undefined, undefined, chat);
+for (let index = 0; index < 20; index++) {
+  const response = await chatApplication(chatEvent);
+  assert.equal(response.statusCode, 201);
+  assert.equal(JSON.parse(response.body).source, 'ai');
+}
+assert.equal(chatCalls, 1);
+assert.equal((await chatApplication(chatEvent)).statusCode, 429);
+assert.equal(
+  (
+    await chatApplication({
+      ...chatEvent,
+      rawPath: '/api/chat/starters',
+      requestContext: { http: { method: 'GET', sourceIp: '192.0.2.3' } },
+    })
+  ).statusCode,
+  200,
+);
+
+const originalSend = S3Client.prototype.send;
+let r2Calls = 0;
+S3Client.prototype.send = async function (command) {
+  r2Calls++;
+  assert.ok(command instanceof GetObjectCommand);
+  assert.deepEqual(command.input, { Bucket: 'fake', Key: 'artifacts/chat/knowledge.json' });
+  return {
+    Body: {
+      transformToString: async () =>
+        JSON.stringify({
+          version: 1,
+          generatedAt: knowledge.generatedAt,
+          source: { repository: 'portfolio', artifactPath: '.generated/chat/knowledge.json' },
+          contentHash:
+            'sha256:' + createHash('sha256').update(JSON.stringify(knowledge)).digest('hex'),
+          knowledge,
+        }),
+    },
+  };
+};
+try {
+  const remoteChat = createChat(
+    {
+      R2_ENDPOINT: 'https://r2.example.invalid',
+      R2_BUCKET: 'fake',
+      R2_ACCESS_KEY_ID: 'fake',
+      R2_SECRET_ACCESS_KEY: 'fake',
+    },
+    blockedFetch,
+    process.cwd(),
+  );
+  assert.equal((await remoteChat.reply({ message: '¿Qué hace Modo Playa?' })).source, 'fallback');
+  assert.equal(r2Calls, 1);
+} finally {
+  S3Client.prototype.send = originalSend;
+}
+
+console.log(
+  'Chat empaquetado: 201/503, cachés, cuotas independientes, fallback sintético, SDK S3 simulado y sin red.',
 );
