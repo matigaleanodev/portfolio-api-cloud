@@ -451,7 +451,8 @@
                     "apigateway:POST",
                     "apigateway:PATCH",
                     "apigateway:PUT",
-                    "apigateway:DELETE"
+                    "apigateway:DELETE",
+                    "apigateway:TagResource"
                   ],
                   "Resource": {
                     "Fn::If": [
@@ -465,62 +466,6 @@
                         }
                       ],
                       ["arn:aws:apigateway:us-east-1::/apis/*"]
-                    ]
-                  }
-                },
-                {
-                  "Ref": "AWS::NoValue"
-                }
-              ]
-            },
-            {
-              "Fn::If": [
-                "ApiManagementEnabled",
-                {
-                  "Sid": "ManageApiTags",
-                  "Effect": "Allow",
-                  "Action": [
-                    "apigateway:GET",
-                    "apigateway:POST",
-                    "apigateway:PATCH",
-                    "apigateway:PUT",
-                    "apigateway:DELETE"
-                  ],
-                  "Resource": {
-                    "Fn::If": [
-                      "HasApiId",
-                      [
-                        {
-                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/${TestApiId}"
-                        },
-                        {
-                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/${TestApiId}/*"
-                        },
-                        {
-                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/${TestApiId}"
-                        },
-                        {
-                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/${TestApiId}/*"
-                        },
-                        {
-                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F${TestApiId}"
-                        },
-                        {
-                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F${TestApiId}%2F*"
-                        },
-                        {
-                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F${TestApiId}"
-                        },
-                        {
-                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F${TestApiId}%2F*"
-                        }
-                      ],
-                      [
-                        "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/*",
-                        "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/*",
-                        "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F*",
-                        "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F*"
-                      ]
                     ]
                   }
                 },
@@ -967,7 +912,8 @@
                         "apigateway:POST",
                         "apigateway:PATCH",
                         "apigateway:PUT",
-                        "apigateway:DELETE"
+                        "apigateway:DELETE",
+                        "apigateway:TagResource"
                       ],
                       "Resource": {
                         "Fn::If": [
@@ -981,62 +927,6 @@
                             }
                           ],
                           ["arn:aws:apigateway:us-east-1::/apis/*"]
-                        ]
-                      }
-                    },
-                    {
-                      "Ref": "AWS::NoValue"
-                    }
-                  ]
-                },
-                {
-                  "Fn::If": [
-                    "ApiManagementEnabled",
-                    {
-                      "Sid": "ManageApiTags",
-                      "Effect": "Allow",
-                      "Action": [
-                        "apigateway:GET",
-                        "apigateway:POST",
-                        "apigateway:PATCH",
-                        "apigateway:PUT",
-                        "apigateway:DELETE"
-                      ],
-                      "Resource": {
-                        "Fn::If": [
-                          "HasApiId",
-                          [
-                            {
-                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/${TestApiId}"
-                            },
-                            {
-                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/${TestApiId}/*"
-                            },
-                            {
-                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/${TestApiId}"
-                            },
-                            {
-                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/${TestApiId}/*"
-                            },
-                            {
-                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F${TestApiId}"
-                            },
-                            {
-                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F${TestApiId}%2F*"
-                            },
-                            {
-                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F${TestApiId}"
-                            },
-                            {
-                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F${TestApiId}%2F*"
-                            }
-                          ],
-                          [
-                            "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/*",
-                            "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/*",
-                            "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F*",
-                            "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F*"
-                          ]
                         ]
                       }
                     },
