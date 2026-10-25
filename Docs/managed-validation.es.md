@@ -4,9 +4,9 @@
 
 ## Estado comprobado
 
-La implementación y los workflows están preparados localmente. No hay despliegue, changeset remoto ni prueba administrada de este incremento. La auditoría Observer del 25/10 volvió a comprobar cuenta 650387442642, us-east-1, OIDC con audiencia sts.amazonaws.com, ausencia de los ocho roles previstos y ambas stacks, y lista vacía de metadatos de secretos test. La HTTP API portfolio-cloud-prod continúa existente e independiente. GitHub solo tiene el environment merge; faltan los controles de despliegue.
+La primera instalación privada quedó desplegada y pasó una comprobación corta de los seis contratos, IAM y cuota compartida. [Resultado, procedencia y límites](first-private-deploy.es.md). Los environments de entrega restringen branch main y los cuatro flags quedaron false.
 
-main/dev/remoto coincidían en 6f993417a0a9785b7ee3dbf120a9493a99e23c22 al iniciar. La release v0.1.0 conserva su assembly original. El asset nuevo cambia el paquete: necesita otra revisión y otro artifact de CI integrada, promovidos a main. No se identifica como el assembly de v0.1.0 ni se mueve el tag.
+main/dev/remoto coincidían en 6f993417a0a9785b7ee3dbf120a9493a99e23c22 al iniciar. La release v0.1.0 conserva su assembly original. El asset desplegado usa otro paquete y artifact de CI integrada, revisados y promovidos a main. No se identifica como el assembly de v0.1.0 ni se mueve el tag.
 
 ## Runtime y paquetes
 
@@ -47,17 +47,17 @@ infra/delivery-access.template.json materializa tres roles externos y tres bound
 | PortfolioApiCloudTestFoundationCloudFormationRole | servicio CloudFormation; bucket/SSM dedicados, cuatro roles y cinco policies exactos de test-foundation.template.json; CreateRole exige la boundary correspondiente  |
 | PortfolioApiCloudTestGitHubExecuteRole            | OIDC del repo/environment test-execute; lectura/ejecución de las dos stacks previstas y lectura del bucket; cada sesión reduce a los ARN observados                  |
 
-La fundación no puede administrar estas identidades de arranque. Ninguna usa AdministratorAccess, credenciales permanentes ni acceso administrativo genérico. El runtime continúa en la stack CDK. Las tres policies pasaron Access Analyzer sin hallazgos y las dos plantillas pasaron cfn-lint 1.57.2; eso no instala permisos ni prueba su efectividad.
+La fundación no puede administrar estas identidades de arranque. Ninguna usa AdministratorAccess, credenciales permanentes ni acceso administrativo genérico. El runtime continúa en la stack CDK. Las tres policies de acceso pasaron Access Analyzer sin hallazgos en la revisión inicial. La fundación actual registra dos W3037 de cfn-lint 1.57.2 sobre el permiso de etiquetado exigido por ApiGatewayV2; el resto del lint no tiene hallazgos. La comprobación de estos validadores no sustituye la ejecución administrada.
 
-Una identidad OIDC inexistente no puede desplegar su propia confianza. El template de acceso requiere una identidad de provisioning ya confiable y acotada, operada mediante un workflow existente del owner. Ese workflow y su identidad aún no están identificados ni verificados. No hay un camino local alternativo de bootstrap, assets o CloudFormation, ni se deduce elevación de Observer. La creación de esas identidades queda como prerrequisito externo explícito, sin un bootstrap automático circular.
+El acceso inicial quedó instalado con una identidad administrativa SSO verificada. La fundación y la aplicación se prepararon y ejecutaron por Actions con changesets revisados. Los subjects OIDC usan los IDs inmutables efectivos del repositorio y propietario, y environments restringidos a main. El arranque administrativo no reemplaza el circuito de despliegue ordinario.
 
-## Plan de la primera ejecución
+## Plan de la primera ejecución (histórico)
 
 1. Identificar el workflow/identidad inicial que pueda provisionar el template de acceso por Actions, revisar su policy efectiva y el changeset exacto antes de ejecutarlo. Sin ese origen confiable no comienza el provisioning.
 2. Integrar la revisión nueva con CI aprobada y promoverla a main; configurar test-foundation-plan, test-plan y test-execute con restricción main y revisores viables. Conservar SHA/digest/run/artifact y SHA del workflow por separado.
 3. Crear únicamente el secreto ficticio mediante validation-secret.yml. Conservar el ARN devuelto y la clave de derivación; una segunda ejecución falla en vez de sobrescribirla. La renovación futura de tarifas ficticias requiere un cambio revisado que preserve esa clave.
 4. Preparar foundation con el digest del template, RuntimeSecretArn observado, CREATE, AllowRegionalApiBootstrap=true y TestApiId=unassigned. Cambios esperados: bucket versionado/cifrado/TLS, versión SSM 6, cuatro roles y cinco boundaries. Revisar recibo y ejecutar por separado.
-5. Preparar aplicación con el nuevo artifact success de CI y las variables de roles previstas. Cambios esperados: una Lambda ARM64 Node24/512 MiB/28 s/concurrencia 5, HTTP API IAM/stage, tabla de control retenida, logs de 14 días, rol/policy de runtime y tres alarmas sin acciones. El secreto y la tabla no son datos de aplicación.
+5. Preparar aplicación con el nuevo artifact success de CI y las variables de roles previstas. Cambios esperados: una Lambda ARM64 Node24/512 MiB/28 s/sin reserva en la variante simulada, HTTP API IAM/stage, tabla de control retenida, logs de 14 días, rol/policy de runtime y tres alarmas sin acciones. El secreto y la tabla no son datos de aplicación.
 6. Revisar el recibo y los ARN exactos; ejecutar con la identidad separada. Después comprobar gateway/IAM, seis contratos simulados, cuotas/reservas compartidas, privacidad y recuperación según la matriz de test-operations. Health solo prueba liveness.
 
-No hay todavía un digest de artifact CI publicado para este incremento ni ARN de changeset que ejecutar. Los digests locales de templates y fuentes quedan en la evidencia privada de cierre. La preparación publica assets y crea changesets: también es una mutación y se mantiene separada de validar y ejecutar. La API original, EC2, DNS, Tunnel/Traefik y tráfico real continúan independientes.
+El recorrido inicial se completó con el artifact y changeset registrados en el resultado del primer deploy privado. Las referencias del plan describen el diseño previo; la matriz exhaustiva de fallos/carga/recuperación permanece pendiente antes de producción.
