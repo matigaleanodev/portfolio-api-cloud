@@ -2,11 +2,11 @@
 
 [English](testing.md) · 25/10/2026.
 
-**Incremento vigente:** [primera instalación con dobles y circuito Actions](managed-validation.es.md), implementados localmente. main/v0.1.0 ya existen; provisioning, ejecución y validación administrada siguen pendientes.
+**Incremento vigente:** [primera instalación con dobles y circuito Actions](managed-validation.es.md), desplegada y comprobada en AWS con proveedores simulados. [Resultado del primer deploy privado](first-private-deploy.es.md). Las secciones de diseño y auditoría conservan su contexto previo.
 
 **Estado vigente de fase 4:** [controles del runtime](runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
 
-Vitest **5.0.5** ejecuta toda la suite: **614 casos**, distribuidos en 529 de aplicación, 66 de tooling y 19 de infraestructura. Se migraron inicialmente 155 casos de node:test y los 12 de unittest; no se mantiene un segundo runner para esas suites. Los scripts productivos de CI siguen en Python y sus validaciones se ejercitan desde Vitest con fixtures locales. El smoke del paquete sigue siendo un verificador ejecutable con Node sin dependencias de desarrollo.
+Vitest **5.0.5** ejecuta toda la suite: **617 casos**, distribuidos en 529 de aplicación, 69 de tooling y 19 de infraestructura. Se migraron inicialmente 155 casos de node:test y los 12 de unittest; no se mantiene un segundo runner para esas suites. Los scripts productivos de CI siguen en Python y sus validaciones se ejercitan desde Vitest con fixtures locales. El smoke del paquete sigue siendo un verificador ejecutable con Node sin dependencias de desarrollo.
 
 Los títulos usan español y **Dado/Cuando/Entonces**. Expresan una condición, la acción y un resultado verificable. Los nombres de campos y contratos HTTP conservan sus identificadores técnicos. Los fixtures históricos no se reescriben: el título explica el escenario y las aserciones conservan sus valores originales.
 
@@ -28,7 +28,7 @@ Los comandos `npm run test:app`, `npm run test:tooling` y `npm run test:infra` e
 | Cuotas                    |     5 | ventana, bloqueo, vencimiento lógico y aislamiento de IP                              |
 | Aislamiento               |     5 | ambiente, composición y cerco de red                                                  |
 | Suscripciones             |    82 | alta/baja: DTO, upstream, timeout, transporte, cuotas y composición                   |
-| Tooling                   |    66 | detección de alcance y validaciones del workflow con respuestas ficticias             |
+| Tooling                   |    69 | detección de alcance y validaciones del workflow con respuestas ficticias             |
 | Endurecimiento            |    57 | concurrencia, presupuesto global, sesiones, startup, cancelación y fallback           |
 | Infraestructura           |    19 | recursos, IAM, payload v2, límites, logs, roles y asset                               |
 | Chat                      |   223 | DTO, FAQ, contexto/historial, publicación, IA, R2/local, cachés, cuotas y composición |
@@ -37,7 +37,7 @@ Los comandos `npm run test:app`, `npm run test:tooling` y `npm run test:infra` e
 
 Antes de ejecutar Vitest se elimina el ambiente heredado y se deshabilitan metadata AWS y lectura de `.env`. Los proyectos application e infrastructure cargan el cerco de red antes de sus imports y bloquean proveedores, sockets, DNS y procesos hijos. Los tests de tooling necesitan procesos Python locales para ejecutar las validaciones reales; usan un ambiente mínimo y respuestas GitHub sintéticas, sin ejecutar gh ni workflows. TypeScript compila antes de entrar al cerco para conservar el comportamiento de los decoradores del build real.
 
-Los casos de infraestructura inspeccionan CloudFormation y assets; no emulan AWS. Quedan pendientes firma SigV4, permisos/boundaries efectivos, bootstrap, integración HTTP API/Lambda, errores de plataforma, secretos/proveedores aislados, cuota distribuida, deadline/cancelación y recuperación. [Stack y requisitos](infrastructure.es.md). Los seis contratos están implementados localmente. [Chat, referencias y diferencias](chat.es.md).
+Los casos de infraestructura inspeccionan CloudFormation y assets; no emulan AWS. La comprobación privada verificó SigV4, seis contratos y cuota compartida con Secrets Manager/DynamoDB reales. Antes de producción quedan errores de plataforma, proveedores reales, concurrencia bajo carga, deadline/cancelación y recuperación. [Stack y requisitos](infrastructure.es.md). Los seis contratos están implementados localmente. [Chat, referencias y diferencias](chat.es.md).
 
 Suscripciones suma **82 casos**: 36 referencias DTO/controlador, 28 referencias upstream y 18 pruebas adicionales; cada referencia ejercita POST y DELETE. Se comprueba timeout real de 8 s, errores exactos, cuota independiente y concurrente, formatos/límite, composición Lambda y ausencia de efectos reales. Dos expectativas anteriores de 404 se reemplazan por los contratos reales; health y contacto conservan su cobertura. [Procedencia y diferencias](subscriptions.es.md).
 
@@ -49,6 +49,6 @@ El handler administrado usa cuotas compartidas, configuración de Secrets Manage
 
 La ampliación de etapa 5/6 agrega 19 pruebas: trece del bundle, dos del workflow de preparación y cuatro assertions de infraestructura. [Diseño y criterios posteriores](deployment-design.es.md).
 
-La preparación anterior sumó 22 casos: siete del techo IAM/fundación y quince de recuperación por run/digest, incluyendo CI fallida, artifact de PR, revisión/run/intento ajenos, vencimiento, ZIP inseguro y alteraciones. El total es 614 (529 aplicación, 66 tooling, 19 infraestructura). La plantilla también se comprobó con cfn-lint 1.57.2; esto no simula IAM ni prueba compatibilidad AWS efectiva.
+La preparación anterior sumó 22 casos: siete del techo IAM/fundación y quince de recuperación por run/digest, incluyendo CI fallida, artifact de PR, revisión/run/intento ajenos, vencimiento, ZIP inseguro y alteraciones. El total es 617 (529 aplicación, 69 tooling, 19 infraestructura). La plantilla también se comprobó con cfn-lint 1.57.2; esto no simula IAM ni prueba compatibilidad AWS efectiva.
 
-La validación aislada agrega 16 casos de aplicación, 17 de revisión de changeset/tooling y una assertion de infraestructura. Total vigente: 614 (529 aplicación, 66 tooling, 19 infraestructura). Ambos paquetes se comprueban con red bloqueada; el smoke del entrypoint de validación conserva los SDK reales y solo simula sus respuestas dentro de la prueba.
+La validación aislada agrega 16 casos de aplicación, 17 de revisión de changeset/tooling y una assertion de infraestructura. Total vigente: 617 (529 aplicación, 69 tooling, 19 infraestructura). Ambos paquetes se comprueban con red bloqueada; el smoke del entrypoint de validación conserva los SDK reales y solo simula sus respuestas dentro de la prueba.

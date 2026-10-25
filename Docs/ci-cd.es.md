@@ -2,7 +2,7 @@
 
 [English](ci-cd.md) · 25/10/2026. Los workflows cubren validación documental, preparación de test e integración de ramas. La aplicación local incluye los seis contratos con pruebas; la stack se sintetiza localmente.
 
-**Incremento vigente:** [primera instalación con dobles y circuito Actions](managed-validation.es.md), implementados localmente. main/v0.1.0 ya existen; provisioning, ejecución y validación administrada siguen pendientes.
+**Incremento vigente:** [primera instalación con dobles y circuito Actions](managed-validation.es.md), desplegada y comprobada en AWS con proveedores simulados. [Resultado del primer deploy privado](first-private-deploy.es.md). Las secciones de diseño y auditoría conservan su contexto previo.
 
 **Estado vigente de fase 4:** [controles del runtime](runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
 
@@ -12,9 +12,9 @@
 
 El job documentation valida pares/enlaces y detecta aplicación e infraestructura por separado. package.json exige lock, tsconfig y entrada real; restos de aplicación sin manifiesto fallan. cdk.json activa infraestructura y exige sus scripts específicos.
 
-Application ejecuta `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` y `test:package` en Node 24.22.1. Vitest ejecuta 513 casos de aplicación y 49 de tooling. No hay lint con --fix ni modificación automática de fuentes. El cerco de red se carga antes de la aplicación, con ambiente sin credenciales heredadas. [Cobertura y casos](testing.es.md).
+Application ejecuta `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` y `test:package` en Node 24.22.1. Vitest ejecuta 529 casos de aplicación y 69 de tooling. No hay lint con --fix ni modificación automática de fuentes. El cerco de red se carga antes de la aplicación, con ambiente sin credenciales heredadas. [Cobertura y casos](testing.es.md).
 
-Infrastructure está activo porque ya existe cdk.json; ejecuta 18 casos en `test:infra` y `cdk -- synth --no-lookups --context stage=test`, sin credenciales AWS. [Stack local y prerrequisitos](infrastructure.es.md).
+Infrastructure está activo porque ya existe cdk.json; ejecuta 19 casos en `test:infra` y `cdk -- synth --no-lookups --context stage=test`, sin credenciales AWS. [Stack local y prerrequisitos](infrastructure.es.md).
 
 El check obligatorio sigue llamándose `verify`, ligado a GitHub Actions: exige documentation exitosa y éxito de cada ámbito presente; solo admite skipped para un ámbito ausente. El job de aplicación debe aprobar completo. El summary distingue aplicación y synth; no declara infraestructura comprobada si falta la stack.
 

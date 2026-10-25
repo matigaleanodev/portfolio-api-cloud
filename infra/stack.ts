@@ -47,7 +47,7 @@ export class PortfolioApiStack extends Stack {
     const cors = new CfnParameter(this, 'CorsOrigin', {
       type: 'String',
       default: '',
-      description: 'Origen de pruebas; vacío deshabilita CORS.',
+      description: 'Origen de pruebas; CORS se deshabilita si no se define.',
     });
 
     const secretArn = new CfnParameter(this, 'RuntimeSecretArn', {
@@ -116,7 +116,7 @@ export class PortfolioApiStack extends Stack {
       logGroup: logs,
       memorySize: 512,
       timeout: Duration.seconds(28),
-      reservedConcurrentExecutions: 5,
+      reservedConcurrentExecutions: scenario ? undefined : 5,
       environment: {
         NODE_ENV: 'production',
         CORS_ORIGIN: cors.valueAsString,
