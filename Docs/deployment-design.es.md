@@ -127,3 +127,7 @@ La recuperación de tráfico debe mantener un solo destino de escritura por requ
 La configuración efectiva del repositorio devuelve `use_immutable_subject=true` y el prefijo `repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186`. GitHub incorpora los IDs inmutables del owner y del repositorio en los repos creados después del 15/07/2026. Cada trust fija ese prefijo y su environment exacto mediante `StringEquals`, con audiencia `sts.amazonaws.com`; no se admiten comodines ni el subject anterior basado solo en nombres.
 
 La primera autenticación de configuración ficticia detectó la diferencia: el acceso inicial esperaba el subject anterior y STS rechazó `AssumeRoleWithWebIdentity` antes de crear el secreto. La corrección alinea los dos trusts de acceso y el trust de fundación con la identidad emitida, conservando policies, boundaries y environments restringidos a main. [Formato OIDC vigente](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims).
+
+## Metadata del assembly recuperado
+
+El bundle conserva también `additionalMetadataFile` de cada artifact del manifest. CDK necesita esa metadata para cargar la stack desde el assembly conservado; omitirla produce `ENOENT` antes de publicar assets. La creación valida esas referencias con las mismas restricciones de rutas y enlaces que templates/assets. La recuperación rechaza un assembly con metadata referenciada ausente, incluso si su inventario de hashes es consistente. Los archivos históricos no referenciados siguen excluidos.

@@ -14,6 +14,7 @@ function fixture() {
   writeFileSync(join(root, '.nvmrc'), '24.22.1\n');
   writeFileSync(join(root, 'package-lock.json'), '{}');
   writeFileSync(join(root, 'cdk.out/asset.txt'), 'runtime');
+  writeFileSync(join(root, 'cdk.out/stack.metadata.json'), '{}');
   writeFileSync(
     join(root, 'cdk.out/assets.json'),
     JSON.stringify({
@@ -29,6 +30,7 @@ function fixture() {
           type: 'aws:cloudformation:stack',
           environment: 'aws://650387442642/us-east-1',
           properties: { templateFile: 'asset.txt' },
+          additionalMetadataFile: 'stack.metadata.json',
         },
       },
     }),
@@ -53,6 +55,7 @@ test('Dado un assembly local, cuando se conserva y recupera el bundle, entonces 
   expect(run('verify', output, revision).status).toBe(0);
   expect(() => readFileSync(join(output, 'cdk.out/stale.txt'))).toThrow();
   expect(readFileSync(join(output, 'cdk.out/asset.txt'), 'utf8')).toBe('runtime');
+  expect(readFileSync(join(output, 'cdk.out/stack.metadata.json'), 'utf8')).toBe('{}');
   expect(JSON.parse(readFileSync(join(output, 'review.json'), 'utf8')).nodeVersion).toBe(
     'v24.22.1',
   );
@@ -150,3 +153,20 @@ test.each(['asset válido', 'asset externo'])(
     }
   },
 );
+
+test('Dada metadata referenciada ausente, cuando se prepara el bundle, entonces falla antes de conservarlo', () => {
+  const { root, output } = fixture();
+  rmSync(join(root, 'cdk.out/stack.metadata.json'));
+  expect(run('create', root, output, revision, 'v24.22.1').status).toBe(1);
+});
+
+test('Dado un inventario consistente sin metadata referenciada, cuando se recupera el bundle, entonces rechaza el assembly incompleto', () => {
+  const { root, output } = fixture();
+  expect(run('create', root, output, revision, 'v24.22.1').status).toBe(0);
+  rmSync(join(output, 'cdk.out/stack.metadata.json'));
+  const checksumPath = join(output, 'checksums.json');
+  const checksums = JSON.parse(readFileSync(checksumPath, 'utf8'));
+  delete checksums['cdk.out/stack.metadata.json'];
+  writeFileSync(checksumPath, JSON.stringify(checksums));
+  expect(run('verify', output, revision).status).toBe(1);
+});

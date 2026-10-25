@@ -10,7 +10,12 @@ revision = 'a' * 40
 scenario = sys.argv[1]
 with tempfile.TemporaryDirectory() as directory:
     root = Path(directory)
-    files = {'review.json': json.dumps({'revision': revision}), 'runtime.txt': 'same runtime'}
+    files = {
+        'review.json': json.dumps({'revision': revision}),
+        'runtime.txt': 'same runtime',
+        'cdk.out/manifest.json': json.dumps({'artifacts': {'PortfolioApiCloudTest': {'type': 'aws:cloudformation:stack', 'additionalMetadataFile': 'stack.metadata.json'}}}),
+        'cdk.out/stack.metadata.json': '{}',
+    }
     files['checksums.json'] = json.dumps({key: hashlib.sha256(value.encode()).hexdigest() for key, value in files.items()})
     archive = root / 'artifact.zip'
     with zipfile.ZipFile(archive, 'w') as bundle:

@@ -50,6 +50,8 @@ def create(root: Path, output: Path, revision: str, node_version: str) -> None:
     references = {"manifest.json"}
     asset_manifests = 0
     for artifact in manifest["artifacts"].values():
+        if "additionalMetadataFile" in artifact:
+            references.add(artifact["additionalMetadataFile"])
         properties = artifact.get("properties", {})
         references.update(properties[key] for key in ("templateFile", "file") if key in properties)
         if artifact["type"] == "cdk:asset-manifest":
@@ -84,6 +86,11 @@ def verify(output: Path, revision: str) -> None:
     expected = json.loads((output / "checksums.json").read_text())
     if not expected or inventory(output) != expected:
         raise ValueError("El bundle tiene archivos alterados, faltantes o adicionales")
+    assembly = output / "cdk.out"
+    manifest = json.loads(reference_path(assembly, "manifest.json").read_text())
+    for artifact in manifest["artifacts"].values():
+        if "additionalMetadataFile" in artifact:
+            reference_path(assembly, artifact["additionalMetadataFile"])
     review = json.loads((output / "review.json").read_text())
     if not re.fullmatch(r"[a-f0-9]{40}", revision) or review["revision"] != revision:
         raise ValueError("La revisión no coincide")
