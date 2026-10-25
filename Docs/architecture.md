@@ -81,3 +81,7 @@ Refreshing profile/project data used by the bot is the final step before product
 ## Phase 4 update
 
 The managed handler uses shared quotas, Secrets Manager configuration validated before business, a total deadline and provider cancellation. Descriptions of local memory, lazy configuration/500 and partial timeouts refer to the initial migration or local composition adapter. [Hardening](runtime-hardening.md) records current controls and differences; effective permissions/proxies/providers still require managed validation.
+
+## Production with Luna
+
+Real package, one model, conservative admission, direct gateway and reversible recovery. [Detalles](production.md).

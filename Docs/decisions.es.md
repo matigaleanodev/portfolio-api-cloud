@@ -138,3 +138,7 @@ Una sola instalación AWS conserva los nombres test existentes y se valida inici
 ## ADR-018 — Validación aislada y ejecución por changeset revisado
 
 Estado: **implementado localmente; sin provisioning ni validación administrada**. Entry point/asset exclusivo con proveedores ficticios y Secrets/Dynamo reales, paquete normal sin dobles, cuatro escenarios fijados en bytes y una sola instalación. Fundación y aplicación se preparan por Actions; ejecución separada con sesión restringida a ARN exactos y recibo vivo de template/assets. La confianza OIDC inicial requiere una identidad externa ya establecida; no se introduce bootstrap local ni elevación implícita. [Implementación, policies, prerrequisitos y plan](managed-validation.es.md).
+
+## ADR-019 — Luna y promoción de la instalación existente
+
+Paquete real, modelo único, admisión conservadora, gateway directo y recuperación reversible. [Detalles](production.es.md).
