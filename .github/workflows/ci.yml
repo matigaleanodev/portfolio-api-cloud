@@ -78,7 +78,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run test:infra
       - name: Synthesize test stack without AWS lookups
-        run: npm run cdk -- synth --no-lookups --context stage=test
+        run: npm run cdk -- synth --no-lookups --context stage=test --context validationScenario=success
       - name: Assemble review bundle without credentials
         run: |
           python3 scripts/review_bundle.py create . .tmp/review-bundle "$GITHUB_SHA" "$(node --version)"
