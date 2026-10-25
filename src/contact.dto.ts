@@ -6,8 +6,8 @@ import {
   MaxLength,
   MinLength,
   validateSync,
-} from "class-validator";
-import { plainToInstance } from "class-transformer";
+} from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 export class ContactDto {
   @IsString()
@@ -37,8 +37,7 @@ export function validateContact(body: unknown): {
   dto: ContactDto;
   errors: string[];
 } {
-  if (Array.isArray(body))
-    return { dto: new ContactDto(), errors: ["body must be an object"] };
+  if (Array.isArray(body)) return { dto: new ContactDto(), errors: ['body must be an object'] };
   const dto = plainToInstance(ContactDto, body ?? {});
   const errors = validateSync(dto, {
     whitelist: true,

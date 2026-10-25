@@ -23,7 +23,7 @@ npm run check
 
 [Test stack and prerequisites](Docs/infrastructure.md) · [Spanish test cases](Docs/testing.md). Vitest runs 178 cases (155 application, 12 tooling, 11 infrastructure).
 
-Standard formatting with Prettier **3.9.10**, using its unchanged defaults (`.prettierrc.json`). `npm run format` applies formatting; `npm run format:check` checks without writing and is required in CI. Defaults use two spaces, double quotes, semicolons and an advisory 80-column print width. `.gitignore` and `.prettierignore` exclude generated/private files, the lockfile and the pinned historical fixture.
+Readable formatting with Prettier **3.9.10** and explicit `.prettierrc.json` rules: two spaces, single quotes, semicolons, trailing commas and an advisory 100-column print width. Scripts separate preparation, execution and checks with blank lines preserved by Prettier. `npm run format` writes changes; `npm run format:check` checks without writing and is required in CI. `.gitignore` and `.prettierignore` exclude private/generated files, the lockfile and the pinned historical fixture.
 
 ## Scope
 

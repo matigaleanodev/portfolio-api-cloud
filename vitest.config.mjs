@@ -1,5 +1,7 @@
-import { defineConfig } from "vitest/config";
-const isolated = { environment: "node", setupFiles: ["./test/setup.mjs"] };
+import { defineConfig } from 'vitest/config';
+
+const isolated = { environment: 'node', setupFiles: ['./test/setup.mjs'] };
+
 export default defineConfig({
   envDir: false,
   test: {
@@ -8,24 +10,24 @@ export default defineConfig({
         envDir: false,
         test: {
           ...isolated,
-          name: "application",
-          include: [".tmp/tests/test/*.test.js"],
+          name: 'application',
+          include: ['.tmp/tests/test/*.test.js'],
         },
       },
       {
         envDir: false,
         test: {
           ...isolated,
-          name: "infrastructure",
-          include: [".tmp/tests/test/infra/*.test.js"],
+          name: 'infrastructure',
+          include: ['.tmp/tests/test/infra/*.test.js'],
         },
       },
       {
         envDir: false,
         test: {
-          environment: "node",
-          name: "tooling",
-          include: [".tmp/tests/test/tooling/*.test.js"],
+          environment: 'node',
+          name: 'tooling',
+          include: ['.tmp/tests/test/tooling/*.test.js'],
         },
       },
     ],

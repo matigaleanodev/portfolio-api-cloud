@@ -81,4 +81,4 @@ La suite completa usa Vitest 5.0.5: 155 casos de aplicación, 12 tooling migrado
 
 ## Formato de código
 
-Prettier 3.9.10 de desarrollo, fijado en manifiesto/lock y con configuración vacía para usar sus valores estándar. Se formatean fuentes, tests, infraestructura, scripts JavaScript, configuración y documentación compatibles. `format` aplica cambios; `format:check` solo verifica y forma parte de `check` y CI. No se modifica el fixture histórico ni su hash. Python queda fuera del alcance de Prettier.
+Prettier 3.9.10 de desarrollo, fijado en manifiesto/lock y con reglas explícitas para legibilidad: 100 columnas orientativas, 2 espacios y comillas simples. Se formatean fuentes, tests, infraestructura, scripts JavaScript, configuración y documentación compatibles. `format` aplica cambios; `format:check` solo verifica y forma parte de `check` y CI. No se modifica el fixture histórico ni su hash. Python queda fuera del alcance de Prettier.

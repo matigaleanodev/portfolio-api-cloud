@@ -23,7 +23,7 @@ npm run check
 
 [Stack de test y requisitos](Docs/infrastructure.es.md) · [Casos de prueba en español](Docs/testing.es.md). Vitest ejecuta 178 casos (155 aplicación, 12 tooling, 11 infraestructura).
 
-Formato estándar con Prettier **3.9.10**, sin personalizar sus valores predeterminados (`.prettierrc.json`). `npm run format` aplica el formato; `npm run format:check` lo verifica sin modificar archivos y es obligatorio en CI. Usa 2 espacios, comillas dobles, punto y coma y ancho orientativo de 80 columnas. Se respetan `.gitignore` y `.prettierignore`; el lock y el fixture histórico con hash fijado quedan fuera.
+Formato legible con Prettier **3.9.10** y reglas explícitas en `.prettierrc.json`: 2 espacios, comillas simples, punto y coma, comas finales y ancho orientativo de 100 columnas. Los scripts separan preparación, ejecución y comprobación con líneas en blanco; Prettier conserva esa separación. `npm run format` aplica el formato; `npm run format:check` verifica sin modificar archivos y es obligatorio en CI. `.gitignore` y `.prettierignore` excluyen privados, generados, lock y fixture histórico con hash fijado.
 
 ## Alcance
 

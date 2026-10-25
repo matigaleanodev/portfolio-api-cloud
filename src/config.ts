@@ -8,11 +8,10 @@ export function readConfiguration(
   const value = env.CORS_ORIGIN?.trim();
   const origins =
     value
-      ?.split(",")
+      ?.split(',')
       .map((origin) => origin.trim())
       .filter(Boolean) ?? [];
-  const corsOrigins =
-    value === "*" ? true : origins.length > 0 ? Object.freeze(origins) : false;
+  const corsOrigins = value === '*' ? true : origins.length > 0 ? Object.freeze(origins) : false;
   return Object.freeze({ corsOrigins });
 }
 
@@ -25,16 +24,10 @@ export interface ContactConfiguration {
 export function readContactConfiguration(
   env: Readonly<Record<string, string | undefined>>,
 ): ContactConfiguration {
-  const required = [
-    "RESEND_API_KEY",
-    "CONTACT_FROM_EMAIL",
-    "CONTACT_TO_EMAIL",
-  ] as const;
+  const required = ['RESEND_API_KEY', 'CONTACT_FROM_EMAIL', 'CONTACT_TO_EMAIL'] as const;
   const missing = required.filter((key) => !env[key]?.trim());
   if (missing.length)
-    throw new Error(
-      `Missing required environment variables: ${missing.join(", ")}`,
-    );
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   // El origen comprueba trim para presencia pero conserva los valores al enviar.
   return Object.freeze({
     apiKey: env.RESEND_API_KEY!,

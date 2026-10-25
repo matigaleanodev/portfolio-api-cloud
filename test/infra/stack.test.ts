@@ -1,180 +1,159 @@
-import { test, expect } from "vitest";
-import { App } from "aws-cdk-lib";
-import { Match, Template } from "aws-cdk-lib/assertions";
-import { join } from "node:path";
-import { readdirSync, readFileSync } from "node:fs";
-import { PortfolioApiStack } from "../../infra/stack.js";
-const app = new App({ context: { stage: "test" } });
+import { test, expect } from 'vitest';
+import { App } from 'aws-cdk-lib';
+import { Match, Template } from 'aws-cdk-lib/assertions';
+import { join } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { PortfolioApiStack } from '../../infra/stack.js';
+const app = new App({ context: { stage: 'test' } });
 const stack = new PortfolioApiStack(app);
 const template = Template.fromStack(stack);
-test("INF-001 | Dado el ambiente test, cuando se define la stack, entonces apunta únicamente a la cuenta y región acordadas", () => {
-  expect(
-    () => new PortfolioApiStack(new App({ context: { stage: "prod" } })),
-  ).toThrow("Solo se admite el ambiente test.");
-  expect(() => new PortfolioApiStack(new App())).toThrow(
-    "Solo se admite el ambiente test.",
+test('Dado el ambiente test, cuando se define la stack, entonces apunta únicamente a la cuenta y región acordadas', () => {
+  expect(() => new PortfolioApiStack(new App({ context: { stage: 'prod' } }))).toThrow(
+    'Solo se admite el ambiente test.',
   );
-  expect(stack.stackName).toBe("portfolio-api-cloud-test");
-  expect(stack.account).toBe("650387442642");
-  expect(stack.region).toBe("us-east-1");
+  expect(() => new PortfolioApiStack(new App())).toThrow('Solo se admite el ambiente test.');
+  expect(stack.stackName).toBe('portfolio-api-cloud-test');
+  expect(stack.account).toBe('650387442642');
+  expect(stack.region).toBe('us-east-1');
 });
-test("INF-002 | Dado el paquete compilado, cuando se define la Lambda, entonces usa Node 24 ARM64 sin VPC ni URL alternativa", () => {
-  template.resourceCountIs("AWS::Lambda::Function", 1);
-  template.hasResourceProperties("AWS::Lambda::Function", {
-    Runtime: "nodejs24.x",
-    Handler: "dist/handler.handler",
-    Architectures: ["arm64"],
+test('Dado el paquete compilado, cuando se define la Lambda, entonces usa Node 24 ARM64 sin VPC ni URL alternativa', () => {
+  template.resourceCountIs('AWS::Lambda::Function', 1);
+  template.hasResourceProperties('AWS::Lambda::Function', {
+    Runtime: 'nodejs24.x',
+    Handler: 'dist/handler.handler',
+    Architectures: ['arm64'],
     VpcConfig: Match.absent(),
   });
-  template.resourceCountIs("AWS::Lambda::Url", 0);
-  template.resourceCountIs("AWS::EC2::NatGateway", 0);
+  template.resourceCountIs('AWS::Lambda::Url', 0);
+  template.resourceCountIs('AWS::EC2::NatGateway', 0);
 });
-test("INF-003 | Dado el presupuesto técnico de test, cuando se configura la ejecución, entonces limita memoria, duración y concurrencia", () => {
-  template.hasResourceProperties("AWS::Lambda::Function", {
+test('Dado el presupuesto técnico de test, cuando se configura la ejecución, entonces limita memoria, duración y concurrencia', () => {
+  template.hasResourceProperties('AWS::Lambda::Function', {
     MemorySize: 512,
     Timeout: 28,
     ReservedConcurrentExecutions: 5,
   });
 });
-test("INF-004 | Dados errores del SDK, cuando la Lambda ejecuta en AWS, entonces usa NODE_ENV production sin secretos en el template", () => {
-  template.hasResourceProperties("AWS::Lambda::Function", {
+test('Dados errores del SDK, cuando la Lambda ejecuta en AWS, entonces usa NODE_ENV production sin secretos en el template', () => {
+  template.hasResourceProperties('AWS::Lambda::Function', {
     Environment: {
-      Variables: { NODE_ENV: "production", CORS_ORIGIN: { Ref: "CorsOrigin" } },
+      Variables: { NODE_ENV: 'production', CORS_ORIGIN: { Ref: 'CorsOrigin' } },
     },
   });
   expect(JSON.stringify(template.toJSON())).not.toMatch(
     /RESEND_API_KEY|CONTACT_FROM_EMAIL|CONTACT_TO_EMAIL|OPENAI_API_KEY/,
   );
 });
-test("INF-005 | Dada una API HTTP regional, cuando se integra con Lambda, entonces conserva payload v2 y un timeout menor a 30 segundos", () => {
-  template.resourceCountIs("AWS::ApiGatewayV2::Api", 1);
-  template.hasResourceProperties("AWS::ApiGatewayV2::Api", {
-    ProtocolType: "HTTP",
+test('Dada una API HTTP regional, cuando se integra con Lambda, entonces conserva payload v2 y un timeout menor a 30 segundos', () => {
+  template.resourceCountIs('AWS::ApiGatewayV2::Api', 1);
+  template.hasResourceProperties('AWS::ApiGatewayV2::Api', {
+    ProtocolType: 'HTTP',
     CorsConfiguration: Match.absent(),
   });
-  template.hasResourceProperties("AWS::ApiGatewayV2::Integration", {
-    IntegrationType: "AWS_PROXY",
-    PayloadFormatVersion: "2.0",
+  template.hasResourceProperties('AWS::ApiGatewayV2::Integration', {
+    IntegrationType: 'AWS_PROXY',
+    PayloadFormatVersion: '2.0',
     TimeoutInMillis: 29000,
   });
 });
-test("INF-006 | Dada la API de test, cuando se delega el enrutamiento al handler, entonces exige IAM y permite únicamente OPTIONS sin firma", () => {
-  template.resourceCountIs("AWS::ApiGatewayV2::Route", 2);
-  template.hasResourceProperties("AWS::ApiGatewayV2::Route", {
-    RouteKey: "$default",
-    AuthorizationType: "AWS_IAM",
+test('Dada la API de test, cuando se delega el enrutamiento al handler, entonces exige IAM y permite únicamente OPTIONS sin firma', () => {
+  template.resourceCountIs('AWS::ApiGatewayV2::Route', 2);
+  template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+    RouteKey: '$default',
+    AuthorizationType: 'AWS_IAM',
   });
-  template.hasResourceProperties("AWS::ApiGatewayV2::Route", {
-    RouteKey: "OPTIONS /{proxy+}",
-    AuthorizationType: "NONE",
+  template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+    RouteKey: 'OPTIONS /{proxy+}',
+    AuthorizationType: 'NONE',
   });
 });
-test("INF-007 | Dada una ruta /api, cuando se crea el stage, entonces conserva rawPath sin prefijo y aplica límites globales", () => {
-  template.hasResourceProperties("AWS::ApiGatewayV2::Stage", {
-    StageName: "$default",
+test('Dada una ruta /api, cuando se crea el stage, entonces conserva rawPath sin prefijo y aplica límites globales', () => {
+  template.hasResourceProperties('AWS::ApiGatewayV2::Stage', {
+    StageName: '$default',
     AutoDeploy: true,
     DefaultRouteSettings: { ThrottlingRateLimit: 2, ThrottlingBurstLimit: 5 },
   });
 });
-test("INF-008 | Dada la política de logs de test, cuando se reemplaza la stack, entonces retiene los logs con expiración de catorce días", () => {
-  template.hasResource("AWS::Logs::LogGroup", {
+test('Dada la política de logs de test, cuando se reemplaza la stack, entonces retiene los logs con expiración de catorce días', () => {
+  template.hasResource('AWS::Logs::LogGroup', {
     Properties: { RetentionInDays: 14 },
-    DeletionPolicy: "Retain",
-    UpdateReplacePolicy: "Retain",
+    DeletionPolicy: 'Retain',
+    UpdateReplacePolicy: 'Retain',
   });
 });
-test("INF-009 | Dado el rol de ejecución, cuando se sintetizan permisos, entonces exige una boundary externa y solo permite escribir sus logs", () => {
-  template.resourceCountIs("AWS::IAM::Role", 1);
-  template.hasResourceProperties("AWS::IAM::Role", {
-    PermissionsBoundary: { Ref: "RuntimePermissionsBoundaryArn" },
+test('Dado el rol de ejecución, cuando se sintetizan permisos, entonces exige una boundary externa y solo permite escribir sus logs', () => {
+  template.resourceCountIs('AWS::IAM::Role', 1);
+  template.hasResourceProperties('AWS::IAM::Role', {
+    PermissionsBoundary: { Ref: 'RuntimePermissionsBoundaryArn' },
     ManagedPolicyArns: Match.absent(),
   });
-  template.hasResourceProperties("AWS::IAM::Policy", {
+  template.hasResourceProperties('AWS::IAM::Policy', {
     PolicyDocument: {
       Statement: [
         {
-          Action: ["logs:CreateLogStream", "logs:PutLogEvents"],
-          Effect: "Allow",
+          Action: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+          Effect: 'Allow',
           Resource: Match.anyValue(),
         },
       ],
-      Version: "2012-10-17",
+      Version: '2012-10-17',
     },
   });
-  const logId = Object.keys(template.findResources("AWS::Logs::LogGroup"))[0]!;
-  template.hasResourceProperties("AWS::IAM::Policy", {
+  const logId = Object.keys(template.findResources('AWS::Logs::LogGroup'))[0]!;
+  template.hasResourceProperties('AWS::IAM::Policy', {
     PolicyDocument: {
       Statement: [
         {
-          Action: ["logs:CreateLogStream", "logs:PutLogEvents"],
-          Effect: "Allow",
+          Action: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+          Effect: 'Allow',
           Resource: {
-            "Fn::Join": ["", [{ "Fn::GetAtt": [logId, "Arn"] }, ":*"]],
+            'Fn::Join': ['', [{ 'Fn::GetAtt': [logId, 'Arn'] }, ':*']],
           },
         },
       ],
-      Version: "2012-10-17",
+      Version: '2012-10-17',
     },
   });
-  const parameters = template.toJSON()["Parameters"] as Record<
-    string,
-    Record<string, unknown>
-  >;
-  expect(
-    parameters["RuntimePermissionsBoundaryArn"]!["Default"],
-  ).toBeUndefined();
+  const parameters = template.toJSON()['Parameters'] as Record<string, Record<string, unknown>>;
+  expect(parameters['RuntimePermissionsBoundaryArn']!['Default']).toBeUndefined();
 });
-test("INF-010 | Dada la publicación CDK futura, cuando se sintetiza el manifest, entonces separa los roles de deploy, CloudFormation y assets", () => {
+test('Dada la publicación CDK futura, cuando se sintetiza el manifest, entonces separa los roles de deploy, CloudFormation y assets', () => {
   const artifact = app.synth().getStackArtifact(stack.artifactId);
   expect(artifact.assumeRoleArn).toBe(
-    "arn:aws:iam::650387442642:role/PortfolioApiCloudTestCdkDeployRole",
+    'arn:aws:iam::650387442642:role/PortfolioApiCloudTestCdkDeployRole',
   );
   expect(artifact.cloudFormationExecutionRoleArn).toBe(
-    "arn:aws:iam::650387442642:role/PortfolioApiCloudTestCloudFormationExecutionRole",
+    'arn:aws:iam::650387442642:role/PortfolioApiCloudTestCloudFormationExecutionRole',
   );
   const manifest = JSON.stringify(app.synth().manifest);
-  expect(manifest).not.toContain("AdministratorAccess");
+  expect(manifest).not.toContain('AdministratorAccess');
   const assets = JSON.parse(
-    readFileSync(
-      join(app.synth().directory, `${stack.artifactId}.assets.json`),
-      "utf8",
-    ),
+    readFileSync(join(app.synth().directory, `${stack.artifactId}.assets.json`), 'utf8'),
   ) as {
     files: Record<
       string,
       {
-        destinations: Record<
-          string,
-          { assumeRoleArn: string; bucketName: string }
-        >;
+        destinations: Record<string, { assumeRoleArn: string; bucketName: string }>;
       }
     >;
   };
   for (const file of Object.values(assets.files))
     for (const destination of Object.values(file.destinations)) {
       expect(destination.assumeRoleArn).toBe(
-        "arn:aws:iam::650387442642:role/PortfolioApiCloudTestFilePublishingRole",
+        'arn:aws:iam::650387442642:role/PortfolioApiCloudTestFilePublishingRole',
       );
-      expect(destination.bucketName).toBe(
-        "cdk-papiatest-assets-650387442642-us-east-1",
-      );
+      expect(destination.bucketName).toBe('cdk-papiatest-assets-650387442642-us-east-1');
     }
 });
-test("INF-011 | Dado el asset de Lambda, cuando se inspecciona su contenido, entonces incluye solo runtime y conserva las licencias de dependencias", () => {
-  expect(readdirSync(".tmp/lambda").sort()).toEqual([
-    "LICENSE",
-    "dist",
-    "node_modules",
-    "package.json",
+test('Dado el asset de Lambda, cuando se inspecciona su contenido, entonces incluye solo runtime y conserva las licencias de dependencias', () => {
+  expect(readdirSync('.tmp/lambda').sort()).toEqual([
+    'LICENSE',
+    'dist',
+    'node_modules',
+    'package.json',
   ]);
-  expect(readdirSync(".tmp/lambda/dist")).toContain("handler.js");
-  expect(() =>
-    readFileSync(".tmp/lambda/node_modules/vitest/package.json"),
-  ).toThrow();
-  expect(() =>
-    readFileSync(".tmp/lambda/node_modules/aws-cdk-lib/package.json"),
-  ).toThrow();
-  expect(
-    readFileSync(".tmp/lambda/node_modules/resend/LICENSE", "utf8"),
-  ).toContain("MIT");
+  expect(readdirSync('.tmp/lambda/dist')).toContain('handler.js');
+  expect(() => readFileSync('.tmp/lambda/node_modules/vitest/package.json')).toThrow();
+  expect(() => readFileSync('.tmp/lambda/node_modules/aws-cdk-lib/package.json')).toThrow();
+  expect(readFileSync('.tmp/lambda/node_modules/resend/LICENSE', 'utf8')).toContain('MIT');
 });

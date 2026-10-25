@@ -81,4 +81,4 @@ All suites use Vitest 5.0.5: 155 application cases, 12 tooling cases migrated fr
 
 ## Code formatting
 
-Prettier 3.9.10 is pinned as a development dependency, with an empty configuration selecting standard defaults. It formats supported sources, tests, infrastructure, JavaScript scripts, configuration and documentation. `format` writes changes; `format:check` only checks and is part of `check` and CI. The historical fixture and its hash are preserved. Python is outside Prettier's scope.
+Prettier 3.9.10 is pinned as a development dependency, with explicit readability rules: advisory 100 columns, two spaces and single quotes. It formats supported sources, tests, infrastructure, JavaScript scripts, configuration and documentation. `format` writes changes; `format:check` only checks and is part of `check` and CI. The historical fixture and its hash are preserved. Python is outside Prettier's scope.
