@@ -81,3 +81,7 @@ La actualización de perfil y proyectos usados por el bot es el último paso pre
 ## Actualización de fase 4
 
 El handler administrado usa cuotas compartidas, configuración de Secrets Manager validada antes de negocio, deadline total y cancelación de proveedores. Las descripciones de memoria local, configuración lazy/500 y timeouts parciales corresponden al traslado inicial o al adaptador de composición local. Los controles actuales y diferencias están en [endurecimiento](runtime-hardening.es.md); permisos/proxies/proveedores reales siguen pendientes de validación administrada.
+
+## Producción con Luna
+
+Paquete real, modelo único, admisión conservadora, gateway directo y recuperación reversible. [Detalles](production.es.md).

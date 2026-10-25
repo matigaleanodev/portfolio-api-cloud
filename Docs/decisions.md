@@ -138,3 +138,7 @@ One AWS installation retains existing test names and starts validation with simu
 ## ADR-018 — Isolated validation and execution of reviewed change sets
 
 Status: **implemented locally; no provisioning or managed validation**. Dedicated entrypoint/asset with fictitious providers and real Secrets/Dynamo, normal package without doubles, four scenarios fixed in reviewed bytes and one installation. Foundation and application preparation use Actions; separate execution narrows the session to exact ARNs and a live template/asset receipt. Initial OIDC trust requires an existing external identity; there is no local bootstrap or inferred elevation. [Implementation, policies, prerequisites and plan](managed-validation.md).
+
+## ADR-019 — Luna and promotion of the existing installation
+
+Real package, one model, conservative admission, direct gateway and reversible recovery. [Detalles](production.md).

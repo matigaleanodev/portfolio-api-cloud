@@ -194,8 +194,8 @@ export function createAiAdmission(
       }
     },
     async reserve(inputTokens, outputTokens, sessionId) {
-      // Tarifas estándar sin descuentos: nanodólares por token GPT-4.1 mini.
-      const cost = inputTokens * 400 + outputTokens * 1600;
+      // Luna Standard: entrada con margen de escritura de caché; salida incluye razonamiento.
+      const cost = inputTokens * 125 + outputTokens * 500;
       if (
         ![inputTokens, outputTokens, cost, budgetNanoUsd].every(Number.isSafeInteger) ||
         inputTokens < 0 ||

@@ -1,30 +1,324 @@
 {
   "version": 1,
-  "generatedAt": "2026-10-25T05:18:44Z",
+  "generatedAt": "2026-10-25T16:18:39.003Z",
   "source": {
-    "repository": "matigaleanodev/portfolio-api@a0ef80fa9f82d1cea5a31425a63ab0a344338c56",
-    "artifactPath": "src/chat/content/chat-faq.data.ts"
+    "repository": "portfolio",
+    "artifactPath": ".generated/chat/knowledge.json"
   },
-  "contentHash": "sha256:5c7c161c023a5e336a00c1c23b6d037265f1e32c85485abb9d2be44c43c888d2",
+  "release": {
+    "generatedAt": "2026-10-25T16:18:39.469Z",
+    "siteUrl": "https://matiasgaleano.dev"
+  },
+  "contentHash": "sha256:35c3d29ca1e5cd1bb37370397c7bc8843705485cb762cfc4d0fa6edefd4a210c",
   "knowledge": {
-    "generatedAt": "2026-10-25T05:18:44Z",
+    "generatedAt": "2026-10-25T16:18:39.003Z",
     "projects": [
       {
         "slug": "foodly-notes",
         "title": "Foodly Notes",
-        "excerpt": "Un recetario con Ionic + Angular y API NestJS publicado en Play Store."
+        "excerpt": "App de recetas publicada en Google Play y construida como producto fullstack real: experiencia mobile en Ionic/Angular, API NestJS propia y despliegue continuo en AWS.",
+        "stack": ["Google Play", "API NestJS", "AWS", "Docker", "CI/CD"],
+        "links": [
+          {
+            "label": "Play Store",
+            "url": "https://play.google.com/store/apps/details?id=io.matiasgaleano.foodlynotes",
+            "icon": "play",
+            "primary": true
+          },
+          {
+            "label": "Repositorio Frontend",
+            "url": "https://github.com/matigaleanodev/foodly-notes",
+            "icon": "code",
+            "primary": false
+          },
+          {
+            "label": "Repositorio Backend",
+            "url": "https://github.com/matigaleanodev/foodly-notes-api",
+            "icon": "server",
+            "primary": false
+          },
+          {
+            "label": "Documentación",
+            "url": "https://matigaleano-dev.notion.site/Foodly-Notes-2f9aa07ef7dd80f0b9a0f2af1030bdb0",
+            "icon": "bookopen",
+            "primary": false
+          },
+          {
+            "label": "Explorar arquitectura",
+            "url": "https://matiasgaleano.dev/diagrams/foodly-notes-ecosystem.html",
+            "icon": "server",
+            "primary": false
+          }
+        ],
+        "highlights": [
+          "Proyecto destacado del portfolio.",
+          "App publicada",
+          "Backend propio + cloud operable",
+          "Disponible en Google Play con recetas y traducciones desde una API propia; favoritos y progreso de compras persistidos en el dispositivo.",
+          "Diseñé y construí la app mobile, la API NestJS y el flujo de CI/CD para publicar cambios sin fricción.",
+          "Frontend Ionic/Angular desacoplado de una API NestJS + MongoDB, contenedores en AWS EC2 y deploy automatizado con GitHub Actions.",
+          "Play Store: https://play.google.com/store/apps/details?id=io.matiasgaleano.foodlynotes",
+          "Repositorio Frontend: https://github.com/matigaleanodev/foodly-notes",
+          "Repositorio Backend: https://github.com/matigaleanodev/foodly-notes-api",
+          "Documentación: https://matigaleano-dev.notion.site/Foodly-Notes-2f9aa07ef7dd80f0b9a0f2af1030bdb0",
+          "Explorar arquitectura: /diagrams/foodly-notes-ecosystem.html"
+        ],
+        "searchText": "foodly-notes Foodly Notes App de recetas publicada en Google Play y construida como producto fullstack real: experiencia mobile en Ionic/Angular, API NestJS propia y despliegue continuo en AWS. App publicada Backend propio + cloud operable Disponible en Google Play con recetas y traducciones desde una API propia; favoritos y progreso de compras persistidos en el dispositivo. Diseñé y construí la app mobile, la API NestJS y el flujo de CI/CD para publicar cambios sin fricción. Frontend Ionic/Angular desacoplado de una API NestJS + MongoDB, contenedores en AWS EC2 y deploy automatizado con GitHub Actions. Google Play API NestJS AWS Docker CI/CD Play Store https://play.google.com/store/apps/details?id=io.matiasgaleano.foodlynotes primary cta Repositorio Frontend https://github.com/matigaleanodev/foodly-notes secondary cta Repositorio Backend https://github.com/matigaleanodev/foodly-notes-api secondary cta Documentación https://matigaleano-dev.notion.site/Foodly-Notes-2f9aa07ef7dd80f0b9a0f2af1030bdb0 secondary cta Explorar arquitectura /diagrams/foodly-notes-ecosystem.html secondary cta"
       },
       {
         "slug": "modo-playa",
         "title": "Modo Playa",
-        "excerpt": "Un catálogo de alojamientos con backend multi-tenant en NestJS."
+        "excerpt": "Plataforma de alojamientos pensada como caso de arquitectura backend: API multi-tenant, panel admin y catálogo público desacoplado para escalar por propietario sin duplicar sistema.",
+        "stack": ["Multi-tenant", "API NestJS", "MongoDB", "JWT", "Media pipeline"],
+        "links": [
+          {
+            "label": "Play Store",
+            "url": "https://play.google.com/store/apps/details?id=io.modoplay.app",
+            "icon": "play",
+            "primary": true
+          },
+          {
+            "label": "Repositorio Backend",
+            "url": "https://github.com/matigaleanodev/modo-playa-api",
+            "icon": "server",
+            "primary": false
+          },
+          {
+            "label": "Repositorio Catálogo",
+            "url": "https://github.com/matigaleanodev/modo-playa-app",
+            "icon": "code",
+            "primary": false
+          },
+          {
+            "label": "Repositorio Admin",
+            "url": "https://github.com/matigaleanodev/modo-playa-admin",
+            "icon": "code",
+            "primary": false
+          },
+          {
+            "label": "Explorar arquitectura",
+            "url": "https://matiasgaleano.dev/diagrams/modo-playa-ecosystem.html",
+            "icon": "server",
+            "primary": false
+          }
+        ],
+        "highlights": [
+          "Plataforma multi-tenant",
+          "Arquitectura API + modelado de dominio",
+          "Producto real con app publicada en Google Play, panel admin operativo y aislamiento de datos por ownerId sobre un backend compartido.",
+          "Definí la estrategia multi-tenant, la API NestJS, la separación entre superficies y los flujos de administración y publicación.",
+          "NestJS + MongoDB con JWT, media pipeline en backend y fronteras explícitas entre app pública, admin y capa de datos.",
+          "Play Store: https://play.google.com/store/apps/details?id=io.modoplay.app",
+          "Repositorio Backend: https://github.com/matigaleanodev/modo-playa-api",
+          "Repositorio Catálogo: https://github.com/matigaleanodev/modo-playa-app",
+          "Repositorio Admin: https://github.com/matigaleanodev/modo-playa-admin",
+          "Explorar arquitectura: /diagrams/modo-playa-ecosystem.html"
+        ],
+        "searchText": "modo-playa Modo Playa Plataforma de alojamientos pensada como caso de arquitectura backend: API multi-tenant, panel admin y catálogo público desacoplado para escalar por propietario sin duplicar sistema. Plataforma multi-tenant Arquitectura API + modelado de dominio Producto real con app publicada en Google Play, panel admin operativo y aislamiento de datos por ownerId sobre un backend compartido. Definí la estrategia multi-tenant, la API NestJS, la separación entre superficies y los flujos de administración y publicación. NestJS + MongoDB con JWT, media pipeline en backend y fronteras explícitas entre app pública, admin y capa de datos. Multi-tenant API NestJS MongoDB JWT Media pipeline Play Store https://play.google.com/store/apps/details?id=io.modoplay.app primary cta Repositorio Backend https://github.com/matigaleanodev/modo-playa-api secondary cta Repositorio Catálogo https://github.com/matigaleanodev/modo-playa-app secondary cta Repositorio Admin https://github.com/matigaleanodev/modo-playa-admin secondary cta Explorar arquitectura /diagrams/modo-playa-ecosystem.html secondary cta"
       },
       {
         "slug": "portfolio",
         "title": "Portfolio",
-        "excerpt": "Portfolio con arquitectura static-first, chatbot contextual y automatización serverless en AWS."
+        "excerpt": "Plataforma técnica personal construida como sistema static-first: frontend Angular, pipeline editorial en Markdown, blog prerenderizado, chatbot con IA y automatización serverless post-publicación.",
+        "stack": ["Static-first", "SSG blog", "IA chat", "NestJS API", "AWS serverless"],
+        "links": [
+          {
+            "label": "Explorar arquitectura",
+            "url": "https://matiasgaleano.dev/diagrams/portfolio-ecosystem.html",
+            "icon": "server",
+            "primary": false
+          },
+          {
+            "label": "Blog técnico",
+            "url": "https://matiasgaleano.dev/blog",
+            "icon": "bookopen",
+            "primary": true
+          },
+          {
+            "label": "Repositorio Frontend",
+            "url": "https://github.com/matigaleanodev/portfolio",
+            "icon": "code",
+            "primary": false
+          },
+          {
+            "label": "Repositorio API",
+            "url": "https://github.com/matigaleanodev/portfolio-api",
+            "icon": "server",
+            "primary": false
+          },
+          {
+            "label": "Repositorio Cloud",
+            "url": "https://github.com/matigaleanodev/portfolio-cloud",
+            "icon": "server",
+            "primary": false
+          }
+        ],
+        "highlights": [
+          "Plataforma técnica personal",
+          "Static-first + automatización serverless",
+          "Blog público prerenderizado, artifacts editoriales versionados y separación real entre frontend, API y capa cloud.",
+          "Diseñé la arquitectura del ecosistema, el pipeline de contenido y la integración entre Angular, NestJS y AWS para publicar y operar el sitio.",
+          "Frontend estático en Firebase, API mínima en NestJS, handoff de artifacts hacia Lambdas y publicación canónica del knowledge del chat en la capa cloud.",
+          "Explorar arquitectura: /diagrams/portfolio-ecosystem.html",
+          "Blog técnico: https://matiasgaleano.dev/blog",
+          "Repositorio Frontend: https://github.com/matigaleanodev/portfolio",
+          "Repositorio API: https://github.com/matigaleanodev/portfolio-api",
+          "Repositorio Cloud: https://github.com/matigaleanodev/portfolio-cloud"
+        ],
+        "searchText": "portfolio Portfolio Plataforma técnica personal construida como sistema static-first: frontend Angular, pipeline editorial en Markdown, blog prerenderizado, chatbot con IA y automatización serverless post-publicación. Plataforma técnica personal Static-first + automatización serverless Blog público prerenderizado, artifacts editoriales versionados y separación real entre frontend, API y capa cloud. Diseñé la arquitectura del ecosistema, el pipeline de contenido y la integración entre Angular, NestJS y AWS para publicar y operar el sitio. Frontend estático en Firebase, API mínima en NestJS, handoff de artifacts hacia Lambdas y publicación canónica del knowledge del chat en la capa cloud. Static-first SSG blog IA chat NestJS API AWS serverless Explorar arquitectura /diagrams/portfolio-ecosystem.html secondary cta Blog técnico https://matiasgaleano.dev/blog primary cta Repositorio Frontend https://github.com/matigaleanodev/portfolio secondary cta Repositorio API https://github.com/matigaleanodev/portfolio-api secondary cta Repositorio Cloud https://github.com/matigaleanodev/portfolio-cloud secondary cta"
       }
     ],
-    "posts": []
+    "posts": [
+      {
+        "slug": "del-pedido-de-negocio-a-la-review",
+        "title": "Del pedido de negocio a la review: cómo trabajamos una funcionalidad",
+        "excerpt": "Refinamiento con negocio, refinamiento técnico, planning, desarrollo y QA: cómo se ordena el trabajo de una funcionalidad y qué pasa cuando producción interrumpe lo planificado.",
+        "date": "2026-10-23",
+        "tags": ["engineering", "agile", "scrum", "jira", "teamwork"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/del-pedido-de-negocio-a-la-review",
+        "summary": "Una parte importante del desarrollo profesional ocurre antes de abrir el editor. Hay que entender qué necesita negocio, convertir esa necesidad en trabajo concreto, encontrar dependencias y acordar qué puede entregar el equipo. Después hay que desarrollar, probar y mostrar lo que se hizo. Mientras tanto, producción...",
+        "searchText": "del-pedido-de-negocio-a-la-review Del pedido de negocio a la review: cómo trabajamos una funcionalidad Refinamiento con negocio, refinamiento técnico, planning, desarrollo y QA: cómo se ordena el trabajo de una funcionalidad y qué pasa cuando producción interrumpe lo planificado. engineering agile scrum jira teamwork Una parte importante del desarrollo profesional ocurre antes de abrir el editor. Hay que entender qué necesita negocio, convertir esa necesidad en trabajo concreto, encontrar dependencias y acordar qué puede entregar el equipo. Después hay que desarrollar, probar y mostrar lo que se hizo. Mientras tanto, producción..."
+      },
+      {
+        "slug": "mis-expectativas-con-angular-native",
+        "title": "Mis expectativas con Angular Native",
+        "excerpt": "Angular Native me interesa por la posibilidad de construir interfaces nativas desde Angular. Estas son mis expectativas, las dudas que todavía tengo y las pruebas que haría antes de elegirlo para una app real.",
+        "date": "2026-10-09",
+        "tags": ["angular", "angular-native", "mobile", "engineering"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/mis-expectativas-con-angular-native",
+        "summary": "Angular Native me llamó la atención bastante rápido. Trabajo con Angular y la posibilidad de llevar parte de esa forma de desarrollar a una interfaz nativa me resulta atractiva. También me genera preguntas. Una cosa es reconocer templates, signals e inyección de dependencias. Otra es construir una app que se comport...",
+        "searchText": "mis-expectativas-con-angular-native Mis expectativas con Angular Native Angular Native me interesa por la posibilidad de construir interfaces nativas desde Angular. Estas son mis expectativas, las dudas que todavía tengo y las pruebas que haría antes de elegirlo para una app real. angular angular-native mobile engineering Angular Native me llamó la atención bastante rápido. Trabajo con Angular y la posibilidad de llevar parte de esa forma de desarrollar a una interfaz nativa me resulta atractiva. También me genera preguntas. Una cosa es reconocer templates, signals e inyección de dependencias. Otra es construir una app que se comport..."
+      },
+      {
+        "slug": "mi-app-necesita-un-backend-desde-el-primer-dia",
+        "title": "¿Mi app necesita un backend desde el primer día?",
+        "excerpt": "Una primera versión mobile puede resolver mucho con datos locales. El criterio está en entender qué necesita el usuario, qué pasa si pierde el dispositivo y cuándo cuentas, backup o sincronización justifican un backend.",
+        "date": "2026-08-20",
+        "tags": ["mobile", "architecture", "product", "backend", "engineering"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/mi-app-necesita-un-backend-desde-el-primer-dia",
+        "summary": "Cuando pienso una app nueva, es bastante fácil empezar a dibujar una API antes de terminar de definir qué va a hacer la primera pantalla. Usuarios, autenticación, base de datos, recuperación de contraseña, deploy y algún mecanismo de sincronización. Todo parece parte del paquete inicial. Pero hay productos donde el...",
+        "searchText": "mi-app-necesita-un-backend-desde-el-primer-dia ¿Mi app necesita un backend desde el primer día? Una primera versión mobile puede resolver mucho con datos locales. El criterio está en entender qué necesita el usuario, qué pasa si pierde el dispositivo y cuándo cuentas, backup o sincronización justifican un backend. mobile architecture product backend engineering Cuando pienso una app nueva, es bastante fácil empezar a dibujar una API antes de terminar de definir qué va a hacer la primera pantalla. Usuarios, autenticación, base de datos, recuperación de contraseña, deploy y algún mecanismo de sincronización. Todo parece parte del paquete inicial. Pero hay productos donde el..."
+      },
+      {
+        "slug": "como-decido-entre-signals-y-rxjs-en-angular",
+        "title": "Cómo decido entre Signals y RxJS en Angular",
+        "excerpt": "Estado de pantalla, valores derivados y búsquedas HTTP tienen necesidades distintas. Así decido dónde usar signals, dónde mantener RxJS y cómo conectar ambos sin duplicar responsabilidades.",
+        "date": "2026-07-16",
+        "tags": ["angular", "frontend", "rxjs", "engineering"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/como-decido-entre-signals-y-rxjs-en-angular",
+        "summary": "Una pantalla con un buscador, un filtro y una lista parece bastante simple hasta que hay que decidir quién maneja cada cosa. El texto cambia mientras escribís. El filtro modifica los resultados. Una búsqueda tarda más que la siguiente. Hay que mostrar carga, permitir reintentos y evitar que una respuesta vieja pise...",
+        "searchText": "como-decido-entre-signals-y-rxjs-en-angular Cómo decido entre Signals y RxJS en Angular Estado de pantalla, valores derivados y búsquedas HTTP tienen necesidades distintas. Así decido dónde usar signals, dónde mantener RxJS y cómo conectar ambos sin duplicar responsabilidades. angular frontend rxjs engineering Una pantalla con un buscador, un filtro y una lista parece bastante simple hasta que hay que decidir quién maneja cada cosa. El texto cambia mientras escribís. El filtro modifica los resultados. Una búsqueda tarda más que la siguiente. Hay que mostrar carga, permitir reintentos y evitar que una respuesta vieja pise..."
+      },
+      {
+        "slug": "como-organizo-componentes-angular-standalone-sin-rigidizar-frontend",
+        "title": "Cómo organizo componentes en Angular standalone sin rigidizar el frontend",
+        "excerpt": "Un frontend mantenible no sale de inventar carpetas perfectas. Sale de componentizar chico, mover lógica donde corresponde y usar Angular standalone para marcar límites más claros sin volver la UI ceremoniosa.",
+        "date": "2026-05-14",
+        "tags": ["angular", "frontend", "architecture", "engineering"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/como-organizo-componentes-angular-standalone-sin-rigidizar-frontend",
+        "summary": "Hay frontends que se vuelven difíciles de mantener no porque les falten componentes, sino porque se intentó organizar demasiado. Empieza con una buena intención: dejar todo prolijo, definir una estructura clara, pensar reutilización, separar carpetas y evitar caos. El problema aparece cuando esa organización se rigi...",
+        "searchText": "como-organizo-componentes-angular-standalone-sin-rigidizar-frontend Cómo organizo componentes en Angular standalone sin rigidizar el frontend Un frontend mantenible no sale de inventar carpetas perfectas. Sale de componentizar chico, mover lógica donde corresponde y usar Angular standalone para marcar límites más claros sin volver la UI ceremoniosa. angular frontend architecture engineering Hay frontends que se vuelven difíciles de mantener no porque les falten componentes, sino porque se intentó organizar demasiado. Empieza con una buena intención: dejar todo prolijo, definir una estructura clara, pensar reutilización, separar carpetas y evitar caos. El problema aparece cuando esa organización se rigi..."
+      },
+      {
+        "slug": "arquitectura-angular-real",
+        "title": "Cómo estructuro mis proyectos Angular (arquitectura real)",
+        "excerpt": "Así organizo mis proyectos Angular reales: una capa base para API, CRUD y recursos, componentes abstractos para listas y formularios, y servicios transversales para navegación, storage e i18n.",
+        "date": "2026-05-06",
+        "tags": ["angular", "architecture", "ionic", "frontend"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/arquitectura-angular-real",
+        "summary": "Cuando un proyecto Angular empieza a crecer, el problema no suele ser el primer módulo. El problema aparece bastante después, cuando ya vas por el sexto. Si cada feature resuelve HTTP, formularios, loading, navegación y estado a su manera, la base se vuelve inconsistente demasiado rápido. Por eso en mis proyectos ti...",
+        "searchText": "arquitectura-angular-real Cómo estructuro mis proyectos Angular (arquitectura real) Así organizo mis proyectos Angular reales: una capa base para API, CRUD y recursos, componentes abstractos para listas y formularios, y servicios transversales para navegación, storage e i18n. angular architecture ionic frontend Cuando un proyecto Angular empieza a crecer, el problema no suele ser el primer módulo. El problema aparece bastante después, cuando ya vas por el sexto. Si cada feature resuelve HTTP, formularios, loading, navegación y estado a su manera, la base se vuelve inconsistente demasiado rápido. Por eso en mis proyectos ti..."
+      },
+      {
+        "slug": "jerarquia-visual-importa-mas-de-lo-que-parece",
+        "title": "Por qué la jerarquía visual importa más de lo que parece",
+        "excerpt": "Muchas interfaces no se sienten pesadas por falta de estética, sino porque todo compite al mismo tiempo. La jerarquía visual ordena la atención, baja la carga mental y vuelve más entendibles tablas, formularios y paneles reales.",
+        "date": "2026-04-25",
+        "tags": ["frontend", "engineering", "product", "ui"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/jerarquia-visual-importa-mas-de-lo-que-parece",
+        "summary": "Muchas interfaces no fallan porque les falte color, una animación más prolija o una tipografía distinta. Fallan por algo bastante más básico: todo compite visualmente al mismo tiempo. Ese problema aparece mucho en sistemas internos, paneles administrativos y aplicaciones enterprise. Pantallas con filtros arriba, mét...",
+        "searchText": "jerarquia-visual-importa-mas-de-lo-que-parece Por qué la jerarquía visual importa más de lo que parece Muchas interfaces no se sienten pesadas por falta de estética, sino porque todo compite al mismo tiempo. La jerarquía visual ordena la atención, baja la carga mental y vuelve más entendibles tablas, formularios y paneles reales. frontend engineering product ui Muchas interfaces no fallan porque les falte color, una animación más prolija o una tipografía distinta. Fallan por algo bastante más básico: todo compite visualmente al mismo tiempo. Ese problema aparece mucho en sistemas internos, paneles administrativos y aplicaciones enterprise. Pantallas con filtros arriba, mét..."
+      },
+      {
+        "slug": "mas-arquitectura-no-siempre-es-mejor",
+        "title": "Mas arquitectura no siempre es mejor",
+        "excerpt": "Agregar capas, servicios o infraestructura no vuelve madura a una solución. La decisión correcta aparece cuando la arquitectura responde a un problema real, con costo, escala y operación concretos.",
+        "date": "2026-04-09",
+        "tags": ["architecture", "engineering", "backend", "devops"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/mas-arquitectura-no-siempre-es-mejor",
+        "summary": "En ingeniería, una solución puede verse sofisticada mucho antes de volverse realmente buena. Ese es un problema bastante común: confundir complejidad con madurez técnica. Un sistema con más capas, más servicios, más mensajes asíncronos y más infraestructura puede impresionar en un diagrama, pero seguir resolviendo p...",
+        "searchText": "mas-arquitectura-no-siempre-es-mejor Mas arquitectura no siempre es mejor Agregar capas, servicios o infraestructura no vuelve madura a una solución. La decisión correcta aparece cuando la arquitectura responde a un problema real, con costo, escala y operación concretos. architecture engineering backend devops En ingeniería, una solución puede verse sofisticada mucho antes de volverse realmente buena. Ese es un problema bastante común: confundir complejidad con madurez técnica. Un sistema con más capas, más servicios, más mensajes asíncronos y más infraestructura puede impresionar en un diagrama, pero seguir resolviendo p..."
+      },
+      {
+        "slug": "imagenes-backend-only-api-multi-tenant",
+        "title": "Por qué desacoplé el manejo de imágenes en el backend",
+        "excerpt": "En Modo Playa resolví media como un problema de backend y de dominio: uploads con estado, normalización con Sharp, R2 como storage y reglas claras para no romper el multi-tenant.",
+        "date": "2026-03-19",
+        "tags": ["nestjs", "backend", "architecture", "multitenant", "cloudflare-r2", "sharp"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/imagenes-backend-only-api-multi-tenant",
+        "summary": "Durante bastante tiempo subir imágenes parecía una decisión más de interfaz que de arquitectura. Un input file, alguna URL firmada, una confirmación del lado cliente y listo. El problema es que eso funciona bárbaro mientras las imágenes son un detalle periférico. En cuanto entran reglas de negocio, ownership, estado...",
+        "searchText": "imagenes-backend-only-api-multi-tenant Por qué desacoplé el manejo de imágenes en el backend En Modo Playa resolví media como un problema de backend y de dominio: uploads con estado, normalización con Sharp, R2 como storage y reglas claras para no romper el multi-tenant. nestjs backend architecture multitenant cloudflare-r2 sharp Durante bastante tiempo subir imágenes parecía una decisión más de interfaz que de arquitectura. Un input file, alguna URL firmada, una confirmación del lado cliente y listo. El problema es que eso funciona bárbaro mientras las imágenes son un detalle periférico. En cuanto entran reglas de negocio, ownership, estado..."
+      },
+      {
+        "slug": "como-diseno-contratos-cross-repo-sin-volverme-loco",
+        "title": "Cómo diseño contratos cross-repo sin volverme loco",
+        "excerpt": "Así diseño contratos cross-repo entre frontend, backend y automatización: ownership claro, artifacts explícitos, handoffs versionados y menos acoplamiento implícito.",
+        "date": "2026-03-06",
+        "tags": ["architecture", "engineering", "monorepo", "documentation", "devops"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/como-diseno-contratos-cross-repo-sin-volverme-loco",
+        "summary": "Trabajar con varios repos que evolucionan juntos parece ordenado hasta que deja de serlo. Separar frontend, backend y automatización tiene ventajas reales: despliegues independientes, límites más claros y menos ruido dentro de cada proyecto. El problema aparece cuando esa separación no viene acompañada por contratos...",
+        "searchText": "como-diseno-contratos-cross-repo-sin-volverme-loco Cómo diseño contratos cross-repo sin volverme loco Así diseño contratos cross-repo entre frontend, backend y automatización: ownership claro, artifacts explícitos, handoffs versionados y menos acoplamiento implícito. architecture engineering monorepo documentation devops Trabajar con varios repos que evolucionan juntos parece ordenado hasta que deja de serlo. Separar frontend, backend y automatización tiene ventajas reales: despliegues independientes, límites más claros y menos ruido dentro de cada proyecto. El problema aparece cuando esa separación no viene acompañada por contratos..."
+      },
+      {
+        "slug": "errores-estables-dos-apis-reales",
+        "title": "Cómo resolví el contrato de errores en ASP.NET Core y NestJS",
+        "excerpt": "En Proyecto Atlas API y Modo Playa API resolví el mismo problema con stacks distintos: devolver errores útiles para backend, frontend y usuario sin depender de parsear mensajes libres.",
+        "date": "2026-02-27",
+        "tags": ["architecture", "backend", "api", "nestjs", "aspnet-core", "engineering"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/errores-estables-dos-apis-reales",
+        "summary": "Una API puede devolver un 404 correcto y aun así seguir siendo incómoda de integrar. Ese problema aparece cuando el backend trata el error como texto libre y espera que el frontend \"entienda\" qué pasó leyendo mensajes pensados más para debugging que para lógica de producto. Mientras el proyecto es chico, eso suele p...",
+        "searchText": "errores-estables-dos-apis-reales Cómo resolví el contrato de errores en ASP.NET Core y NestJS En Proyecto Atlas API y Modo Playa API resolví el mismo problema con stacks distintos: devolver errores útiles para backend, frontend y usuario sin depender de parsear mensajes libres. architecture backend api nestjs aspnet-core engineering Una API puede devolver un 404 correcto y aun así seguir siendo incómoda de integrar. Ese problema aparece cuando el backend trata el error como texto libre y espera que el frontend \"entienda\" qué pasó leyendo mensajes pensados más para debugging que para lógica de producto. Mientras el proyecto es chico, eso suele p..."
+      },
+      {
+        "slug": "arquitectura-modo-playa",
+        "title": "Cómo diseñé la arquitectura de Modo Playa",
+        "excerpt": "Modo Playa está pensado como un producto multi-tenant real: API NestJS, MongoDB, aislamiento por ownerId, separación entre catálogo público y admin, y un pipeline backend para uploads e imágenes.",
+        "date": "2026-02-18",
+        "tags": ["nestjs", "mongodb", "architecture", "multitenant", "backend"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/arquitectura-modo-playa",
+        "summary": "Modo Playa no lo pensé como una demo aislada. Lo pensé como un producto real que hoy ya tiene presencia pública, incluso con app publicada en Google Play , y que necesitaba dos superficies distintas: un catálogo público mobile-first para buscar alojamientos un panel administrativo para que cada propietario gestione...",
+        "searchText": "arquitectura-modo-playa Cómo diseñé la arquitectura de Modo Playa Modo Playa está pensado como un producto multi-tenant real: API NestJS, MongoDB, aislamiento por ownerId, separación entre catálogo público y admin, y un pipeline backend para uploads e imágenes. nestjs mongodb architecture multitenant backend Modo Playa no lo pensé como una demo aislada. Lo pensé como un producto real que hoy ya tiene presencia pública, incluso con app publicada en Google Play , y que necesitaba dos superficies distintas: un catálogo público mobile-first para buscar alojamientos un panel administrativo para que cada propietario gestione..."
+      },
+      {
+        "slug": "portfolio-static-first-angular-markdown-prerender",
+        "title": "Cómo armé un portfolio static-first con Angular, Markdown y prerender",
+        "excerpt": "Cómo llevé mi portfolio a un modelo static-first real: contenido en Markdown, artifacts JSON generados en build, prerender de rutas y backend reducido solo a capacidades dinámicas.",
+        "date": "2026-02-06",
+        "tags": ["angular", "architecture", "seo", "static-site", "frontend"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/portfolio-static-first-angular-markdown-prerender",
+        "summary": "Durante bastante tiempo mi portfolio tuvo una mezcla medio incómoda: el frontend mostraba contenido editorial, pero parte de la lógica seguía orbitando alrededor de un enfoque runtime, casi como si un blog y una sección de proyectos necesitaran comportarse igual que una aplicación transaccional. No era un problema d...",
+        "searchText": "portfolio-static-first-angular-markdown-prerender Cómo armé un portfolio static-first con Angular, Markdown y prerender Cómo llevé mi portfolio a un modelo static-first real: contenido en Markdown, artifacts JSON generados en build, prerender de rutas y backend reducido solo a capacidades dinámicas. angular architecture seo static-site frontend Durante bastante tiempo mi portfolio tuvo una mezcla medio incómoda: el frontend mostraba contenido editorial, pero parte de la lógica seguía orbitando alrededor de un enfoque runtime, casi como si un blog y una sección de proyectos necesitaran comportarse igual que una aplicación transaccional. No era un problema d..."
+      },
+      {
+        "slug": "cuando-docker-logs-dejo-de-ser-suficiente-en-produccion",
+        "title": "Cuando docker logs dejó de ser suficiente en producción",
+        "excerpt": "Así armé mi stack real de observabilidad en producción con Grafana, Loki y Promtail sobre Docker en EC2: logs centralizados, menos tiempo perdido y costo bajo a cambio de más operación manual.",
+        "date": "2026-01-29",
+        "tags": ["observability", "devops", "aws", "docker", "grafana", "loki", "promtail"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/cuando-docker-logs-dejo-de-ser-suficiente-en-produccion",
+        "summary": "Tener varias APIs corriendo en un mismo EC2 es cómodo hasta que algo falla en producción y la única respuesta operativa es abrir docker logs contenedor por contenedor. Durante un tiempo trabajé así. Servía para salir del paso, pero no para tener visibilidad real. Cuando convivís con varios servicios, errores intermi...",
+        "searchText": "cuando-docker-logs-dejo-de-ser-suficiente-en-produccion Cuando docker logs dejó de ser suficiente en producción Así armé mi stack real de observabilidad en producción con Grafana, Loki y Promtail sobre Docker en EC2: logs centralizados, menos tiempo perdido y costo bajo a cambio de más operación manual. observability devops aws docker grafana loki promtail Tener varias APIs corriendo en un mismo EC2 es cómodo hasta que algo falla en producción y la única respuesta operativa es abrir docker logs contenedor por contenedor. Durante un tiempo trabajé así. Servía para salir del paso, pero no para tener visibilidad real. Cuando convivís con varios servicios, errores intermi..."
+      },
+      {
+        "slug": "desplegar-apis-docker-ec2",
+        "title": "Cómo desplegar APIs con Docker en un EC2 (paso a paso)",
+        "excerpt": "Así despliego mis APIs NestJS en un EC2 compartido: imágenes en GHCR, Docker Compose por app, HTTPS en el reverse proxy y deploy automático con GitHub Actions.",
+        "date": "2026-01-15",
+        "tags": ["docker", "aws", "ec2", "nestjs", "devops"],
+        "canonicalUrl": "https://matiasgaleano.dev/blog/desplegar-apis-docker-ec2",
+        "summary": "Durante bastante tiempo evalué la opción más \"enterprise\" para desplegar mis APIs: ECS, task definitions, networking separado y más piezas alrededor del runtime. Para productos chicos y medianos, ese tradeoff no me terminaba de cerrar. Hoy mantengo varias APIs NestJS activas y preferí pasar a un EC2 compartido con c...",
+        "searchText": "desplegar-apis-docker-ec2 Cómo desplegar APIs con Docker en un EC2 (paso a paso) Así despliego mis APIs NestJS en un EC2 compartido: imágenes en GHCR, Docker Compose por app, HTTPS en el reverse proxy y deploy automático con GitHub Actions. docker aws ec2 nestjs devops Durante bastante tiempo evalué la opción más \"enterprise\" para desplegar mis APIs: ECS, task definitions, networking separado y más piezas alrededor del runtime. Para productos chicos y medianos, ese tradeoff no me terminaba de cerrar. Hoy mantengo varias APIs NestJS activas y preferí pasar a un EC2 compartido con c..."
+      }
+    ]
   }
 }

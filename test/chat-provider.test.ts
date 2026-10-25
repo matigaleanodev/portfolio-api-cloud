@@ -20,7 +20,14 @@ const payload: ChatCompletionPayload = {
   suggestedSeedQuestions: ['¿Qué hace?'],
 };
 function response(text: string, usage?: unknown) {
-  return new Response(JSON.stringify({ output: [{ content: [{ text }] }], usage }));
+  return new Response(
+    JSON.stringify({
+      status: 'completed',
+      model: 'gpt-6-luna',
+      output: [{ type: 'message', content: [{ type: 'output_text', text }] }],
+      usage,
+    }),
+  );
 }
 function success() {
   return response(
@@ -46,9 +53,9 @@ test('Dado el proveedor habilitado, cuando se consulta dos veces, entonces conse
   });
   const body = JSON.parse(options?.body as string);
   expect(body).toMatchObject({
-    model: 'gpt-4.1-mini',
-    temperature: 0.3,
-    max_output_tokens: 300,
+    model: 'gpt-6-luna',
+    reasoning: { effort: 'none' },
+    max_output_tokens: 600,
     text: { format: { type: 'json_object' } },
   });
   expect(body.store).toBe(false);
@@ -148,7 +155,7 @@ test('Dado un transporte que espera abort, cuando pasan quince segundos, entonce
 test('Dados hechos, historial, links y sugerencias diferentes, cuando se consulta, entonces las claves de caché permanecen separadas', async () => {
   const request = vi.fn<typeof fetch>().mockImplementation(async () => success());
   const service = new OpenAiService(
-    { OPENAI_API_KEY: 'fake', OPENAI_CHAT_MODEL: 'modelo-ficticio' },
+    { OPENAI_API_KEY: 'fake', OPENAI_CHAT_MODEL: 'gpt-6-luna' },
     request,
   );
   await service.generateChatResponse(payload);
@@ -166,7 +173,7 @@ test('Dados hechos, historial, links y sugerencias diferentes, cuando se consult
   });
   await service.generateChatResponse({ ...payload, suggestedSeedQuestions: ['Otra'] });
   expect(request).toHaveBeenCalledTimes(5);
-  expect(JSON.parse(request.mock.calls[0]?.[1]?.body as string).model).toBe('modelo-ficticio');
+  expect(JSON.parse(request.mock.calls[0]?.[1]?.body as string).model).toBe('gpt-6-luna');
 });
 test('Dada caché IA por cinco minutos y 200 entradas, cuando vence o se excede, entonces vuelve a consultar sin retener más entradas', async () => {
   vi.useFakeTimers();
@@ -199,5 +206,78 @@ test('Dadas métricas con campos extra y consumos inválidos, cuando se registra
     outcome: 'success',
     durationMs: 12,
     cachedInputTokens: 0,
+  });
+});
+
+for (const model of ['gpt-4.1-mini', 'gpt-4.1-mini-2025-04-14', 'gpt-6-sol']) {
+  test(`Dado el modelo ${model}, cuando se configura, entonces se rechaza sin transporte alternativo`, () => {
+    const request = vi.fn<typeof fetch>();
+    expect(
+      () => new OpenAiService({ OPENAI_API_KEY: 'fake', OPENAI_CHAT_MODEL: model }, request),
+    ).toThrow('Unsupported AI model');
+    expect(request).not.toHaveBeenCalled();
+  });
+}
+for (const status of ['incomplete', 'failed', 'cancelled', 'in_progress']) {
+  test(`Dado estado ${status}, cuando contiene JSON válido, entonces no simula éxito ni reintenta`, async () => {
+    const request = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status,
+          model: 'gpt-6-luna',
+          output: [
+            {
+              type: 'message',
+              content: [
+                {
+                  type: 'output_text',
+                  text: JSON.stringify({ answer: 'Parcial', suggestedQuestions: [] }),
+                },
+              ],
+            },
+          ],
+          usage: { output_tokens: 600, output_tokens_details: { reasoning_tokens: 400 } },
+        }),
+      ),
+    );
+    expect(
+      await new OpenAiService({ OPENAI_API_KEY: 'fake' }, request).generateChatResponse(payload),
+    ).toBeNull();
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(vi.mocked(console.info).mock.calls)).toContain('reasoningTokens');
+  });
+}
+test('Dado razonamiento antes del mensaje, cuando termina Luna, entonces encuentra el texto y registra consumo completo', async () => {
+  const request = vi.fn<typeof fetch>().mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        status: 'completed',
+        model: 'gpt-6-luna',
+        output: [
+          { type: 'reasoning' },
+          {
+            type: 'message',
+            content: [
+              {
+                type: 'output_text',
+                text: JSON.stringify({ answer: 'Lista', suggestedQuestions: [] }),
+              },
+            ],
+          },
+        ],
+        usage: {
+          input_tokens: 100,
+          output_tokens: 70,
+          output_tokens_details: { reasoning_tokens: 40 },
+        },
+      }),
+    ),
+  );
+  expect(
+    await new OpenAiService({ OPENAI_API_KEY: 'fake' }, request).generateChatResponse(payload),
+  ).toEqual({ answer: 'Lista', suggestedQuestions: [] });
+  expect(JSON.parse(vi.mocked(console.info).mock.calls.at(-1)![0])).toMatchObject({
+    reasoningTokens: 40,
+    outputTokens: 70,
   });
 });
