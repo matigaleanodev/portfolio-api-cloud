@@ -74,10 +74,14 @@ export function createValidationProviders(scenario: ValidationScenario) {
       ? { input_tokens: 100 }
       : ai
         ? {
+            status: 'completed',
+            model: 'gpt-6-luna',
             output: [
               {
+                type: 'message',
                 content: [
                   {
+                    type: 'output_text',
                     text: JSON.stringify({
                       answer: 'Respuesta simulada de validación.',
                       suggestedQuestions: [],

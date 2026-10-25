@@ -46,14 +46,21 @@ function event(message = '¿Qué hace Modo Playa?', ip = '192.0.2.1') {
   return value;
 }
 function compose() {
-  const request = vi
-    .fn<typeof fetch>()
-    .mockImplementation(
-      async () =>
-        new Response(
-          JSON.stringify({ output: [{ content: [{ text: JSON.stringify(providerAnswer) }] }] }),
-        ),
-    );
+  const request = vi.fn<typeof fetch>().mockImplementation(
+    async () =>
+      new Response(
+        JSON.stringify({
+          status: 'completed',
+          model: 'gpt-6-luna',
+          output: [
+            {
+              type: 'message',
+              content: [{ type: 'output_text', text: JSON.stringify(providerAnswer) }],
+            },
+          ],
+        }),
+      ),
+  );
   const repository = { getKnowledge: vi.fn().mockResolvedValue(artifact) };
   const chat = new ChatService(
     new FaqService(),
