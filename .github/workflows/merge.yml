@@ -25,7 +25,7 @@ jobs:
   merge:
     if: github.repository == 'matigaleanodev/portfolio-api-cloud' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') && github.actor == 'matigaleanodev' && github.triggering_actor == 'matigaleanodev' && vars.MERGE_WORKFLOW_ENABLED == 'true'
     environment: merge
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
       PR_NUMBER: ${{ inputs.pull_request }}

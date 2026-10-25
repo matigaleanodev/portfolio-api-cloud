@@ -2,6 +2,23 @@ name: Prepare test deployment
 
 on:
   workflow_dispatch:
+    inputs:
+      artifact_run_id:
+        description: Run CI por push de la revisión integrada
+        type: string
+        required: true
+      artifact_id:
+        description: Artifact test-assembly del run revisado
+        type: string
+        required: true
+      reviewed_revision:
+        description: SHA completo integrado y revisado
+        type: string
+        required: true
+      reviewed_digest:
+        description: Digest sha256 del artifact revisado en GitHub
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -19,24 +36,34 @@ jobs:
   prepare:
     if: github.repository == 'matigaleanodev/portfolio-api-cloud' && github.ref == 'refs/heads/main' && vars.TEST_PLAN_ENABLED == 'true'
     environment: test-plan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: read
+      actions: read
       id-token: write
     env:
+      ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id }}
+      ARTIFACT_ID: ${{ inputs.artifact_id }}
+      REVIEWED_REVISION: ${{ inputs.reviewed_revision }}
+      REVIEWED_DIGEST: ${{ inputs.reviewed_digest }}
       TEST_RUNTIME_SECRET_ARN: ${{ vars.TEST_RUNTIME_SECRET_ARN }}
       TEST_AWS_ROLE_ARN: ${{ vars.TEST_AWS_ROLE_ARN }}
       TEST_EXECUTION_ROLE_ARN: ${{ vars.TEST_EXECUTION_ROLE_ARN }}
       TEST_CDK_DEPLOY_ROLE_ARN: ${{ vars.TEST_CDK_DEPLOY_ROLE_ARN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Check prerequisites before authentication
         shell: bash
         run: |
           set -euo pipefail
+          [[ "$ARTIFACT_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$REVIEWED_REVISION" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$REVIEWED_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
           test -f package.json
           test -f package-lock.json
           test -f cdk.json
@@ -44,24 +71,31 @@ jobs:
           [[ "$TEST_AWS_ROLE_ARN" == arn:aws:iam::650387442642:role/PortfolioApiCloudTestGitHubDeployRole ]]
           [[ "$TEST_EXECUTION_ROLE_ARN" == arn:aws:iam::650387442642:role/PortfolioApiCloudTestCloudFormationExecutionRole ]]
           [[ "$TEST_CDK_DEPLOY_ROLE_ARN" == arn:aws:iam::650387442642:role/PortfolioApiCloudTestCdkDeployRole ]]
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: '24.22.1'
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm run format:check
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
-      - run: npm run test:package
-      - run: npm run test:infra
-      - run: npm run cdk -- synth --no-lookups --context stage=test
-      - name: Validate the synthesized target
+      - name: Recover the reviewed CI artifact before AWS authentication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$REVIEWED_REVISION" "$GITHUB_SHA"
+          mkdir -p .tmp
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARTIFACT_RUN_ID" > .tmp/source-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" > .tmp/source-artifact.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > .tmp/source-artifact.zip
+          python3 scripts/recover_bundle.py .tmp/source-artifact.zip .tmp/source-artifact.json .tmp/source-run.json .tmp/recovered "$REVIEWED_REVISION" "$REVIEWED_DIGEST"
+          cmp package-lock.json .tmp/recovered/package-lock.json
+          [[ "$(node --version)" == v24.22.1 ]]
+      - name: Validate the recovered target
         run: |
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          manifest = json.loads(Path('cdk.out/manifest.json').read_text())
+          manifest = json.loads(Path('.tmp/recovered/cdk.out/manifest.json').read_text())
           stacks = [(key, value) for key, value in manifest['artifacts'].items() if value['type'] == 'aws:cloudformation:stack']
           assert len(stacks) == 1, 'Solo se permite una stack de test'
           name, stack = stacks[0]
@@ -70,15 +104,26 @@ jobs:
           assert stack['properties']['stackName'] == 'portfolio-api-cloud-test'
           assert stack['properties']['cloudFormationExecutionRoleArn'] == os.environ['TEST_EXECUTION_ROLE_ARN']
           assert stack['properties']['assumeRoleArn'] == os.environ['TEST_CDK_DEPLOY_ROLE_ARN']
+          assert stack['properties']['requiresBootstrapStackVersion'] == 6
+          assert manifest['minimumCliVersion'] == '2.1146.1'
+          review = json.loads(Path('.tmp/recovered/review.json').read_text())
+          assert review['nodeVersion'] == 'v24.22.1'
+          assets = json.loads(Path('.tmp/recovered/cdk.out/PortfolioApiCloudTest.assets.json').read_text())
+          assert not assets.get('dockerImages')
+          assert assets['files']
+          for asset in assets['files'].values():
+              for destination in asset['destinations'].values():
+                  assert destination['bucketName'] == 'cdk-papiatest-assets-650387442642-us-east-1'
+                  assert destination['region'] == 'us-east-1'
+                  assert destination['assumeRoleArn'] == 'arn:aws:iam::650387442642:role/PortfolioApiCloudTestFilePublishingRole'
           PY
       - name: Retain the exact reviewed assembly before authentication
         run: |
-          python3 scripts/review_bundle.py create . .tmp/review-bundle "$GITHUB_SHA" "$(node --version)"
-          python3 scripts/review_bundle.py verify .tmp/review-bundle "$GITHUB_SHA"
-      - uses: actions/upload-artifact@v4
+          python3 scripts/review_bundle.py verify .tmp/recovered "$REVIEWED_REVISION"
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: test-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .tmp/review-bundle/
+          path: .tmp/recovered/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 30
@@ -100,6 +145,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          change_set="portfolio-api-cloud-test-${GITHUB_SHA}-${GITHUB_RUN_ID}"
-          npm run cdk -- deploy PortfolioApiCloudTest --app cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never --parameters PortfolioApiCloudTest:RuntimePermissionsBoundaryArn=arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary --parameters "PortfolioApiCloudTest:RuntimeSecretArn=$TEST_RUNTIME_SECRET_ARN"
+          change_set="portfolio-api-cloud-test-${REVIEWED_REVISION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          npm run cdk -- deploy PortfolioApiCloudTest --app .tmp/recovered/cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never --parameters PortfolioApiCloudTest:RuntimePermissionsBoundaryArn=arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary --parameters "PortfolioApiCloudTest:RuntimeSecretArn=$TEST_RUNTIME_SECRET_ARN"
           echo "Changeset test preparado: $change_set. No se ejecutó el despliegue." >> "$GITHUB_STEP_SUMMARY"

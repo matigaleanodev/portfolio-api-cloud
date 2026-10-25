@@ -12,6 +12,10 @@ const prerequisites = workflow
   .join('\n');
 const environment = {
   PATH: '/usr/bin:/bin',
+  ARTIFACT_RUN_ID: '40203426084',
+  ARTIFACT_ID: '12602797574',
+  REVIEWED_REVISION: 'a'.repeat(40),
+  REVIEWED_DIGEST: 'sha256:' + 'b'.repeat(64),
   TEST_RUNTIME_SECRET_ARN:
     'arn:aws:secretsmanager:us-east-1:650387442642:secret:portfolio-api-cloud/test/runtime-Ab1234',
   TEST_AWS_ROLE_ARN: 'arn:aws:iam::650387442642:role/PortfolioApiCloudTestGitHubDeployRole',
@@ -43,10 +47,17 @@ test('Dado el plan test, cuando se revisan sus barreras, entonces retiene el ass
   expect(workflow).toContain("github.ref == 'refs/heads/main'");
   expect(workflow).toContain("vars.TEST_PLAN_ENABLED == 'true'");
   expect(workflow).toContain('environment: test-plan');
+  expect(workflow).toContain('scripts/recover_bundle.py');
+  expect(workflow).toContain('git merge-base --is-ancestor');
+  expect(workflow).toContain('fetch-depth: 0');
+  expect(workflow).toContain('cmp package-lock.json .tmp/recovered/package-lock.json');
+  expect(workflow).not.toContain('npm run cdk -- synth');
   expect(workflow.indexOf('scripts/review_bundle.py verify')).toBeLessThan(
     workflow.indexOf('aws-actions/configure-aws-credentials'),
   );
-  expect(workflow).toContain('--app cdk.out --exclusively --method prepare-change-set');
+  expect(workflow).toContain(
+    '--app .tmp/recovered/cdk.out --exclusively --method prepare-change-set',
+  );
   expect(workflow).not.toMatch(/execute-change-set|cdk (?:bootstrap|destroy)|pull_request_target/);
   for (const file of ['ci.yml', 'deploy-test.yml']) {
     const text = readFileSync(`.github/workflows/${file}`, 'utf8');
