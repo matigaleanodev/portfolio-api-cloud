@@ -131,3 +131,5 @@ The first fictitious-configuration authentication exposed the mismatch: initial 
 ## Recovered assembly metadata
 
 The bundle also preserves each manifest artifact's `additionalMetadataFile`. CDK requires this metadata to load a stack from its retained assembly; omitting it causes `ENOENT` before asset publishing. Creation validates these references with the same path and symlink restrictions as templates/assets. Recovery rejects an assembly whose referenced metadata is missing, even when its checksum inventory is consistent. Unreferenced historical files remain excluded.
+
+The plan requires exactly one stack in the assembly and passes RuntimePermissionsBoundaryArn and RuntimeSecretArn without a stack prefix. The CDK selector PortfolioApiCloudTest differs from the physical name portfolio-api-cloud-test; using the selector as the parameter prefix caused the CLI to ignore both values before change set creation.
