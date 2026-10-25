@@ -23,6 +23,28 @@ try {
     stdio: 'inherit',
     env: { NODE_ENV: 'test', AWS_EC2_METADATA_DISABLED: 'true' },
   });
+  rmSync(new URL('.tmp/validation-dist/', root), { recursive: true, force: true });
+  execFileSync(
+    process.execPath,
+    ['node_modules/typescript/bin/tsc', '-p', 'tsconfig.validation.json'],
+    { cwd: root, stdio: 'inherit' },
+  );
+  const validation = join(directory, 'validation-package');
+  stageRuntimePackage(validation, 'success');
+  cpSync(new URL('test/block-network.mjs', root), join(validation, 'block-network.mjs'));
+  cpSync(
+    new URL('test/validation-package-smoke.mjs', root),
+    join(validation, 'validation-package-smoke.mjs'),
+  );
+  execFileSync(
+    process.execPath,
+    ['--import', './block-network.mjs', './validation-package-smoke.mjs'],
+    {
+      cwd: validation,
+      stdio: 'inherit',
+      env: { NODE_ENV: 'test', AWS_EC2_METADATA_DISABLED: 'true' },
+    },
+  );
 } finally {
   rmSync(directory, { recursive: true, force: true });
 }

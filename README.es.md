@@ -2,6 +2,8 @@
 
 [English](README.md)
 
+**Incremento vigente:** [primera instalación con dobles y circuito Actions](Docs/managed-validation.es.md), implementados localmente. main/v0.1.0 ya existen; provisioning, ejecución y validación administrada siguen pendientes.
+
 **Estado vigente de fase 4:** [controles del runtime](Docs/runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
 
 Implementación alternativa de la API pública de Portfolio con handlers TypeScript. La migración a serverless está decidida; la API NestJS original se conserva como implementación independiente.
@@ -23,7 +25,7 @@ npm run check
 
 `check` verifica el formato y ejecuta tipos estrictos, build ESM, tests sin red, smoke fuera del checkout y validación documental. Los comandos de verificación no corrigen fuentes. El paquete usa `dist/handler.js`, export `handler`, y requiere el `package.json` con `type: module`. Requiere `node_modules` de producción según el lock y `LICENSE`. No carga `.env`; la entrada Lambda lee CORS y referencias no secretas del ambiente y valida un snapshot de Secrets Manager antes de negocio. Health sigue disponible como liveness sin esas claves. [Contrato, procedencia y límites](Docs/contact.es.md).
 
-[Stack de test y requisitos](Docs/infrastructure.es.md) · [Casos de prueba en español](Docs/testing.es.md). Vitest ejecuta 580 casos (513 aplicación, 49 tooling, 18 infraestructura).
+[Stack de test y requisitos](Docs/infrastructure.es.md) · [Casos de prueba en español](Docs/testing.es.md). Vitest ejecuta 614 casos (529 aplicación, 66 tooling, 19 infraestructura).
 
 Formato legible con Prettier **3.9.10** y reglas explícitas en `.prettierrc.json`: 2 espacios, comillas simples, punto y coma, comas finales y ancho orientativo de 100 columnas. Los scripts separan preparación, ejecución y comprobación con líneas en blanco; Prettier conserva esa separación. `npm run format` aplica el formato; `npm run format:check` verifica sin modificar archivos y es obligatorio en CI. `.gitignore` y `.prettierignore` excluyen privados, generados, lock y fixture histórico con hash fijado.
 
@@ -66,7 +68,7 @@ Suscripciones utiliza PORTFOLIO_CLOUD_API_URL, leída únicamente al invocar esa
 
 La ubicación profesional del chat se corrige puntualmente a Posadas, Misiones, Argentina, con diferencia explícita frente al SHA fijado. FAQ y contexto también incluyen el correo profesional contacto@matiasgaleano.dev desde un único dato compartido. El resto del contenido conserva su alcance anterior y la renovación editorial general sigue inmediatamente antes de producción. [Detalle y referencias históricas](Docs/chat.es.md).
 
-La fase 4 implementa el control compartido del handler administrado. La suite actual tiene 580 pruebas: 513 de aplicación, 49 de tooling y 18 de infraestructura. [Configuración, presupuesto global, sesiones, fallback y límites de validación](Docs/runtime-hardening.es.md).
+La fase 4 implementa el control compartido del handler administrado. La suite actual tiene 614 pruebas: 529 de aplicación, 66 de tooling y 19 de infraestructura. [Configuración, presupuesto global, sesiones, fallback y límites de validación](Docs/runtime-hardening.es.md).
 
 ## Infraestructura y entrega revisables
 

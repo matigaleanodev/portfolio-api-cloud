@@ -2,6 +2,8 @@
 
 [Español](test-operations.es.md) · 2026-10-25.
 
+**Current increment:** [first installation with doubles and Actions delivery](managed-validation.md), implemented locally. main/v0.1.0 exist; provisioning, execution and managed validation remain pending.
+
 ## Status and sequence
 
 Protected delivery is operational on dev. This local update pins Ubuntu 24.04 and actions/checkout 7.0.1, setup-node 7.1.0 and upload-artifact 7.0.2; their official manifests use Node 24 and require runner 2.327.1 or later. Application Node remains 24.22.1. The ubuntu-latest migration to 26.04 is rolling out from October 19 to November 19, 2026. Pinning the image avoids depending on that transition; a remote run of this increment remains pending. [Checkout](https://github.com/actions/checkout/releases/tag/v7.0.1), [setup-node](https://github.com/actions/setup-node/releases/tag/v7.1.0), [artifact](https://github.com/actions/upload-artifact/releases/tag/v7.0.2), [runner](https://github.com/actions/runner-images/issues/14748).
@@ -58,9 +60,9 @@ Record command, idempotency token where applicable, actor, time, ARN and events/
 
 ## Doubles for managed validation
 
-Proposed first variant: a validation-only entrypoint packaged as a separate asset with its own digest and handler, deployed only to the test stack. It reuses createManagedHandler with real Secrets Manager and DynamoDB plus explicit contact, subscription and AI doubles. It adds no simulator service or public provider selector.
+Locally implemented variant: a validation-only entrypoint packaged as a separate asset with its own digest and handler, deployed only to the test stack. It reuses createManagedHandler with real Secrets Manager and DynamoDB plus explicit contact, subscription and AI doubles. It adds no simulator service or public provider selector.
 
-That entrypoint and packager are not implemented yet. They must require exact test function/table and secret references, reject destinations outside .invalid domains and non-dummy credentials, and prohibit fallback to real transports. Contact needs an explicit SendEmail dependency in managed composition; subscriptions/AI already have injectable request. The first pass omits remote R2 and uses packaged fallback. Later R2 scenarios need an explicit injected reader, without real R2 credentials. The normal package must exclude entrypoint, scenarios and doubles; test both packages with networking blocked.
+The entrypoint and packager are implemented and verified locally; see the current [first installation plan](managed-validation.md). They must require exact test function/table and secret references, reject destinations outside .invalid domains and non-dummy credentials, and prohibit fallback to real transports. Contact needs an explicit SendEmail dependency in managed composition; subscriptions/AI already have injectable request. The first pass omits remote R2 and uses packaged fallback. Later R2 scenarios need an explicit injected reader, without real R2 credentials. The normal package must exclude entrypoint, scenarios and doubles; test both packages with networking blocked.
 
 Doubles cover success, errors, pending bodies and ambiguous outcomes without external requests. Scenario selection belongs to reviewed test package/configuration, never visitor headers, query or sessionId. Record that this asset tests gateway/IAM/Secrets/Dynamo and behavior with simulated providers; it does not test Resend, R2 or OpenAI availability or their real SDK transports.
 

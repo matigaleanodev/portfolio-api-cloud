@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: portfolio-api-cloud-test-plan
+  group: portfolio-api-cloud-test-mutation
   cancel-in-progress: false
 
 env:
@@ -108,6 +108,9 @@ jobs:
           assert manifest['minimumCliVersion'] == '2.1146.1'
           review = json.loads(Path('.tmp/recovered/review.json').read_text())
           assert review['nodeVersion'] == 'v24.22.1'
+          template = json.loads(Path('.tmp/recovered/cdk.out/' + stack['properties']['templateFile']).read_text())
+          functions = [r['Properties'] for r in template['Resources'].values() if r['Type'] == 'AWS::Lambda::Function']
+          assert len(functions) == 1 and functions[0]['Handler'] == 'dist/validation/handler.handler', 'Se requiere el asset de validación'
           assets = json.loads(Path('.tmp/recovered/cdk.out/PortfolioApiCloudTest.assets.json').read_text())
           assert not assets.get('dockerImages')
           assert assets['files']
@@ -148,3 +151,28 @@ jobs:
           change_set="portfolio-api-cloud-test-${REVIEWED_REVISION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           npm run cdk -- deploy PortfolioApiCloudTest --app .tmp/recovered/cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never --parameters PortfolioApiCloudTest:RuntimePermissionsBoundaryArn=arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary --parameters "PortfolioApiCloudTest:RuntimeSecretArn=$TEST_RUNTIME_SECRET_ARN"
           echo "Changeset test preparado: $change_set. No se ejecutó el despliegue." >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ vars.TEST_CDK_DEPLOY_ROLE_ARN }}
+          role-chaining: true
+          allowed-account-ids: '650387442642'
+          role-session-name: PortfolioApiCloudTestReview-${{ github.run_id }}
+      - name: Capture the exact prepared change set for separate review
+        shell: bash
+        run: |
+          set -euo pipefail
+          change_set="portfolio-api-cloud-test-${REVIEWED_REVISION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          aws cloudformation describe-change-set --region us-east-1 --stack-name portfolio-api-cloud-test --change-set-name "$change_set" --query '{stack:StackId,changeset:ChangeSetId}' > .tmp/targets.json
+          stack_arn=$(jq -r .stack .tmp/targets.json)
+          changeset_arn=$(jq -r .changeset .tmp/targets.json)
+          export REVIEWED_ASSEMBLY=.tmp/recovered/cdk.out
+          digest=$(python3 scripts/review_changeset.py snapshot "$stack_arn" "$changeset_arn" application .tmp/changeset-review.json)
+          echo "Stack: $stack_arn; changeset: $changeset_arn; revisión: $REVIEWED_REVISION; recibo: $digest" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: prepared-changeset-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .tmp/changeset-review.json
+          if-no-files-found: error
+          retention-days: 30

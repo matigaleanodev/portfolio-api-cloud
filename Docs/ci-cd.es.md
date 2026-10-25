@@ -2,6 +2,8 @@
 
 [English](ci-cd.md) · 25/10/2026. Los workflows cubren validación documental, preparación de test e integración de ramas. La aplicación local incluye los seis contratos con pruebas; la stack se sintetiza localmente.
 
+**Incremento vigente:** [primera instalación con dobles y circuito Actions](managed-validation.es.md), implementados localmente. main/v0.1.0 ya existen; provisioning, ejecución y validación administrada siguen pendientes.
+
 **Estado vigente de fase 4:** [controles del runtime](runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
 
 ## CI
