@@ -58,7 +58,6 @@ for (const [key, value] of [
   ['Status', 'CREATE_PENDING'],
   ['ExecutionStatus', 'OBSOLETE'],
   ['NextToken', 'page'],
-  ['IncludeNestedStacks', true],
   ['ImportExistingResources', true],
   ['NotificationARNs', ['arn:aws:sns:fake']],
   ['Changes', []],
@@ -221,4 +220,53 @@ with tempfile.TemporaryDirectory() as directory:
   });
   expect(result.stderr).toBe('');
   expect(result.status).toBe(0);
+});
+
+test('Dado el indicador jerárquico de CDK sin stacks anidadas, cuando se revisa un changeset plano, entonces admite solo la raíz propia', () => {
+  for (const root of [undefined, changeset]) {
+    expect(
+      validate({
+        ...base,
+        change: { ...base.change, IncludeNestedStacks: true, RootChangeSetId: root },
+      }).status,
+    ).toBe(0);
+  }
+});
+
+test('Dadas jerarquías reales en template, cambios o relaciones, cuando se revisan, entonces se rechazan aunque el indicador no esté activo', () => {
+  const nested = changeset + '-child';
+  const cases = [
+    {
+      ...base,
+      template: {
+        Resources: {
+          ...base.template.Resources,
+          Child: { Type: 'AWS::CloudFormation::Stack' },
+        },
+      },
+    },
+    {
+      ...base,
+      change: {
+        ...base.change,
+        Changes: [
+          { ResourceChange: { ResourceType: 'AWS::CloudFormation::Stack', Action: 'Add' } },
+        ],
+      },
+    },
+    {
+      ...base,
+      change: {
+        ...base.change,
+        Changes: [
+          { ResourceChange: { ...base.change.Changes[0]!.ResourceChange, ChangeSetId: nested } },
+        ],
+      },
+    },
+    { ...base, change: { ...base.change, ParentChangeSetId: nested } },
+    { ...base, change: { ...base.change, RootChangeSetId: nested } },
+  ];
+  for (const [index, input] of cases.entries()) {
+    expect(validate(input).status, `Jerarquía no admitida ${index}`).not.toBe(0);
+  }
 });
