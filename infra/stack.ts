@@ -100,12 +100,18 @@ export class PortfolioApiStack extends Stack {
         resources: [secretArn.valueAsString],
       }),
     );
+    const scenario = scope.node.tryGetContext('validationScenario') as unknown;
+    if (
+      scenario !== undefined &&
+      !['success', 'error', 'pending-body', 'ambiguous'].includes(String(scenario))
+    )
+      throw new Error('Invalid validation scenario');
     const handler = new Function(this, 'Handler', {
       functionName: 'portfolio-api-cloud-test',
       runtime: Runtime.NODEJS_24_X,
       architecture: Architecture.ARM_64,
-      handler: 'dist/handler.handler',
-      code: Code.fromAsset('.tmp/lambda'),
+      handler: scenario ? 'dist/validation/handler.handler' : 'dist/handler.handler',
+      code: Code.fromAsset(scenario ? '.tmp/lambda-validation' : '.tmp/lambda'),
       role: runtimeRole,
       logGroup: logs,
       memorySize: 512,

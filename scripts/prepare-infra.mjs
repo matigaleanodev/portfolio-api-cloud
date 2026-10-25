@@ -13,6 +13,21 @@ execFileSync(process.execPath, ['scripts/build.mjs'], {
 rmSync(new URL('.tmp/lambda/', root), { recursive: true, force: true });
 stageRuntimePackage(fileURLToPath(new URL('.tmp/lambda/', root)));
 
+const scenarioArg = process.argv.find((value) => value.startsWith('validationScenario='));
+const scenario =
+  scenarioArg?.slice('validationScenario='.length) ??
+  JSON.parse(process.env.CDK_CONTEXT_JSON ?? '{}').validationScenario;
+if (scenario !== undefined) {
+  rmSync(new URL('.tmp/validation-dist/', root), { recursive: true, force: true });
+  execFileSync(
+    process.execPath,
+    ['node_modules/typescript/bin/tsc', '-p', 'tsconfig.validation.json'],
+    { cwd: root, stdio: 'inherit' },
+  );
+  rmSync(new URL('.tmp/lambda-validation/', root), { recursive: true, force: true });
+  stageRuntimePackage(fileURLToPath(new URL('.tmp/lambda-validation/', root)), scenario);
+}
+
 execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p', 'tsconfig.infra.json'], {
   cwd: root,
   stdio: 'inherit',
