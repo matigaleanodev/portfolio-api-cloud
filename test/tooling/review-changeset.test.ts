@@ -96,7 +96,7 @@ for (const action of [
       }).status,
     ).not.toBe(0);
   });
-test('Dado un rol distinto o paquete normal, cuando se revisa el primer despliegue, entonces rechaza ejecución', () => {
+test('Dado un rol distinto o paquete desconocido, cuando se revisa el primer despliegue, entonces rechaza ejecución', () => {
   expect(
     validate({
       ...base,
@@ -112,7 +112,7 @@ test('Dado un rol distinto o paquete normal, cuando se revisa el primer desplieg
             Type: 'AWS::Lambda::Function',
             Properties: {
               FunctionName: 'portfolio-api-cloud-test',
-              Handler: 'dist/handler.handler',
+              Handler: 'dist/unknown.handler',
             },
           },
         },

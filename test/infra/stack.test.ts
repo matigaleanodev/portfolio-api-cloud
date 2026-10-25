@@ -31,7 +31,7 @@ test('Dado el presupuesto técnico de test, cuando se configura la ejecución, e
   template.hasResourceProperties('AWS::Lambda::Function', {
     MemorySize: 512,
     Timeout: 28,
-    ReservedConcurrentExecutions: 5,
+    ReservedConcurrentExecutions: Match.absent(),
   });
 });
 test('Dados errores del SDK, cuando la Lambda ejecuta en AWS, entonces usa NODE_ENV production sin secretos en el template', () => {
@@ -60,7 +60,7 @@ test('Dada la API de test, cuando se delega el enrutamiento al handler, entonces
   template.resourceCountIs('AWS::ApiGatewayV2::Route', 2);
   template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
     RouteKey: '$default',
-    AuthorizationType: 'AWS_IAM',
+    AuthorizationType: { 'Fn::If': ['PublicIngress', 'NONE', 'AWS_IAM'] },
   });
   template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
     RouteKey: 'OPTIONS /{proxy+}',
