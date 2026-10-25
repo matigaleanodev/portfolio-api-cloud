@@ -27,3 +27,7 @@ El rollback de tráfico restaura la URL base del frontend a `https://api.matiasg
 - [Conteo y tokens no visibles](https://developers.openai.com/api/docs/guides/token-counting)
 - [Reasoning](https://developers.openai.com/api/docs/guides/reasoning)
 - [Cancelación](https://developers.openai.com/api/reference/resources/responses/methods/cancel)
+
+## Comprobación
+
+[HTTP, usage y recuperación](production-rollout.es.md).

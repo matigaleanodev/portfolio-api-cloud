@@ -27,3 +27,7 @@ Traffic rollback restores the frontend base URL to `https://api.matiasgaleano.de
 - [Counting and invisible tokens](https://developers.openai.com/api/docs/guides/token-counting)
 - [Reasoning](https://developers.openai.com/api/docs/guides/reasoning)
 - [Cancellation](https://developers.openai.com/api/reference/resources/responses/methods/cancel)
+
+## Validation
+
+[HTTP, usage y recuperación](production-rollout.md).
