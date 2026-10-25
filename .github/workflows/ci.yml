@@ -79,6 +79,17 @@ jobs:
       - run: npm run test:infra
       - name: Synthesize test stack without AWS lookups
         run: npm run cdk -- synth --no-lookups --context stage=test
+      - name: Assemble review bundle without credentials
+        run: |
+          python3 scripts/review_bundle.py create . .tmp/review-bundle "$GITHUB_SHA" "$(node --version)"
+          python3 scripts/review_bundle.py verify .tmp/review-bundle "$GITHUB_SHA"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-assembly-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .tmp/review-bundle/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
 
   verify:
     name: verify
