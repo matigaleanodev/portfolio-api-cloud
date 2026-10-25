@@ -25,6 +25,7 @@ jobs:
       contents: read
       id-token: write
     env:
+      TEST_RUNTIME_SECRET_ARN: ${{ vars.TEST_RUNTIME_SECRET_ARN }}
       TEST_AWS_ROLE_ARN: ${{ vars.TEST_AWS_ROLE_ARN }}
       TEST_EXECUTION_ROLE_ARN: ${{ vars.TEST_EXECUTION_ROLE_ARN }}
       TEST_CDK_DEPLOY_ROLE_ARN: ${{ vars.TEST_CDK_DEPLOY_ROLE_ARN }}
@@ -39,6 +40,7 @@ jobs:
           test -f package.json
           test -f package-lock.json
           test -f cdk.json
+          [[ "$TEST_RUNTIME_SECRET_ARN" =~ ^arn:aws:secretsmanager:us-east-1:650387442642:secret:portfolio-api-cloud/test/[A-Za-z0-9/_+=.@-]+$ ]]
           [[ "$TEST_AWS_ROLE_ARN" == arn:aws:iam::650387442642:role/PortfolioApiCloudTestGitHubDeployRole ]]
           [[ "$TEST_EXECUTION_ROLE_ARN" == arn:aws:iam::650387442642:role/PortfolioApiCloudTestCloudFormationExecutionRole ]]
           [[ "$TEST_CDK_DEPLOY_ROLE_ARN" == arn:aws:iam::650387442642:role/PortfolioApiCloudTestCdkDeployRole ]]
@@ -88,5 +90,5 @@ jobs:
         run: |
           set -euo pipefail
           change_set="portfolio-api-cloud-test-${GITHUB_SHA}-${GITHUB_RUN_ID}"
-          npm run cdk -- deploy PortfolioApiCloudTest --app cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never --parameters PortfolioApiCloudTest:RuntimePermissionsBoundaryArn=arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary
+          npm run cdk -- deploy PortfolioApiCloudTest --app cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never --parameters PortfolioApiCloudTest:RuntimePermissionsBoundaryArn=arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary --parameters "PortfolioApiCloudTest:RuntimeSecretArn=$TEST_RUNTIME_SECRET_ARN"
           echo "Changeset test preparado: $change_set. No se ejecutó el despliegue." >> "$GITHUB_STEP_SUMMARY"

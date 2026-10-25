@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
 import { Socket } from 'node:net';
 import bodyParser from 'body-parser';
+import { abortable, currentRequest } from './request-scope.js';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 const jsonParser = bodyParser.json({ limit: '16kb' });
@@ -17,14 +18,21 @@ export async function parseBody(event: APIGatewayProxyEventV2): Promise<unknown>
   const response = new ServerResponse(request);
   request.push(bytes);
   request.push(null);
+  const signal = currentRequest()?.signal;
+  const onAbort = () => request.destroy();
+  signal?.addEventListener('abort', onAbort, { once: true });
   try {
     for (const parser of [jsonParser, formParser]) {
-      await new Promise<void>((resolve, reject) => {
-        parser(request, response, (error?: unknown) => (error ? reject(error) : resolve()));
-      });
+      const parse = () =>
+        new Promise<void>((resolve, reject) => {
+          parser(request, response, (error?: unknown) => (error ? reject(error) : resolve()));
+        });
+      if (signal) await abortable(signal, parse);
+      else await parse();
     }
     return request.body;
   } finally {
+    signal?.removeEventListener('abort', onAbort);
     request.destroy();
   }
 }

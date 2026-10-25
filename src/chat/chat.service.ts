@@ -1,4 +1,5 @@
 import { ChatUnavailableError } from './chat.errors.js';
+import { PROFESSIONAL_PROFILE } from './knowledge/professional-profile.js';
 import {
   type ChatRequestDto,
   type ChatResponseDto,
@@ -7,7 +8,6 @@ import {
 import {
   CHAT_DEFAULT_AI_FALLBACK_SUGGESTIONS,
   CHAT_DEFAULT_AI_SEED_QUESTIONS,
-  CHAT_DEFAULT_FALLBACK_ANSWER,
   CHAT_DEFAULT_FALLBACK_SUGGESTED_QUESTIONS,
   CHAT_DEFAULT_STARTERS,
   CHAT_DEFAULT_OUT_OF_SCOPE_ANSWER,
@@ -69,7 +69,15 @@ export class ChatService {
     }
 
     const history = dto.history ?? [];
-    const faqMatch = history.length ? null : await this.faqService.findBestMatch(dto.message);
+    const faqMatch = await this.faqService.findBestMatch(dto.message);
+    if (faqMatch?.id) {
+      await this.faqService.incrementUsage(faqMatch.id);
+      return {
+        answer: faqMatch.answer,
+        suggestedQuestions: this.faqService.buildFollowUpSuggestions(faqMatch).slice(0, 2),
+        source: 'faq',
+      };
+    }
     let contextItems: KnowledgeContextItem[];
     try {
       contextItems = history.length
@@ -80,41 +88,9 @@ export class ChatService {
         'El conocimiento del portfolio no está disponible temporalmente. Intentá de nuevo más tarde.',
       );
     }
-
-    if (faqMatch?.id) {
-      const faqId = faqMatch.id;
-      await this.faqService.incrementUsage(faqId);
-
-      const faqSuggestions = this.faqService.buildFollowUpSuggestions(faqMatch);
-      const aiRephrasing = await this.openAiService.generateChatResponse({
-        userMessage: dto.message,
-        contextItems: [
-          ...contextItems,
-          {
-            sourceType: 'faq',
-            sourceId: faqId,
-            title: faqMatch.question,
-            text: faqMatch.answer,
-            tags: faqMatch.tags ?? [],
-          },
-        ],
-        suggestedSeedQuestions: faqSuggestions,
-      });
-
-      const response: ChatResponseDto = {
-        answer: aiRephrasing?.answer || faqMatch.answer,
-        suggestedQuestions: this.mergeSuggestions(
-          aiRephrasing?.suggestedQuestions ?? [],
-          faqSuggestions,
-        ),
-        source: 'faq',
-      };
-
-      return response;
-    }
-
     const aiResponse = await this.openAiService.generateChatResponse({
       userMessage: dto.message,
+      sessionId: dto.sessionId ?? null,
       contextItems,
       history,
       suggestedSeedQuestions: contextItems[0]
@@ -141,24 +117,14 @@ export class ChatService {
       return response;
     }
 
-    if (contextItems.length > 0) {
-      return {
-        answer:
-          'No pude generar una respuesta en este momento. Podés intentar de nuevo o usar el formulario de contacto del portfolio.',
-        suggestedQuestions: this.buildContextualSuggestions(contextItems[0]!),
-        source: 'fallback',
-      };
-    }
-
-    const fallbackResponse = await this.buildSystemResponse(
-      'fallback',
-      CHAT_DEFAULT_FALLBACK_ANSWER,
-      CHAT_DEFAULT_FALLBACK_SUGGESTED_QUESTIONS,
-    );
-
-    return fallbackResponse;
+    return {
+      answer: `Para seguir con una consulta más específica, ${PROFESSIONAL_PROFILE.contact.charAt(0).toLowerCase()}${PROFESSIONAL_PROFILE.contact.slice(1)}`,
+      suggestedQuestions: contextItems[0]
+        ? this.buildContextualSuggestions(contextItems[0])
+        : [...CHAT_DEFAULT_FALLBACK_SUGGESTED_QUESTIONS].slice(0, 2),
+      source: 'fallback',
+    };
   }
-
   private mergeSuggestions(primary: readonly string[], fallback: readonly string[]): string[] {
     const seen = new Set<string>();
     const merged: string[] = [];

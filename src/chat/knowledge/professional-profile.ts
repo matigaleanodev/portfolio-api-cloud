@@ -1,5 +1,7 @@
 /** Hechos profesionales confirmados; compartidos por contexto y FAQ para evitar divergencias. */
 export const PROFESSIONAL_PROFILE = {
+  contact:
+    'Podés escribirme a contacto@matiasgaleano.dev o usar el formulario del portfolio en matiasgaleano.dev.',
   introduction:
     'Soy Matías Galeano, Full Stack Developer de Posadas, Misiones, Argentina. Desarrollo aplicaciones web y móviles y trabajo entre frontend, backend, cloud y arquitectura.',
   currentWork:

@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "sourceCommit": "a0ef80fa9f82d1cea5a31425a63ab0a344338c56",
+  "sourcePath": "src/chat/content/chat-faq.data.ts",
+  "sourceSha256": "5d7ee8c37438ebf0ecc468e0ca4cbc67577c2f578b0b19130440b17de1f0be75",
+  "contentHash": "sha256:5c7c161c023a5e336a00c1c23b6d037265f1e32c85485abb9d2be44c43c888d2",
+  "scope": "Subset of existing curated project facts; no posts or general editorial renewal."
+}

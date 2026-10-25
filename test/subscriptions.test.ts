@@ -1,3 +1,5 @@
+import { createManagedHandler } from '../src/handler.js';
+import { managedEnvironment, runtimeSecret, SimulatedControlStore } from './support/control.js';
 import { test, vi } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -222,16 +224,19 @@ for (const failure of [
   });
 }
 
-test('Dado el timeout real de ocho segundos, cuando se abortan fetch o la lectura JSON, entonces devuelve 503 o 502 según el origen', async () => {
-  const timeout = vi.spyOn(AbortSignal, 'timeout');
+test('Dado el timeout real de ocho segundos, cuando se abortan fetch o la lectura JSON, entonces devuelve 503 incluso si el body queda pendiente', async () => {
+  vi.useFakeTimers();
+  const signals: AbortSignal[] = [];
   const networkRequest: typeof fetch = async (_url, options) =>
     new Promise((_resolve, reject) => {
+      signals.push(options!.signal!);
       options!.signal!.addEventListener('abort', () => reject(options!.signal!.reason), {
         once: true,
       });
     });
-  const bodyRequest: typeof fetch = async (_url, options) =>
-    ({
+  const bodyRequest: typeof fetch = async (_url, options) => {
+    signals.push(options!.signal!);
+    return {
       ok: true,
       status: 200,
       json: () =>
@@ -240,8 +245,9 @@ test('Dado el timeout real de ocho segundos, cuando se abortan fetch o la lectur
             once: true,
           });
         }),
-    }) as Response;
-  const responses = await Promise.all([
+    } as Response;
+  };
+  const pendingResponses = Promise.all([
     createApplication(
       cors,
       undefined,
@@ -258,19 +264,22 @@ test('Dado el timeout real de ocho segundos, cuando se abortan fetch o la lectur
       createSubscriptionSender(config, bodyRequest),
     )(subscriptionEvent()),
   ]);
+  await vi.advanceTimersByTimeAsync(8000);
+  const responses = await pendingResponses;
   assert.deepEqual(
     responses.map((response) => response.statusCode),
-    [503, 503, 502],
+    [503, 503, 503],
   );
   assert.deepEqual(
     responses.map((response) => JSON.parse(response.body ?? '').message),
     [
       'No se pudo conectar con el servicio de suscripciones.',
       'No se pudo conectar con el servicio de suscripciones.',
-      'El servicio de suscripciones devolvio una respuesta invalida.',
+      'No se pudo conectar con el servicio de suscripciones.',
     ],
   );
-  assert.deepEqual(timeout.mock.calls, [[8000], [8000], [8000]]);
+  assert.equal(signals.length, 3);
+  assert.ok(signals.every((signal) => signal.aborted));
 }, 11000);
 
 test('Dadas altas concurrentes, cuando once solicitudes compiten por una IP, entonces solo diez llegan al proveedor', async () => {
@@ -526,7 +535,7 @@ test('Dada ausencia o falla inesperada del proveedor, cuando llega una suscripci
   }
   assert.equal(process.env.PORTFOLIO_CLOUD_API_URL, undefined);
   for (const method of methods)
-    assert.equal((await handler(subscriptionEvent(method))).statusCode, 500);
+    assert.equal((await handler(subscriptionEvent(method))).statusCode, 503);
 });
 
 test('Dado el handler Lambda con configuración ficticia, cuando solicita alta y baja, entonces compone HTTP nativo con body y sin leer dotenv', async () => {
@@ -536,9 +545,20 @@ test('Dado el handler Lambda con configuración ficticia, cuando solicita alta y
     return new Response('{"message":"ok","email":"test@example.com"}');
   });
   try {
-    process.env.PORTFOLIO_CLOUD_API_URL = ' https://cloud.example.invalid/base/// ';
+    process.env.PORTFOLIO_CLOUD_API_URL = 'https://ignored.example.invalid';
+    const managed = createManagedHandler(managedEnvironment, {
+      store: new SimulatedControlStore(),
+      readSecret: async () =>
+        JSON.stringify({
+          ...runtimeSecret(),
+          PORTFOLIO_CLOUD_API_URL: ' https://cloud.example.invalid/base/// ',
+        }),
+    });
     for (const method of methods) {
-      const result = await handler(subscriptionEvent(method, { email: ' TEST@Example.com ' }));
+      const event = subscriptionEvent(method, { email: ' TEST@Example.com ' });
+      event.requestContext.stage = '$default';
+      event.requestContext.domainName = 'local.execute-api.us-east-1.amazonaws.com';
+      const result = await managed(event);
       assert.equal(result.statusCode, 200);
       assert.equal(result.body, '{"message":"ok","email":"test@example.com"}');
     }

@@ -2,6 +2,8 @@
 
 [Español](README.es.md)
 
+**Current phase 4 status:** [runtime controls](Docs/runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
+
 Alternative implementation of Portfolio's public API using TypeScript handlers. Serverless migration is decided; the original NestJS API remains an independent implementation.
 
 ## Current status
@@ -21,7 +23,7 @@ npm run check
 
 `check` validates formatting and runs strict types, ESM build, network-blocked tests, an out-of-checkout smoke test and document validation. Verification commands do not fix sources. The package uses `dist/handler.js`, export `handler`, and requires `package.json` with `type: module`. Runtime requires production `node_modules` from the lock and `LICENSE`. It does not load `.env`; only the Lambda entry reads environment for CORS and contact (`RESEND_API_KEY`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`). Health remains available without these keys. [Contract, provenance and limits](Docs/contact.md).
 
-[Test stack and prerequisites](Docs/infrastructure.md) · [Spanish test cases](Docs/testing.md). Vitest runs 479 cases (456 application, 12 tooling, 11 infrastructure).
+[Test stack and prerequisites](Docs/infrastructure.md) · [Spanish test cases](Docs/testing.md). Vitest runs 539 cases (513 application, 12 tooling, 14 infrastructure).
 
 Readable formatting with Prettier **3.9.10** and explicit `.prettierrc.json` rules: two spaces, single quotes, semicolons, trailing commas and an advisory 100-column print width. Scripts separate preparation, execution and checks with blank lines preserved by Prettier. `npm run format` writes changes; `npm run format:check` checks without writing and is required in CI. `.gitignore` and `.prettierignore` exclude private/generated files, the lockfile and the pinned historical fixture.
 
@@ -62,4 +64,6 @@ Subscriptions uses PORTFOLIO_CLOUD_API_URL, read only when invoking that slice. 
 
 [Starters/chat: contracts, configuration, references, differences and provenance](Docs/chat.md). New dependencies: S3 SDK 3.1156.0 for R2 and reflect-metadata 0.2.2 for nested history. Profile/projects/prompts retain audited SHA content; editorial refresh remains pending.
 
-Chat professional location is corrected specifically to Posadas, Misiones, Argentina, with an explicit difference from the pinned SHA. Other content retains its previous scope; general editorial renewal remains immediately before production. [Details and historical references](Docs/chat.md).
+Chat professional location is corrected specifically to Posadas, Misiones, Argentina, with an explicit difference from the pinned SHA. FAQ and context also include the professional email contacto@matiasgaleano.dev from one shared fact. Other content retains its previous scope; general editorial renewal remains immediately before production. [Details and historical references](Docs/chat.md).
+
+Phase 4 implements shared control for the managed handler. The current suite has 539 tests: 513 application, 12 tooling and 14 infrastructure. [Configuration, global budget, sessions, fallback and validation limits](Docs/runtime-hardening.md).

@@ -81,7 +81,7 @@ test('Dada la política de logs de test, cuando se reemplaza la stack, entonces 
     UpdateReplacePolicy: 'Retain',
   });
 });
-test('Dado el rol de ejecución, cuando se sintetizan permisos, entonces exige una boundary externa y solo permite escribir sus logs', () => {
+test('Dado el rol de ejecución, cuando se sintetizan permisos, entonces exige una boundary externa y acota logs, control y lectura del secreto', () => {
   template.resourceCountIs('AWS::IAM::Role', 1);
   template.hasResourceProperties('AWS::IAM::Role', {
     PermissionsBoundary: { Ref: 'RuntimePermissionsBoundaryArn' },
@@ -89,20 +89,20 @@ test('Dado el rol de ejecución, cuando se sintetizan permisos, entonces exige u
   });
   template.hasResourceProperties('AWS::IAM::Policy', {
     PolicyDocument: {
-      Statement: [
+      Statement: Match.arrayWith([
         {
           Action: ['logs:CreateLogStream', 'logs:PutLogEvents'],
           Effect: 'Allow',
           Resource: Match.anyValue(),
         },
-      ],
+      ]),
       Version: '2012-10-17',
     },
   });
   const logId = Object.keys(template.findResources('AWS::Logs::LogGroup'))[0]!;
   template.hasResourceProperties('AWS::IAM::Policy', {
     PolicyDocument: {
-      Statement: [
+      Statement: Match.arrayWith([
         {
           Action: ['logs:CreateLogStream', 'logs:PutLogEvents'],
           Effect: 'Allow',
@@ -110,7 +110,7 @@ test('Dado el rol de ejecución, cuando se sintetizan permisos, entonces exige u
             'Fn::Join': ['', [{ 'Fn::GetAtt': [logId, 'Arn'] }, ':*']],
           },
         },
-      ],
+      ]),
       Version: '2012-10-17',
     },
   });
@@ -149,6 +149,7 @@ test('Dado el asset de Lambda, cuando se inspecciona su contenido, entonces incl
   expect(readdirSync('.tmp/lambda').sort()).toEqual([
     'LICENSE',
     'dist',
+    'fallback',
     'node_modules',
     'package.json',
   ]);
@@ -156,4 +157,59 @@ test('Dado el asset de Lambda, cuando se inspecciona su contenido, entonces incl
   expect(() => readFileSync('.tmp/lambda/node_modules/vitest/package.json')).toThrow();
   expect(() => readFileSync('.tmp/lambda/node_modules/aws-cdk-lib/package.json')).toThrow();
   expect(readFileSync('.tmp/lambda/node_modules/resend/LICENSE', 'utf8')).toContain('MIT');
+});
+
+test('Dado almacenamiento de control, cuando se sintetiza, entonces usa una tabla sin datos de aplicación, con TTL y protección de borrado', () => {
+  template.resourceCountIs('AWS::DynamoDB::Table', 1);
+  template.hasResource('AWS::DynamoDB::Table', {
+    Properties: {
+      BillingMode: 'PAY_PER_REQUEST',
+      DeletionProtectionEnabled: true,
+      TimeToLiveSpecification: { AttributeName: 'ttl', Enabled: true },
+      KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+    },
+    DeletionPolicy: 'Retain',
+    UpdateReplacePolicy: 'Retain',
+  });
+  template.resourceCountIs('AWS::SecretsManager::Secret', 0);
+  template.hasResourceProperties('AWS::IAM::Policy', {
+    PolicyDocument: {
+      Statement: Match.arrayWith([
+        {
+          Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'],
+          Resource: {
+            'Fn::GetAtt': [Object.keys(template.findResources('AWS::DynamoDB::Table'))[0], 'Arn'],
+          },
+          Effect: 'Allow',
+        },
+        {
+          Action: 'secretsmanager:GetSecretValue',
+          Resource: { Ref: 'RuntimeSecretArn' },
+          Effect: 'Allow',
+        },
+      ]),
+    },
+  });
+});
+test('Dadas alarmas locales, cuando se definen, entonces cubren error, throttling y duración sin enviar notificaciones', () => {
+  template.resourceCountIs('AWS::CloudWatch::Alarm', 3);
+  for (const resource of Object.values(template.findResources('AWS::CloudWatch::Alarm'))) {
+    expect(resource.Properties.AlarmActions).toBeUndefined();
+    expect(resource.Properties.TreatMissingData).toBe('notBreaching');
+  }
+  template.resourceCountIs('AWS::SNS::Topic', 0);
+});
+test('Dada entrada administrada, cuando se configura Lambda, entonces fija API y tabla y usa únicamente ARN de secreto sin valor por defecto', () => {
+  template.hasResourceProperties('AWS::Lambda::Function', {
+    Environment: {
+      Variables: {
+        TRUSTED_API_ID: { Ref: Object.keys(template.findResources('AWS::ApiGatewayV2::Api'))[0] },
+        QUOTA_TABLE_NAME: { Ref: Object.keys(template.findResources('AWS::DynamoDB::Table'))[0] },
+        RUNTIME_SECRET_ARN: { Ref: 'RuntimeSecretArn' },
+      },
+    },
+  });
+  expect(template.toJSON().Parameters.RuntimeSecretArn.Default).toBeUndefined();
+  expect(template.toJSON().Parameters.RuntimeSecretArn.NoEcho).toBe(true);
+  expect(() => readFileSync('.tmp/lambda/fallback/chat-knowledge.v1.json')).not.toThrow();
 });

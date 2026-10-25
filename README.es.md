@@ -2,11 +2,13 @@
 
 [English](README.md)
 
+**Estado vigente de fase 4:** [controles del runtime](Docs/runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
+
 Implementación alternativa de la API pública de Portfolio con handlers TypeScript. La migración a serverless está decidida; la API NestJS original se conserva como implementación independiente.
 
 ## Estado actual
 
-Aplicación local con composición explícita y entrada HTTP API v2: `GET /api/health` → 200 `{"status":"ok"}` y `POST /api/contact` → 204 vacío, con validación, honeypot, proveedor simulado en pruebas y cuota local 5/h/IP. POST y DELETE /api/subscriptions devuelven 200 con normalización del email, proveedor HTTP y cuotas locales independientes de 10/h/IP. GET /api/chat/starters devuelve 200 y POST /api/chat devuelve 201 con FAQ/IA/fallback, historial y cuotas independientes de 20/min/IP. Los seis contratos tienen cobertura local; la integración administrada permanece pendiente. La stack CDK de test está definida y sintetizada localmente; no se desplegó.
+Aplicación local con composición explícita y entrada HTTP API v2: `GET /api/health` → 200 `{"status":"ok"}` y `POST /api/contact` → 204 vacío, con validación, honeypot, proveedor simulado en pruebas y cuota compartida 5/h/IP en el handler administrado. POST y DELETE /api/subscriptions devuelven 200 con normalización del email, proveedor HTTP y cuotas compartidas independientes de 10/h/IP. GET /api/chat/starters devuelve 200 y POST /api/chat devuelve 201 con FAQ/IA/fallback, historial y cuotas independientes de 20/min/IP. Los seis contratos tienen cobertura local; la integración administrada permanece pendiente. La stack CDK de test está definida y sintetizada localmente; no se desplegó.
 
 El prototipo comparativo fue descartado. Sus [resultados](Docs/local-runtime.es.md) se conservan como evidencia histórica y no son mediciones de esta base, cold starts AWS ni prueba de ahorro mensual.
 
@@ -19,9 +21,9 @@ npm ci --ignore-scripts
 npm run check
 ```
 
-`check` verifica el formato y ejecuta tipos estrictos, build ESM, tests sin red, smoke fuera del checkout y validación documental. Los comandos de verificación no corrigen fuentes. El paquete usa `dist/handler.js`, export `handler`, y requiere el `package.json` con `type: module`. Requiere `node_modules` de producción según el lock y `LICENSE`. No carga `.env`; únicamente la entrada Lambda lee el ambiente para CORS y contacto (`RESEND_API_KEY`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`). Health sigue disponible sin esas claves. [Contrato, procedencia y límites](Docs/contact.es.md).
+`check` verifica el formato y ejecuta tipos estrictos, build ESM, tests sin red, smoke fuera del checkout y validación documental. Los comandos de verificación no corrigen fuentes. El paquete usa `dist/handler.js`, export `handler`, y requiere el `package.json` con `type: module`. Requiere `node_modules` de producción según el lock y `LICENSE`. No carga `.env`; la entrada Lambda lee CORS y referencias no secretas del ambiente y valida un snapshot de Secrets Manager antes de negocio. Health sigue disponible como liveness sin esas claves. [Contrato, procedencia y límites](Docs/contact.es.md).
 
-[Stack de test y requisitos](Docs/infrastructure.es.md) · [Casos de prueba en español](Docs/testing.es.md). Vitest ejecuta 479 casos (456 aplicación, 12 tooling, 11 infraestructura).
+[Stack de test y requisitos](Docs/infrastructure.es.md) · [Casos de prueba en español](Docs/testing.es.md). Vitest ejecuta 539 casos (513 aplicación, 12 tooling, 14 infraestructura).
 
 Formato legible con Prettier **3.9.10** y reglas explícitas en `.prettierrc.json`: 2 espacios, comillas simples, punto y coma, comas finales y ancho orientativo de 100 columnas. Los scripts separan preparación, ejecución y comprobación con líneas en blanco; Prettier conserva esa separación. `npm run format` aplica el formato; `npm run format:check` verifica sin modificar archivos y es obligatorio en CI. `.gitignore` y `.prettierignore` excluyen privados, generados, lock y fixture histórico con hash fijado.
 
@@ -62,4 +64,6 @@ Suscripciones utiliza PORTFOLIO_CLOUD_API_URL, leída únicamente al invocar esa
 
 [Starters/chat: contratos, configuración, referencias, diferencias y procedencia](Docs/chat.es.md). Dependencias nuevas: SDK S3 3.1156.0 para R2 y reflect-metadata 0.2.2 para historial anidado. Perfil/proyectos/prompts conservan el SHA auditado; renovación editorial pendiente.
 
-La ubicación profesional del chat se corrige puntualmente a Posadas, Misiones, Argentina, con diferencia explícita frente al SHA fijado. El resto del contenido conserva su alcance anterior y la renovación editorial general sigue inmediatamente antes de producción. [Detalle y referencias históricas](Docs/chat.es.md).
+La ubicación profesional del chat se corrige puntualmente a Posadas, Misiones, Argentina, con diferencia explícita frente al SHA fijado. FAQ y contexto también incluyen el correo profesional contacto@matiasgaleano.dev desde un único dato compartido. El resto del contenido conserva su alcance anterior y la renovación editorial general sigue inmediatamente antes de producción. [Detalle y referencias históricas](Docs/chat.es.md).
+
+La fase 4 implementa el control compartido del handler administrado. La suite actual tiene 539 pruebas: 513 de aplicación, 12 de tooling y 14 de infraestructura. [Configuración, presupuesto global, sesiones, fallback y límites de validación](Docs/runtime-hardening.es.md).

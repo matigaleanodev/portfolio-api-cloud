@@ -16,17 +16,18 @@ export function createApplication(
   sendContact?: (dto: ContactDto) => Promise<void>,
   sendSubscription?: SubscriptionSender,
   chat?: Pick<ChatService, 'reply'>,
+  quotaFactory: typeof createQuota = createQuota,
 ) {
   const corsOrigins =
     typeof config.corsOrigins === 'boolean' ? config.corsOrigins : [...config.corsOrigins];
-  const contactQuota = createQuota(5, 'contact');
+  const contactQuota = quotaFactory(5, 'contact');
   const chatQuotas = {
-    starters: createQuota(20, 'starters', 60),
-    chat: createQuota(20, 'chat', 60),
+    starters: quotaFactory(20, 'starters', 60),
+    chat: quotaFactory(20, 'chat', 60),
   };
   const subscriptionQuotas = {
-    POST: createQuota(10, 'subscribe'),
-    DELETE: createQuota(10, 'unsubscribe'),
+    POST: quotaFactory(10, 'subscribe'),
+    DELETE: quotaFactory(10, 'unsubscribe'),
   };
 
   return async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStructuredResultV2> => {

@@ -2,6 +2,8 @@
 
 [English](architecture.md) · Propuesta al 24/10/2026. Fuentes oficiales: [registro](sources.es.md).
 
+**Estado vigente de fase 4:** [controles del runtime](runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
+
 ## Recomendación
 
 La migración a serverless está decidida. Construir la API con **handlers TypeScript**, conservando contratos, dominio, contenido y proveedores. NestJS/Express adaptado queda como referencia del [experimento local](local-runtime.es.md). **AWS CDK v2 con TypeScript** queda elegido; la [stack de test](infrastructure.es.md) está definida y sintetizada localmente, sin bootstrap ni despliegue. Candidata de infraestructura común: **una Lambda Event Function**, fuera de VPC, detrás de **API Gateway HTTP API regional**, sin dominio productivo durante pruebas. El tamaño real (seis rutas, sin DB ni workers) no justifica repartir por endpoint.
@@ -13,7 +15,7 @@ API Gateway conserva rutas `/api/*`, códigos, body DELETE y errores. CORS en un
 ## Protección y runtime necesarios
 
 - Un storage compartido para Throttler (Nest) o un limiter equivalente (handlers) es necesario para preservar cuotas por IP al distribuir ejecución. Candidato proporcional: una tabla DynamoDB on-demand para contadores efímeros, operaciones atómicas y TTL. No es una DB de aplicación. Definir vencimiento lógico sin depender de la eliminación eventual TTL; preservar 5/h contacto, 10/h suscripciones y 20/min chat. El backend debe recibir la IP confiable del evento, sin confiar en X-Forwarded-For arbitrario. Guardar identificadores derivados y limitar retención.
-- Rate/burst por ruta de API Gateway y concurrencia reservada conservadora (propuesta 5 para test, a medir) limitan presión global. No reemplazan el límite por IP ni son un tope monetario. Presupuesto/alertas tampoco cortan el gasto automáticamente. Proponer una cuota diaria global de llamadas IA y corte operativo; acordar el umbral antes de habilitar público.
+- Rate/burst por ruta de API Gateway y concurrencia reservada conservadora (propuesta 5 para test, a medir) limitan presión global. No reemplazan el límite por IP ni son un tope monetario. Presupuesto/alertas tampoco cortan el gasto automáticamente. La política definida fija cinco respuestas de IA por sesión y un presupuesto diario privado por ambiente, con reserva atómica antes del consumo y continuidad FAQ/contacto; implementación distribuida e identidad/vigencia de sesión pendientes. [Decisión](decisions.es.md).
 - Deadline total propuesto ≤25 s, Lambda ≤28 s, integración HTTP ≤30 s. OpenAI ya corta a 15 s y upstream a 8 s; falta cancelación real R2/body/retries y timeout Resend. El presupuesto incluye cold start, carga de secretos y knowledge. Si no alcanza con margen, revisar entrada/arquitectura, no esconder timeouts.
 - Cachear cliente SDK/Resend/config en el entorno; ninguna corrección funcional puede depender de que siga caliente. Empaquetar fallback de knowledge inmutable y con trazabilidad; acordar edad máxima stale. Mantener historial en la request y navegador.
 - Config no secreta por stage. Proponer un secreto JSON por ambiente en Secrets Manager, recuperado por rol runtime y cacheado con refresh acotado; nunca en Git, synth, outputs ni payloads de CI. La creación y carga de secretos forma parte de la configuración de cada ambiente. R2 usa credencial propia de lectura del artifact, no permisos AWS S3 sobre ese proveedor externo.
@@ -73,3 +75,7 @@ Las tres APIs actuales siguen operativas durante toda la migración. Al finaliza
 La actualización de perfil y proyectos usados por el bot es el último paso previo al despliegue productivo. [Etapas y recuperación](migration.es.md).
 
 [Alta/baja de suscripciones, composición HTTP y límites](subscriptions.es.md).
+
+## Actualización de fase 4
+
+El handler administrado usa cuotas compartidas, configuración de Secrets Manager validada antes de negocio, deadline total y cancelación de proveedores. Las descripciones de memoria local, configuración lazy/500 y timeouts parciales corresponden al traslado inicial o al adaptador de composición local. Los controles actuales y diferencias están en [endurecimiento](runtime-hardening.es.md); permisos/proxies/proveedores reales siguen pendientes de validación administrada.

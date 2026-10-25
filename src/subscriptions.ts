@@ -1,4 +1,5 @@
 import type { SubscriptionConfiguration } from './config.js';
+import { abortable, operationSignal, runtimeMetric } from './request-scope.js';
 import type { SubscriptionEmailDto } from './subscriptions.dto.js';
 
 export interface SubscriptionResponse {
@@ -28,57 +29,75 @@ export function createSubscriptionSender(
   const endpoint = `${config.baseUrl}/subscriptions`;
 
   return async (method, dto) => {
-    try {
-      const response = await request(endpoint, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dto),
-        signal: AbortSignal.timeout(8_000),
-      });
-
-      let payload: unknown;
+    const signal = operationSignal(8_000);
+    const startedAt = performance.now();
+    return abortable(signal, async () => {
       try {
-        payload = await response.json();
-      } catch {
-        payload = null;
-      }
+        const response = await request(endpoint, {
+          method,
+          redirect: 'error',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dto),
+          signal,
+        });
 
-      if (response.ok) {
-        if (
-          !payload ||
-          typeof payload !== 'object' ||
-          !('message' in payload) ||
-          typeof payload.message !== 'string' ||
-          ('email' in payload && payload.email !== undefined && typeof payload.email !== 'string')
-        ) {
-          throw new SubscriptionError(
-            502,
-            'El servicio de suscripciones devolvio una respuesta invalida.',
-          );
+        let payload: unknown;
+        try {
+          payload = await response.json();
+        } catch {
+          payload = null;
         }
 
-        return {
-          message: payload.message,
-          email:
-            'email' in payload && typeof payload.email === 'string' ? payload.email : undefined,
-        };
-      }
+        if (response.ok) {
+          if (
+            !payload ||
+            typeof payload !== 'object' ||
+            !('message' in payload) ||
+            typeof payload.message !== 'string' ||
+            ('email' in payload && payload.email !== undefined && typeof payload.email !== 'string')
+          ) {
+            throw new SubscriptionError(
+              502,
+              'El servicio de suscripciones devolvio una respuesta invalida.',
+            );
+          }
 
-      if (response.status >= 400 && response.status < 500) {
-        const message =
-          payload &&
-          typeof payload === 'object' &&
-          'error' in payload &&
-          typeof payload.error === 'string'
-            ? payload.error
-            : 'No se pudo validar la solicitud de suscripcion.';
-        throw new SubscriptionError(400, message);
-      }
+          return {
+            message: payload.message,
+            email:
+              'email' in payload && typeof payload.email === 'string' ? payload.email : undefined,
+          };
+        }
 
-      throw new SubscriptionError(502, 'No se pudo procesar la suscripcion en este momento.');
-    } catch (error) {
-      if (error instanceof SubscriptionError) throw error;
-      throw new SubscriptionError(503, 'No se pudo conectar con el servicio de suscripciones.');
-    }
+        if (response.status >= 400 && response.status < 500) {
+          const message =
+            payload &&
+            typeof payload === 'object' &&
+            'error' in payload &&
+            typeof payload.error === 'string'
+              ? payload.error
+              : 'No se pudo validar la solicitud de suscripcion.';
+          throw new SubscriptionError(400, message);
+        }
+
+        throw new SubscriptionError(502, 'No se pudo procesar la suscripcion en este momento.');
+      } catch (error) {
+        if (error instanceof SubscriptionError) throw error;
+        throw new SubscriptionError(503, 'No se pudo conectar con el servicio de suscripciones.');
+      }
+    })
+      .then((result) => {
+        runtimeMetric('subscription_provider', 'success', {
+          durationMs: Math.round(performance.now() - startedAt),
+        });
+        return result;
+      })
+      .catch((error: unknown) => {
+        runtimeMetric('subscription_provider', signal.aborted ? 'timeout' : 'error', {
+          durationMs: Math.round(performance.now() - startedAt),
+        });
+        if (error instanceof SubscriptionError) throw error;
+        throw new SubscriptionError(503, 'No se pudo conectar con el servicio de suscripciones.');
+      });
   };
 }

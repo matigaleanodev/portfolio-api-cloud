@@ -121,7 +121,7 @@ export const PROFILE_KNOWLEDGE_ITEMS: readonly KnowledgeContextItem[] = [
     sourceId: 'main-contact',
     title: 'Contacto profesional',
     text: [
-      'El contacto principal se realiza desde el formulario del portfolio en matiasgaleano.dev.',
+      PROFESSIONAL_PROFILE.contact,
       'También mantiene presencia pública en GitHub y LinkedIn.',
     ].join(' '),
     tags: ['contact', 'portfolio', 'github', 'linkedin'],

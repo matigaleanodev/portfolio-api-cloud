@@ -110,7 +110,7 @@ test('Dado un perfil y R2 caído, cuando se consulta empleo y luego proyectos, e
   const { app, repository, request } = compose();
   repository.getKnowledge.mockRejectedValue(new Error('fallo privado'));
   expect((await app(event('¿En qué empresa trabajás hoy?'))).statusCode).toBe(201);
-  expect(request.mock.calls[0]?.[1]?.body).toContain('Banco Comafi a través de Boreal IT');
+  expect(request).not.toHaveBeenCalled();
   expect(repository.getKnowledge).not.toHaveBeenCalled();
   const response = await app(event());
   expect(response.statusCode).toBe(503);
@@ -123,7 +123,7 @@ test('Dado un perfil y R2 caído, cuando se consulta empleo y luego proyectos, e
   expect(response.headers?.['access-control-allow-origin']).toBe(
     'https://frontend.example.invalid',
   );
-  expect(request).toHaveBeenCalledTimes(1);
+  expect(request).not.toHaveBeenCalled();
 });
 test('Dado OpenAI caído, cuando hay FAQ o contexto, entonces conserva source y distingue fallo técnico de dato no confirmado', async () => {
   const { app, request } = compose();
@@ -137,7 +137,7 @@ test('Dado OpenAI caído, cuando hay FAQ o contexto, entonces conserva source y 
   expect(response.statusCode).toBe(201);
   expect(JSON.parse(response.body ?? '')).toMatchObject({
     source: 'fallback',
-    answer: expect.stringContaining('No pude generar'),
+    answer: expect.stringContaining('contacto@matiasgaleano.dev'),
   });
 });
 test('Dado un historial explícito, cuando se usa otro sessionId, entonces no persiste ni mezcla conversaciones', async () => {
@@ -253,13 +253,13 @@ test('Dada cuota de un minuto, cuando se bloquea y reintenta, entonces la sanci�
   await vi.advanceTimersByTimeAsync(1000);
   expect((await quota('192.0.2.1')).headers['x-ratelimit-remaining']).toBe('19');
 });
-test('Dado el handler sin secretos ni knowledge, cuando se consulta, entonces mantiene health/starters, FAQ y 503 editorial sin red', async () => {
+test('Dado el handler sin secretos ni knowledge, cuando se consulta, entonces mantiene health y rechaza negocio con 503 sin red', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'portfolio-handler-chat-'));
   vi.spyOn(process, 'cwd').mockReturnValue(directory);
   expect(process.env.OPENAI_API_KEY).toBeUndefined();
   expect((await handler(httpEvent())).statusCode).toBe(200);
-  expect((await handler(httpEvent('GET', '/api/chat/starters'))).statusCode).toBe(200);
-  expect((await handler(event('¿Dónde trabajás?'))).statusCode).toBe(201);
+  expect((await handler(httpEvent('GET', '/api/chat/starters'))).statusCode).toBe(503);
+  expect((await handler(event('¿Dónde trabajás?'))).statusCode).toBe(503);
   expect((await handler(event())).statusCode).toBe(503);
   await rm(directory, { recursive: true, force: true });
 });

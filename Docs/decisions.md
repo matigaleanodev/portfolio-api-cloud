@@ -51,7 +51,7 @@ Refreshing bot data about the professional profile and projects is the final ste
 
 ## Open operational decisions
 
-Budget and daily AI quota; latency/cost thresholds; maximum stale age and provider retention; test isolation; roles/bootstrap; artifact retention; URL/routing and cutover runbook. Actual billing and private plans are unverified. Public scenarios are hypothetical.
+Identity/NAT and daily-budget impact in AWS test, model availability and price review; latency/cost thresholds; maximum stale age and provider retention; test isolation; roles/bootstrap; artifact retention; URL/routing and cutover runbook. Actual billing and private plans are unverified. Public scenarios are hypothetical.
 
 ## ADR-006 — Local foundation and independent validation
 
@@ -105,4 +105,18 @@ Status: **local slice implemented; managed integration pending**. POST/DELETE re
 
 Status: **implemented and locally verified**. Required a0ef80fa starters/chat modules, content and prompts are retained without refresh. Direct/nested DTO uses reflect-metadata; R2 repository uses current pinned S3 SDK; OpenAI fetch is preserved. Independent 20/min/IP quotas reuse the local fixed-window/block decision. Original R2 timeout, stale and AI retention limits are preserved/tested; free-form logs are omitted while bounded metrics remain. [Contracts, differences, provenance and stage 4 prerequisites](chat.md). Local evidence does not establish AWS deployment/integration.
 
-Chat professional location is corrected specifically to Posadas, Misiones, Argentina, with an explicit difference from the pinned SHA. Other content retains its previous scope; general editorial renewal remains immediately before production. [Details and historical references](chat.md).
+Chat professional location is corrected specifically to Posadas, Misiones, Argentina, with an explicit difference from the pinned SHA. FAQ and context also include the professional email contacto@matiasgaleano.dev from one shared fact. Other content retains its previous scope; general editorial renewal remains immediately before production. [Details and historical references](chat.md).
+
+## ADR-014 — Bounded AI use and FAQ continuity
+
+Status: **implemented locally; managed validation pending**.
+
+Chat will prioritize FAQ without AI rephrasing and allow at most five AI answers per session. When the session allowance or global daily budget is exhausted, it will continue with a relevant FAQ; otherwise it will kindly answer: “Para seguir con una consulta más específica, podés escribirme a contacto@matiasgaleano.dev”. Visitors will not see budget amounts or internal quota details.
+
+The daily budget is configured per environment outside public content. Each paid request must atomically reserve its maximum cost before dispatch, including input, output, model, prices and concurrent calls. Reservations with ambiguous outcomes must not be released as if no cost occurred. If shared control or configuration cannot establish availability, AI must not be invoked. Spend alerts do not replace this cutoff. [OpenAI Docs](https://developers.openai.com/api/docs/guides/terraform/rate-limits-and-spend).
+
+sessionId and history come from the client and currently establish neither a session nor consumption. Session lifetime is bounded by the Argentine day and server-derived origin; an additional five/IP/day prevents renewal by changing sessionId. People behind NAT share this protection; its impact requires managed validation. IP quotas and the global budget remain independent controls. The managed handler implements direct FAQ, shared quotas and atomic global/session/origin reservations; [phase 4](runtime-hardening.md) records details and limitations. The email is already part of curated knowledge and FAQ.
+
+## ADR-015 — Shared controls, deadline and packaged fallback
+
+Status: **implemented locally; not deployed**. DynamoDB CAS for quotas and a transaction for AI admission; 25-second total deadline with cancellation; validated secret and bounded refresh; v1 fallback with checksum and maximum age; logs without PII and alarms without actions. DynamoDB and Secrets Manager SDKs are pinned at 3.1156.0. The memory limiter remains only a local composition adapter. [Decisions, configuration and exit criteria](runtime-hardening.md).

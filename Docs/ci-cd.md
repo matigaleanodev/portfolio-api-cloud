@@ -2,13 +2,15 @@
 
 [Español](ci-cd.es.md) · 2026-10-25. The workflows cover document validation, test planning and branch integration. The local application includes all six contracts with tests; the stack synthesizes locally.
 
+**Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
+
 ## CI
 
 `.github/workflows/ci.yml` handles PRs to main/dev, pushes to those branches and manual dispatch. Read-only permissions; no OIDC, secrets or AWS credentials.
 
 The documentation job validates language pairs/links and detects application/infrastructure separately. package.json requires lock, tsconfig and a real entry; orphan application files fail. cdk.json enables infrastructure and requires its scripts.
 
-Application runs `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` and `test:package` on Node 24.22.1. Vitest runs 456 application cases and 12 tooling cases migrated from unittest. No fixing lint/source mutation. The network guard loads before application imports with no inherited credentials. [Coverage and cases](testing.md).
+Application runs `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` and `test:package` on Node 24.22.1. Vitest runs 513 application cases and 12 tooling cases migrated from unittest. No fixing lint/source mutation. The network guard loads before application imports with no inherited credentials. [Coverage and cases](testing.md).
 
 Infrastructure is active because cdk.json exists; it runs 11 `test:infra` cases and `cdk -- synth --no-lookups --context stage=test`, without AWS credentials. [Local stack and prerequisites](infrastructure.md).
 
@@ -55,4 +57,6 @@ Experiment changes were discarded. This foundation adds new application/infrastr
 
 ## Recovery of the first App merge
 
-The [initial run](https://github.com/matigaleanodev/portfolio-api-cloud/actions/runs/40147675945) validated the PR and generated the token, but `gh pr merge` stopped locally on `mergeStateStatus=BLOCKED` before requesting a server merge. The correction uses the merge endpoint with the exact SHA and confirms `merged=true`. The [recovery run](https://github.com/matigaleanodev/portfolio-api-cloud/actions/runs/40147939891) merged PR #2 with the App while preserving PR/CI. It used a temporary entry from `feat/migration-evidence-docs`, bound to its exact SHA and environment `merge`. This cleanup removes that condition; the recovery variable and environment branch permission have already been removed. The regular flow again accepts dispatch only from main/dev, and the environment retains only those branches. dev was not removed from the lock and the quality ruleset was unchanged.
+The [initial run](https://github.com/matigaleanodev/portfolio-api-cloud/actions/runs/40147675945) validated the PR and generated the token, but `gh pr merge` stopped locally on `mergeStateStatus=BLOCKED` before requesting a server merge. The correction uses the merge endpoint with the exact SHA and confirms `merged=true`. The [recovery run](https://github.com/matigaleanodev/portfolio-api-cloud/actions/runs/40153939891) merged PR #2 with the App while preserving PR/CI. It used a temporary entry from `feat/migration-evidence-docs`, bound to its exact SHA and environment `merge`. This cleanup removes that condition; the recovery variable and environment branch permission have already been removed. The regular flow again accepts dispatch only from main/dev, and the environment retains only those branches. dev was not removed from the lock and the quality ruleset was unchanged.
+
+Future preparation also requires TEST_RUNTIME_SECRET_ARN, restricted to the portfolio-api-cloud/test/ prefix in the same account/region. It is passed as RuntimeSecretArn and contains no secret value. Activation, branch, environment and prepare/execute separation remain unchanged.

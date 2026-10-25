@@ -2,6 +2,8 @@
 
 [Español](chat.es.md) · 2026-10-25.
 
+**Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
+
 ## Contracts and composition
 
 GET /api/chat/starters returns **200** with suggestedQuestions: “¿Quién sos y a qué te dedicás?” and “¿Qué tecnologías usás?”. HEAD shares this route/quota with an empty body. POST /api/chat returns **201** with answer, suggestedQuestions and source (faq, ai or fallback). Routing retains case/trailing-slash behavior, the shared 16 KiB parser, CORS and functional headers. Each method has an independent **20/min/IP** quota, also independent from contact and subscriptions; identity comes from event sourceIp, never XFF.
@@ -10,21 +12,21 @@ src/chat/ retains concrete source domain modules: DTO, FAQ, content, contextual 
 
 Validation: nonblank message string, maximum 500 UTF-16 units; optional/null sessionId string up to 100; optional/null history array of at most six turns; role user/assistant and nonblank content string up to 1500. Text is neither trimmed nor normalized. Unknown fields, including nested ones, are rejected; stopAtFirstError per property and history.0 error prefixes are preserved. History travels in the request: sessionId provides neither identity nor persisted conversation.
 
-Preserved order: out-of-scope → FAQ only without history → context selection → FAQ rephrasing/AI → fallback. FAQ can consume AI; source faq does not imply no provider cost. Professional queries use curated profile without R2. Editorial queries need valid knowledge and retain **503** when unavailable, even with a FAQ match. AI failure with context yields technical fallback rather than claiming missing facts. Suggestion merging, deduplication and limits follow the source.
+Current order: out-of-scope → direct FAQ, including with history → context → AI admission → friendly contact fallback. FAQ uses neither AI rephrasing nor R2. Editorial queries without valid knowledge retain 503. Suggestion merging/limits remain; FAQ uses curated suggestions.
 
-Ranking, conversational references, separation of professional/project facts, links and prompts are retained. The only content correction is the professional location: **Posadas, Misiones, Argentina**, confirmed by the owner, replaces Villa Gesell from the audited SHA and propagates to context and FAQ. Five exported-value hashes normalize only this substitution; historical responses and requests declare the same adaptation without rewriting the fixture. The rest of the profile was not revalidated, and projects, editorial sources and prompts were not refreshed. General renewal remains immediately before production. Future/invalid posts are excluded using Argentina day boundaries.
+Ranking, conversational references, separation of professional/project facts, links and prompts are retained. The targeted content updates cover professional location and contact. The location **Posadas, Misiones, Argentina**, confirmed by the owner, replaces Villa Gesell from the audited SHA and propagates to context and FAQ. FAQ and context also share the email contacto@matiasgaleano.dev, retaining the portfolio form as another channel. Five exported-value hashes normalize only the location and this contact fact; historical responses and requests declare the same adaptations without rewriting the fixture. The rest of the profile was not revalidated, and projects, editorial sources and prompts were not refreshed. General renewal remains immediately before production. Future/invalid posts are excluded using Argentina day boundaries.
 
 ## Configuration and providers
 
-OpenAI reads OPENAI_API_KEY without trim and OPENAI_CHAT_MODEL defaulting to gpt-4.1-mini. Missing key/context returns null without a provider call. Native fetch to /v1/responses, temperature 0.3, max_output_tokens 300, JSON mode, ordered history and prompt text are preserved. No new SDK or store/retention change. [OpenAI Docs](https://developers.openai.com/api/docs/guides/text).
+OpenAI retains native fetch to /v1/responses, temperature 0.3, max_output_tokens 300 and JSON format. The managed handler validates model/prices, counts input and reserves the GLOBAL budget before generation; it sends store:false and default service_tier. Missing key/context/admission prevents generation. [Current configuration and retention](runtime-hardening.md).
 
-AI abort remains 15 seconds; failed HTTP, invalid JSON/response, network error or abort yield null/fallback. The original first output/content block indexing is retained. SHA-256 cache keys include message/context/history/links/suggestions, TTL 24 hours, maximum 200 entries and insertion-order eviction; no AI single-flight or application retries.
+The 15-second AI timeout covers counting, reservation, send and JSON body within the 25-second total deadline. Cache has a five-minute logical expiry and at most 200 entries; cached answers also consume session/origin allowance. No application retries or refunds for ambiguous reservations.
 
 R2 requires trimmed R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY together. With none, only filesystem is used; partial configuration fails. R2_REGION defaults to auto; CHAT_KNOWLEDGE_OBJECT_KEY to artifacts/chat/knowledge.json; CHAT_KNOWLEDGE_CACHE_TTL_MS uses parseInt, minimum 1000 ms and five-minute default. S3 client has explicit endpoint/credentials and forcePathStyle; GetObject receives Bucket/Key. Tests use no professional credentials or AWS queries.
 
 Knowledge order: remote cache → single-flight R2 → stale in-memory cache on failure → local fallback → error. Fallback retains cwd .generated/chat/knowledge.json and ../portfolio/.generated/chat/knowledge.json; the first existing file wins, without trying the second if invalid. Local cache uses path/mtime. It accepts a validated plain artifact or v1 envelope with source, generatedAt and SHA-256 contentHash; validates shape, unique slugs, optional fields and HTTP(S) URLs without credentials. Envelope integrity does not establish authorship.
 
-**Preserved, tested limits:** the five-second R2 timeout surrounds send, does not cancel the SDK and does not cover transformToString; stale has no maximum age. SDK retries retain defaults, without application retries. Caches are per environment and lost on restart. They solve neither total deadlines nor distributed quotas. The package currently carries no real editorial artifact: cold editorial queries return 503 without valid R2/fallback. Smoke writes synthetic fallback only inside its temporary directory; this is not distributed bot content.
+**Current limits:** R2 send/body share five seconds, AbortSignal and 512 KiB maximum; the SDK uses one attempt. Remote, stale and fallback have a maximum age of 30 days. The package includes a real versioned fallback with a curated project subset and checksum, verified in addition to the smoke synthetic fixture. [Phase 4 provenance and limits](runtime-hardening.md).
 
 ## Dependencies and explicit differences
 
@@ -39,7 +41,7 @@ Only required direct pinned dependencies are added: **@aws-sdk/client-s3 3.1156.
 
 Outside the declared differences, no other deliberate content/validation/error change. Tests cover 400/413/429/503 and controlled 500; existing contracts retain 204/200 and 400/502/503 mappings.
 
-## Local evidence
+## Migration evidence before phase 4
 
 **223 new cases**: 59 DTO references; 18 domain/effect references generated by executing original blobs; five content hashes; 74 scenarios adapted from original suites (FAQ, conversation, context, publication); 20 provider/metrics; 33 repository/configuration/SDK; 14 HTTP/quotas/composition. Two 404 expectations are replaced and an existing contact test now expects 400 from chat without message.
 
@@ -89,3 +91,5 @@ Both repositories have the same maintainer. Source remains UNLICENSED: public vi
 ## Next stage
 
 All six contracts are implemented and locally tested with finite differential scope and declared differences. Stage 4 follows: shared/atomic quotas, real IP/proxies, AI budget, deadline/cancellation, versioned fallback/stale policy, retention and secrets/startup. The stack is not deployed and public exposure remains closed. Editorial refresh stays immediately before production.
+
+Current hardening implementation and managed-validation limits are recorded in [runtime hardening](runtime-hardening.md).

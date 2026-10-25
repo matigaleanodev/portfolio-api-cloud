@@ -2,6 +2,8 @@
 
 [Español](contact.es.md) · 2026-10-24.
 
+**Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
+
 `POST /api/contact` returns **204 with an empty body** after awaiting the provider. A valid truthy company honeypot returns the same 204 without sending. Subscribe/unsubscribe are also implemented; [starters/chat](chat.md) now complete all six local contracts. This slice has local tests; it does not establish full parity or AWS behavior.
 
 ## Direct validator usage
@@ -102,3 +104,7 @@ Distributed quotas, managed proxies/IP, deadline/cancellation, secrets/startup p
 The complete suite migrated to Vitest; 11 infrastructure cases were added without removing the 155 application cases. [QA case format](testing.md).
 
 As of 2026-10-25 the current suite has 456 application, 12 tooling and 11 infrastructure tests (479). The previous 155 count describes the contact slice; two 404 expectations are replaced and 82 [subscription tests](subscriptions.md) are added. The quota module is now src/quota.ts, with unchanged contact semantics.
+
+## Phase 4 update
+
+The managed handler uses shared quotas, Secrets Manager configuration validated before business, a total deadline and provider cancellation. Descriptions of local memory, lazy configuration/500 and partial timeouts refer to the initial migration or local composition adapter. [Hardening](runtime-hardening.md) records current controls and differences; effective permissions/proxies/providers still require managed validation.

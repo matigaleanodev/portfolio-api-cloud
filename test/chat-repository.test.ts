@@ -15,6 +15,8 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
 let directory: string;
 beforeEach(async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-10-25T12:00:00Z'));
   directory = await mkdtemp(join(tmpdir(), 'portfolio-chat-test-'));
 });
 afterEach(async () => {
@@ -231,27 +233,19 @@ test('Dado send pendiente, cuando pasan cinco segundos, entonces usa el fallback
   complete(remote(envelope()));
   await Promise.resolve();
 });
-test('Dado send resuelto pero Body pendiente, cuando pasan cinco segundos, entonces conserva el límite original que no cubre lectura', async () => {
+test('Dado send resuelto pero Body pendiente, cuando pasan cinco segundos, entonces aborta lectura y destruye el stream', async () => {
   vi.useFakeTimers();
-  let complete!: (value: string) => void;
-  const reader = async () => ({
-    Body: {
-      transformToString: () =>
-        new Promise<string>((resolve) => {
-          complete = resolve;
-        }),
-    },
+  const destroy = vi.fn();
+  const reader = vi.fn().mockResolvedValue({
+    Body: { destroy, transformToString: () => new Promise<string>(() => undefined) },
   });
-  const result = new ChatKnowledgeRepository(config, reader, directory).getKnowledge();
-  await vi.advanceTimersByTimeAsync(6000);
-  let settled = false;
-  void result.then(() => {
-    settled = true;
-  });
-  await Promise.resolve();
-  expect(settled).toBe(false);
-  complete(JSON.stringify(artifact));
-  expect(await result).toEqual(artifact);
+  const result = new ChatKnowledgeRepository(config, reader, directory)
+    .getKnowledge()
+    .catch(() => 'unavailable');
+  await vi.advanceTimersByTimeAsync(5000);
+  expect(await result).toBe('unavailable');
+  expect(reader.mock.calls[0]?.[0].aborted).toBe(true);
+  expect(destroy).toHaveBeenCalledTimes(1);
 });
 for (const [raw, ttl] of [
   [undefined, 300000],

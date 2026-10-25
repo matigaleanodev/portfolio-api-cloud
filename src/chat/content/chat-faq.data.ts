@@ -246,8 +246,7 @@ const CHAT_FAQ_SEED: readonly ChatFaqSeedEntry[] = [
   },
   {
     question: '¿Cómo puedo contactarte?',
-    answer:
-      'Podés contactarme desde el formulario del portfolio en matiasgaleano.dev o mediante los enlaces profesionales publicados en el sitio.',
+    answer: PROFESSIONAL_PROFILE.contact,
     aliases: ['contacto', 'como te contacto', 'email', 'redes'],
     tags: ['profile'],
     isStarterCandidate: true,

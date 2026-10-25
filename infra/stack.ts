@@ -1,3 +1,5 @@
+import { Alarm, ComparisonOperator, TreatMissingData } from 'aws-cdk-lib/aws-cloudwatch';
+import { AttributeType, BillingMode, Table } from 'aws-cdk-lib/aws-dynamodb';
 import {
   CfnOutput,
   CfnParameter,
@@ -48,6 +50,20 @@ export class PortfolioApiStack extends Stack {
       description: 'Origen de pruebas; vacío deshabilita CORS.',
     });
 
+    const secretArn = new CfnParameter(this, 'RuntimeSecretArn', {
+      type: 'String',
+      noEcho: true,
+      allowedPattern:
+        'arn:aws:secretsmanager:us-east-1:650387442642:secret:portfolio-api-cloud/test/[A-Za-z0-9/_+=.@-]+',
+      description: 'Secreto por ambiente previamente provisionado; sin valores en synth.',
+    });
+    const control = new Table(this, 'RuntimeControl', {
+      partitionKey: { name: 'pk', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'ttl',
+      removalPolicy: RemovalPolicy.RETAIN,
+      deletionProtection: true,
+    });
     const logs = new LogGroup(this, 'RuntimeLogs', {
       logGroupName: '/aws/lambda/portfolio-api-cloud-test',
       retention: RetentionDays.TWO_WEEKS,
@@ -71,6 +87,18 @@ export class PortfolioApiStack extends Stack {
       }),
     );
 
+    runtimeRole.addToPolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'],
+        resources: [control.tableArn],
+      }),
+    );
+    runtimeRole.addToPolicy(
+      new PolicyStatement({
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: [secretArn.valueAsString],
+      }),
+    );
     const handler = new Function(this, 'Handler', {
       functionName: 'portfolio-api-cloud-test',
       runtime: Runtime.NODEJS_24_X,
@@ -82,9 +110,31 @@ export class PortfolioApiStack extends Stack {
       memorySize: 512,
       timeout: Duration.seconds(28),
       reservedConcurrentExecutions: 5,
-      environment: { NODE_ENV: 'production', CORS_ORIGIN: cors.valueAsString },
+      environment: {
+        NODE_ENV: 'production',
+        CORS_ORIGIN: cors.valueAsString,
+        QUOTA_TABLE_NAME: control.tableName,
+        RUNTIME_SECRET_ARN: secretArn.valueAsString,
+      },
     });
 
+    for (const [name, metric, threshold] of [
+      ['Errors', handler.metricErrors({ period: Duration.minutes(5) }), 1],
+      ['Throttles', handler.metricThrottles({ period: Duration.minutes(5) }), 1],
+      [
+        'Duration',
+        handler.metricDuration({ period: Duration.minutes(5), statistic: 'p95' }),
+        24_000,
+      ],
+    ] as const) {
+      new Alarm(this, `Runtime${name}Alarm`, {
+        metric,
+        threshold,
+        evaluationPeriods: 1,
+        comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+      });
+    }
     const integration = new HttpLambdaIntegration('HandlerIntegration', handler, {
       timeout: Duration.seconds(29),
     });
@@ -96,6 +146,8 @@ export class PortfolioApiStack extends Stack {
       defaultIntegration: integration,
       defaultAuthorizer: new HttpIamAuthorizer(),
     });
+
+    handler.addEnvironment('TRUSTED_API_ID', api.apiId);
 
     api.addRoutes({
       path: '/{proxy+}',

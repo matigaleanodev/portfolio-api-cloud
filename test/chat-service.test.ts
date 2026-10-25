@@ -45,7 +45,7 @@ describe('ChatService', () => {
     expect(openAiServiceMock.generateChatResponse).not.toHaveBeenCalled();
   });
 
-  it('Dada una coincidencia FAQ, cuando IA la reformula, entonces conserva source faq y sus sugerencias', async () => {
+  it('Dada una coincidencia FAQ, cuando se responde, entonces conserva la FAQ sin llamar a IA', async () => {
     faqServiceMock.findBestMatch.mockResolvedValue({
       id: 'que-tecnologias-usas',
       question: '¿Qué tecnologías usás?',
@@ -67,8 +67,12 @@ describe('ChatService', () => {
 
     expect(faqServiceMock.incrementUsage).toHaveBeenCalledWith('que-tecnologias-usas');
     expect(result.source).toBe('faq');
-    expect(result.answer).toBe('Trabajo con TypeScript y NestJS.');
-    expect(result.suggestedQuestions).toEqual(['¿Qué proyecto destacás?', '¿Usás MongoDB?']);
+    expect(result.answer).toBe('Uso TypeScript y NestJS');
+    expect(openAiServiceMock.generateChatResponse).not.toHaveBeenCalled();
+    expect(result.suggestedQuestions).toEqual([
+      '¿Qué proyecto destacás?',
+      '¿Cuál es tu experiencia laboral?',
+    ]);
   });
 
   it('Dada una consulta sin FAQ, cuando IA responde con contexto, entonces devuelve source ai', async () => {
@@ -153,7 +157,7 @@ describe('ChatService', () => {
     });
 
     expect(result.source).toBe('fallback');
-    expect(result.answer).toContain('No pude generar una respuesta');
+    expect(result.answer).toContain('contacto@matiasgaleano.dev');
     expect(result.answer).not.toContain('No tengo esa información');
     expect(result.suggestedQuestions).toEqual([
       '¿Qué tecnologías usaste en ese proyecto?',
@@ -243,7 +247,7 @@ describe('ChatService', () => {
     });
 
     expect(result.source).toBe('fallback');
-    expect(result.answer).toContain('No pude generar una respuesta');
+    expect(result.answer).toContain('contacto@matiasgaleano.dev');
     expect(result.suggestedQuestions).toEqual([
       '¿Cómo está dividido el ecosistema portfolio?',
       '¿Qué resolviste con AWS Lambda y storage?',

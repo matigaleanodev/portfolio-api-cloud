@@ -25,18 +25,28 @@ interface Reference {
   }[];
 }
 const reference = JSON.parse(readFileSync('test/chat-domain-reference.json', 'utf8')) as Reference;
-// La referencia histórica queda intacta; solo se declara la ubicación corregida.
+// La referencia histórica queda intacta; se declaran únicamente ubicación y contacto actuales.
 const originalLocation = 'Full Stack Developer de Villa Gesell, Argentina.';
 const currentLocation = 'Full Stack Developer de Posadas, Misiones, Argentina.';
-function withCurrentLocation<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value).replaceAll(originalLocation, currentLocation)) as T;
+const originalFaqContact =
+  'Podés contactarme desde el formulario del portfolio en matiasgaleano.dev o mediante los enlaces profesionales publicados en el sitio.';
+const originalProfileContact =
+  'El contacto principal se realiza desde el formulario del portfolio en matiasgaleano.dev.';
+const currentContact = professional.PROFESSIONAL_PROFILE.contact;
+function withCurrentContent<T>(value: T): T {
+  return JSON.parse(
+    JSON.stringify(value)
+      .replaceAll(originalLocation, currentLocation)
+      .replaceAll(originalFaqContact, currentContact)
+      .replaceAll(originalProfileContact, currentContact),
+  ) as T;
 }
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => undefined));
 for (const scenario of reference.cases) {
   test(
     'Dado ' +
       scenario.label +
-      ', cuando responde el dominio, entonces conserva el origen salvo la ubicación corregida',
+      ', cuando responde el dominio, entonces declara ubicación, contacto, FAQ directa y reserva de IA frente al origen',
     async () => {
       const requests: { url: string; body: unknown }[] = [];
       const request: typeof fetch = async (url, options) => {
@@ -64,9 +74,32 @@ for (const scenario of reference.cases) {
         new KnowledgeService(repository),
         new OpenAiService(scenario.enabled ? { OPENAI_API_KEY: 'fake' } : {}, request),
       );
-      expect(await service.reply(scenario.dto)).toEqual(withCurrentLocation(scenario.response));
-      expect(repository.getKnowledge).toHaveBeenCalledTimes(scenario.reads);
-      expect(requests).toEqual(withCurrentLocation(scenario.requests));
+      const faq = await new FaqService().findBestMatch(scenario.dto.message);
+      const expected = withCurrentContent(scenario.response);
+      if (faq?.id) {
+        expect(await service.reply(scenario.dto)).toEqual({
+          answer: faq.answer,
+          suggestedQuestions: new FaqService().buildFollowUpSuggestions(faq).slice(0, 2),
+          source: 'faq',
+        });
+        expect(repository.getKnowledge).not.toHaveBeenCalled();
+        expect(requests).toEqual([]);
+      } else {
+        if (
+          expected.source === 'fallback' &&
+          !['trivia', 'matemática', 'implementación ajena'].includes(scenario.label)
+        ) {
+          expected.answer = `Para seguir con una consulta más específica, ${currentContact.charAt(0).toLowerCase()}${currentContact.slice(1)}`;
+        }
+        expect(await service.reply(scenario.dto)).toEqual(expected);
+        expect(repository.getKnowledge).toHaveBeenCalledTimes(scenario.reads);
+        expect(requests).toEqual(
+          withCurrentContent(scenario.requests).map((entry) => ({
+            ...entry,
+            body: { ...(entry.body as object), store: false, service_tier: 'default' },
+          })),
+        );
+      }
     },
   );
 }
@@ -81,12 +114,32 @@ for (const [name, module] of Object.entries(modules)) {
   test(
     'Dado el contenido de ' +
       name +
-      ', cuando se calcula su hash, entonces conserva los valores del SHA auditado salvo la ubicación corregida',
+      ', cuando se calcula su hash, entonces conserva los valores del SHA auditado salvo la ubicación y el contacto actualizados',
     () => {
       const sorted = Object.fromEntries(
         Object.entries(module).sort(([left], [right]) => left.localeCompare(right)),
       );
-      const normalized = JSON.stringify(sorted).replaceAll(currentLocation, originalLocation);
+      const historicalModule =
+        name === 'knowledge/professional-profile'
+          ? {
+              ...sorted,
+              PROFESSIONAL_PROFILE: Object.fromEntries(
+                Object.entries(professional.PROFESSIONAL_PROFILE).filter(
+                  ([key]) => key !== 'contact',
+                ),
+              ),
+            }
+          : sorted;
+      let normalized = JSON.stringify(historicalModule).replaceAll(
+        currentLocation,
+        originalLocation,
+      );
+      if (name === 'content/chat-faq.data') {
+        normalized = normalized.replaceAll(currentContact, originalFaqContact);
+      }
+      if (name === 'knowledge/profile.knowledge') {
+        normalized = normalized.replaceAll(currentContact, originalProfileContact);
+      }
       const hash = createHash('sha256').update(normalized).digest('hex');
       expect(hash).toBe(reference.content[name]);
     },

@@ -2,7 +2,13 @@
 
 [English](application.md) · 25/10/2026.
 
+**Estado vigente de fase 4:** [controles del runtime](runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
+
 ## Estructura y configuración
+
+- src/shared-control.ts: CAS de cuotas y reserva transaccional GLOBAL/sesión/origen en DynamoDB.
+- src/runtime-config.ts: secreto JSON validado, revisión de tarifas y refresco limitado.
+- src/request-scope.ts: contexto por request, deadline, cancelación y métricas filtradas.
 
 - src/handler.ts: entrada Lambda; lee CORS al inicializar, contacto al enviar y la URL cloud al usar suscripciones. Nunca carga .env.
 - src/config.ts: mapas explícitos, CORS congelado y configuración de contacto/suscripciones.
@@ -41,7 +47,7 @@ actionlint
 npm audit
 ```
 
-**456 pruebas de aplicación aprobadas**, incluidas 82 nuevas pruebas de suscripciones (36 referencias DTO, 28 upstream y 18 adicionales), 69 referencias DTO/controlador (66 coincidentes, 3 diferencias explícitas al usar validadores directos) y 36 de parser; 12 de tooling (5 scope CI y 7 workflow de merge). Tipos, build, smoke ESM separado, pares/enlaces documentales y actionlint aprobados en Node 24.22.1. npm audit del lock actual: **0 vulnerabilidades reportadas**, incluido desarrollo; no garantiza ausencia de problemas futuros.
+**513 pruebas de aplicación aprobadas**, incluidas 82 nuevas pruebas de suscripciones (36 referencias DTO, 28 upstream y 18 adicionales), 69 referencias DTO/controlador (66 coincidentes, 3 diferencias explícitas al usar validadores directos) y 36 de parser; 12 de tooling (5 scope CI y 7 workflow de merge). Tipos, build, smoke ESM separado, pares/enlaces documentales y actionlint aprobados en Node 24.22.1. npm audit del lock actual: **0 vulnerabilidades reportadas**, incluido desarrollo; no garantiza ausencia de problemas futuros.
 
 La suite limpia el ambiente heredado y carga el cerco de red antes de importar la aplicación. Bloquea fetch/WebSocket, HTTP(S), conexión de sockets/TLS/UDP, DNS y procesos hijos. Se crean streams en memoria para parsing, sin escuchar puertos. Los proveedores son funciones explícitas simuladas; no se envían emails. El cerco evita llamadas accidentales, no constituye sandbox de código hostil.
 
@@ -79,7 +85,7 @@ El incremento de contacto agrega [procedencia por blob y paquetes de referencia]
 
 ## Vitest e infraestructura local
 
-La suite completa usa Vitest 5.0.5: 456 casos de aplicación, 12 tooling migrados desde unittest y 11 de infraestructura, **479 aprobados**. El smoke de paquete es un verificador Node sin devDependencies. Títulos en español Dado/Cuando/Entonces y [formato de casos de prueba](testing.es.md). CDK v2 está instalado y la stack de test se sintetiza sin lookups; [recursos y límites](infrastructure.es.md). El typecheck de infraestructura desactiva solo exactOptionalPropertyTypes por incompatibilidad de declaraciones CDK; aplicación conserva esa opción. Sin despliegue.
+La suite completa usa Vitest 5.0.5: 513 casos de aplicación, 12 tooling migrados desde unittest y 11 de infraestructura, **539 aprobados**. El smoke de paquete es un verificador Node sin devDependencies. Títulos en español Dado/Cuando/Entonces y [formato de casos de prueba](testing.es.md). CDK v2 está instalado y la stack de test se sintetiza sin lookups; [recursos y límites](infrastructure.es.md). El typecheck de infraestructura desactiva solo exactOptionalPropertyTypes por incompatibilidad de declaraciones CDK; aplicación conserva esa opción. Sin despliegue.
 
 ## Formato de código
 
@@ -89,4 +95,8 @@ Prettier 3.9.10 de desarrollo, fijado en manifiesto/lock y con reglas explícita
 
 src/chat/ compone DTO, FAQ, contexto, IA y repositorio R2/local del SHA fijado. SDK S3 3.1156.0 y reflect-metadata 0.2.2 son dependencias directas nuevas; métricas JSON acotadas sin Nest. handler.ts conserva la composición desde el primer POST válido. El smoke ahora ejercita 201/503, cuotas y conocimiento sintético local/remoto. [Los 223 casos nuevos, diferencias y hashes](chat.es.md).
 
-La ubicación profesional del chat se corrige puntualmente a Posadas, Misiones, Argentina, con diferencia explícita frente al SHA fijado. El resto del contenido conserva su alcance anterior y la renovación editorial general sigue inmediatamente antes de producción. [Detalle y referencias históricas](chat.es.md).
+La ubicación profesional del chat se corrige puntualmente a Posadas, Misiones, Argentina, con diferencia explícita frente al SHA fijado. FAQ y contexto también incluyen el correo profesional contacto@matiasgaleano.dev desde un único dato compartido. El resto del contenido conserva su alcance anterior y la renovación editorial general sigue inmediatamente antes de producción. [Detalle y referencias históricas](chat.es.md).
+
+## Actualización de fase 4
+
+El handler administrado usa cuotas compartidas, configuración de Secrets Manager validada antes de negocio, deadline total y cancelación de proveedores. Las descripciones de memoria local, configuración lazy/500 y timeouts parciales corresponden al traslado inicial o al adaptador de composición local. Los controles actuales y diferencias están en [endurecimiento](runtime-hardening.es.md); permisos/proxies/proveedores reales siguen pendientes de validación administrada.

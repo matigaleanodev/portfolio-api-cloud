@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { abortable, operationSignal, runtimeMetric } from './request-scope.js';
 import type { ContactConfiguration } from './config.js';
 import type { ContactDto } from './contact.dto.js';
 
@@ -45,5 +46,20 @@ export function createResendProvider(config: ContactConfiguration): SendEmail {
     baseUrl: 'https://api.resend.com',
     userAgent: 'portfolio-api-cloud',
   });
-  return (email) => resend.emails.send(email);
+  return async (email) => {
+    const signal = operationSignal(8_000);
+    const startedAt = performance.now();
+    try {
+      const result = await abortable(signal, () => resend.emails.send(email, { signal }));
+      runtimeMetric('contact_provider', result.error ? 'error' : 'success', {
+        durationMs: Math.round(performance.now() - startedAt),
+      });
+      return result;
+    } catch (error) {
+      runtimeMetric('contact_provider', signal.aborted ? 'timeout' : 'error', {
+        durationMs: Math.round(performance.now() - startedAt),
+      });
+      throw error;
+    }
+  };
 }

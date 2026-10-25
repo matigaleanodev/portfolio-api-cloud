@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { abortable, operationSignal, runtimeMetric } from '../request-scope.js';
 import fs from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import {
@@ -59,10 +61,14 @@ type RemoteKnowledgeCacheEntry = {
   expiresAt: number;
 };
 
-export type KnowledgeObjectReader = () => Promise<{ Body?: StringBody | undefined }>;
+export type KnowledgeObjectReader = (
+  signal: AbortSignal,
+) => Promise<{ Body?: StringBody | undefined }>;
 
 type StringBody = {
   transformToString(): Promise<string>;
+  destroy?: () => void;
+  [Symbol.asyncIterator]?: () => AsyncIterator<Uint8Array>;
 };
 
 const REMOTE_KNOWLEDGE_TIMEOUT_MS = 5_000;
@@ -76,11 +82,17 @@ export class ChatKnowledgeRepository {
     private readonly r2Config: ChatKnowledgeR2Config | null,
     private readonly readRemote: KnowledgeObjectReader | null,
     private readonly cwd: string = process.cwd(),
+    private readonly hardened = false,
+    private readonly maxAgeMs = 30 * 86400_000,
   ) {}
 
   async getKnowledge(): Promise<EditorialKnowledgeArtifact> {
     const cachedRemote = this.remoteCache;
-    if (cachedRemote && cachedRemote.expiresAt > Date.now()) {
+    if (
+      cachedRemote &&
+      cachedRemote.expiresAt > Date.now() &&
+      this.isFresh(cachedRemote.artifact)
+    ) {
       return cachedRemote.artifact;
     }
 
@@ -88,7 +100,8 @@ export class ChatKnowledgeRepository {
       try {
         return await this.loadRemoteKnowledge();
       } catch {
-        if (cachedRemote) {
+        if (cachedRemote && this.isFresh(cachedRemote.artifact)) {
+          runtimeMetric('knowledge_fallback', 'stale');
           return cachedRemote.artifact;
         }
       }
@@ -96,6 +109,7 @@ export class ChatKnowledgeRepository {
 
     const localArtifact = await this.loadLocalFallbackKnowledge();
     if (localArtifact) {
+      runtimeMetric('knowledge_fallback', 'packaged');
       return localArtifact;
     }
 
@@ -125,14 +139,38 @@ export class ChatKnowledgeRepository {
       throw new Error('R2 chat knowledge is not configured');
     }
 
-    const response = await this.withTimeout(
-      this.readRemote(),
-      REMOTE_KNOWLEDGE_TIMEOUT_MS,
-      'R2 chat knowledge request timed out',
-    );
-    const body = response.Body as StringBody | undefined;
-    const raw = await body?.transformToString();
-
+    const signal = operationSignal(REMOTE_KNOWLEDGE_TIMEOUT_MS);
+    let body: StringBody | undefined;
+    let raw: string;
+    try {
+      raw = await abortable(signal, async () => {
+        const response = await this.readRemote!(signal);
+        body = response.Body;
+        if (signal.aborted) {
+          body?.destroy?.();
+          signal.throwIfAborted();
+        }
+        if (!body) throw new Error('Empty knowledge body');
+        const iterator = body[Symbol.asyncIterator]?.();
+        if (!iterator) {
+          const text = await body.transformToString();
+          if (Buffer.byteLength(text) > 512 * 1024) throw new Error('Knowledge body too large');
+          return text;
+        }
+        const chunks: Buffer[] = [];
+        let size = 0;
+        while (true) {
+          const chunk = await abortable(signal, () => iterator.next());
+          if (chunk.done) break;
+          size += chunk.value.byteLength;
+          if (size > 512 * 1024) throw new Error('Knowledge body too large');
+          chunks.push(Buffer.from(chunk.value));
+        }
+        return Buffer.concat(chunks).toString('utf8');
+      });
+    } finally {
+      body?.destroy?.();
+    }
     if (!raw?.trim()) {
       throw new Error('R2 returned an empty chat knowledge body');
     }
@@ -149,7 +187,9 @@ export class ChatKnowledgeRepository {
   }
 
   private async loadLocalFallbackKnowledge(): Promise<EditorialKnowledgeArtifact | null> {
-    const filePath = await resolveExistingEditorialKnowledgePath(this.cwd);
+    const filePath = this.hardened
+      ? path.resolve(this.cwd, 'fallback/chat-knowledge.v1.json')
+      : await resolveExistingEditorialKnowledgePath(this.cwd);
     if (!filePath) {
       return null;
     }
@@ -159,11 +199,13 @@ export class ChatKnowledgeRepository {
       if (
         this.localCache &&
         this.localCache.filePath === filePath &&
-        this.localCache.mtimeMs === stats.mtimeMs
+        this.localCache.mtimeMs === stats.mtimeMs &&
+        this.isFresh(this.localCache.artifact)
       ) {
         return this.localCache.artifact;
       }
 
+      if (stats.size > 512 * 1024) return null;
       const raw = await fs.readFile(filePath, 'utf8');
       const payload = JSON.parse(raw) as unknown;
       const artifact = this.extractEditorialKnowledgeArtifact(payload);
@@ -192,10 +234,11 @@ export class ChatKnowledgeRepository {
       if (payload.contentHash !== hash || payload.generatedAt !== knowledge.generatedAt) {
         throw new Error('Chat knowledge integrity check failed');
       }
+      if (!this.isFresh(payload.knowledge)) throw new Error('Expired knowledge artifact');
       return payload.knowledge;
     }
 
-    if (this.isEditorialArtifact(payload)) {
+    if (!this.hardened && this.isEditorialArtifact(payload) && this.isFresh(payload)) {
       return payload;
     }
 
@@ -225,7 +268,9 @@ export class ChatKnowledgeRepository {
 
     const candidate = value as Record<string, unknown>;
 
-    return typeof candidate.repository === 'string' && typeof candidate.artifactPath === 'string';
+    return (
+      this.isNonEmptyString(candidate.repository) && this.isNonEmptyString(candidate.artifactPath)
+    );
   }
 
   private isEditorialArtifact(payload: unknown): payload is EditorialKnowledgeArtifact {
@@ -341,23 +386,12 @@ export class ChatKnowledgeRepository {
     }
   }
 
-  private withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(message));
-      }, timeoutMs);
-
-      timer.unref?.();
-
-      promise
-        .then((value) => {
-          clearTimeout(timer);
-          resolve(value);
-        })
-        .catch((error: unknown) => {
-          clearTimeout(timer);
-          reject(error instanceof Error ? error : new Error(String(error)));
-        });
-    });
+  private isFresh(artifact: EditorialKnowledgeArtifact): boolean {
+    const generatedAt = Date.parse(artifact.generatedAt ?? '');
+    return (
+      Number.isFinite(generatedAt) &&
+      generatedAt <= Date.now() + 300_000 &&
+      Date.now() - generatedAt <= this.maxAgeMs
+    );
   }
 }
