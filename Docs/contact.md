@@ -2,7 +2,7 @@
 
 [Español](contact.es.md) · 2026-10-24.
 
-`POST /api/contact` returns **204 with an empty body** after awaiting the provider. A valid truthy company honeypot returns the same 204 without sending. Subscribe/unsubscribe are also implemented; the two chat routes remain pending. This slice has local tests; it does not establish full parity or AWS behavior.
+`POST /api/contact` returns **204 with an empty body** after awaiting the provider. A valid truthy company honeypot returns the same 204 without sending. Subscribe/unsubscribe are also implemented; [starters/chat](chat.md) now complete all six local contracts. This slice has local tests; it does not establish full parity or AWS behavior.
 
 ## Direct validator usage
 
@@ -97,8 +97,8 @@ The application's own implementation is distributed under [MIT](../LICENSE), aut
 
 ## Actual remaining work
 
-Two chat contracts, distributed quotas, managed proxies/IP, deadline/cancellation, secrets/startup policy, API Gateway/IAM tests and recovery. The local timer bug is resolved through the library replacement; stage 4 remains open for distribution. Editorial refresh remains immediately before production. [Application and checks](application.md).
+Distributed quotas, managed proxies/IP, deadline/cancellation, secrets/startup policy, API Gateway/IAM tests and recovery. The local timer bug is resolved through the library replacement; stage 4 remains open for distribution. Editorial refresh remains immediately before production. [Application and checks](application.md).
 
 The complete suite migrated to Vitest; 11 infrastructure cases were added without removing the 155 application cases. [QA case format](testing.md).
 
-As of 2026-10-25 the current suite has 235 application, 12 tooling and 11 infrastructure tests (258). The previous 155 count describes the contact slice; two 404 expectations are replaced and 82 [subscription tests](subscriptions.md) are added. The quota module is now src/quota.ts, with unchanged contact semantics.
+As of 2026-10-25 the current suite has 456 application, 12 tooling and 11 infrastructure tests (479). The previous 155 count describes the contact slice; two 404 expectations are replaced and 82 [subscription tests](subscriptions.md) are added. The quota module is now src/quota.ts, with unchanged contact semantics.

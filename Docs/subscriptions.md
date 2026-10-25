@@ -2,7 +2,7 @@
 
 [Español](subscriptions.es.md) · 2026-10-25.
 
-POST and DELETE /api/subscriptions return **200** with validated upstream JSON: a string message and optional string email. DELETE retains JSON in the request body, never the query. The provider is awaited. Health and contact remain available; GET /api/chat/starters and POST /api/chat still return 404.
+POST and DELETE /api/subscriptions return **200** with validated upstream JSON: a string message and optional string email. DELETE retains JSON in the request body, never the query. The provider is awaited. Health and contact remain available; [starters/chat](chat.md) now complete all six local contracts.
 
 ## Validation and transport
 
@@ -81,6 +81,8 @@ Both repositories are maintained by matigaleanodev. The source declares UNLICENS
 
 **82 new subscription tests**: 36 DTO/controller references, 28 upstream response references and 18 transport/configuration/timeout/quota/composition cases. Each reference family covers both methods. Three validation differences are declared without changing source expectations. Two previous tests requiring subscription 404s are replaced by real contracts.
 
-Total: **258 passing tests** (235 application, 12 tooling, 11 infrastructure), with isolated environment/network guard. Strict types, ESM build, formatting, external-checkout package smoke, bilingual documentation, workflows and lookup-free synth are checked locally. Package smoke exercises subscribe/unsubscribe, normalization, DELETE body, missing configuration and quotas without devDependencies. Executed Node: 24.22.1 LTS; [official release index checked on 2026-10-25](https://nodejs.org/en/blog/release). No lock changes or new dependency.
+At the subscription increment closure: **258 passing tests** (235 application, 12 tooling, 11 infrastructure), with isolated environment/network guard. Strict types, ESM build, formatting, external-checkout package smoke, bilingual documentation, workflows and lookup-free synth are checked locally. Package smoke exercises subscribe/unsubscribe, normalization, DELETE body, missing configuration and quotas without devDependencies. Executed Node: 24.22.1 LTS; [official release index checked on 2026-10-25](https://nodejs.org/en/blog/release). No lock changes or new dependency.
 
-This does not establish AWS integration, effective permissions, upstream availability or managed transport. Starters/chat, shared atomic quotas, managed proxies/IP validation, total deadline, secrets/startup and recovery remain pending. The stack is still undeployed; public exposure is not enabled. Editorial renewal stays immediately before production.
+This does not establish AWS integration, effective permissions, upstream availability or managed transport. Shared atomic quotas, managed proxies/IP validation, total deadline, secrets/startup and recovery remain pending. The stack is still undeployed; public exposure is not enabled. Editorial renewal stays immediately before production.
+
+[Current state and 479-case suite](chat.md). The earlier 258 count is the historical subscription closure; the chat increment audits its new lock separately.

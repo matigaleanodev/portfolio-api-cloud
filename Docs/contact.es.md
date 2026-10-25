@@ -2,7 +2,7 @@
 
 [English](contact.md) · 24/10/2026.
 
-`POST /api/contact` devuelve **204 con body vacío** después de esperar al proveedor. Un honeypot válido con company truthy devuelve el mismo 204 sin envío. Alta/baja de suscripciones también están implementadas; las dos rutas de chat continúan pendientes. Esta sección tiene pruebas locales; no demuestra paridad completa ni funcionamiento en AWS.
+`POST /api/contact` devuelve **204 con body vacío** después de esperar al proveedor. Un honeypot válido con company truthy devuelve el mismo 204 sin envío. Alta/baja de suscripciones también están implementadas; [starters/chat](chat.es.md) completan ahora los seis contratos locales. Esta sección tiene pruebas locales; no demuestra paridad completa ni funcionamiento en AWS.
 
 ## Validadores usados directamente
 
@@ -97,8 +97,8 @@ La implementación propia se distribuye bajo [MIT](../LICENSE), con autoría de 
 
 ## Pendientes reales
 
-Dos contratos de chat, cuotas distribuidas, proxies/IP administrados, deadline/cancelación, políticas de secretos/startup, pruebas API Gateway/IAM y recuperación. La corrección local del bug de timers está resuelta mediante el cambio de librería; la etapa 4 sigue abierta para distribución. La renovación editorial continúa inmediatamente antes de producción. [Aplicación y verificaciones](application.es.md).
+Cuotas distribuidas, proxies/IP administrados, deadline/cancelación, políticas de secretos/startup, pruebas API Gateway/IAM y recuperación. La corrección local del bug de timers está resuelta mediante el cambio de librería; la etapa 4 sigue abierta para distribución. La renovación editorial continúa inmediatamente antes de producción. [Aplicación y verificaciones](application.es.md).
 
 Suite migrada íntegramente a Vitest; se agregan 11 casos de infraestructura sin cambiar los 155 de aplicación. [Formato de casos QA](testing.es.md).
 
-Al 25/10/2026 la suite actual tiene 235 pruebas de aplicación, 12 tooling y 11 infraestructura (258). El conteo 155 anterior corresponde al incremento de contacto; dos expectativas de 404 se reemplazan y se agregan 82 pruebas de [suscripciones](subscriptions.es.md). El módulo de cuota ahora es src/quota.ts, sin cambiar la semántica de contacto.
+Al 25/10/2026 la suite actual tiene 456 pruebas de aplicación, 12 tooling y 11 infraestructura (479). El conteo 155 anterior corresponde al incremento de contacto; dos expectativas de 404 se reemplazan y se agregan 82 pruebas de [suscripciones](subscriptions.es.md). El módulo de cuota ahora es src/quota.ts, sin cambiar la semántica de contacto.

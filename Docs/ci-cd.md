@@ -1,6 +1,6 @@
 # Prepared CI/CD
 
-[Español](ci-cd.es.md) · 2026-10-25. The workflows cover document validation, test planning and branch integration. The local application includes health, contact and subscriptions with tests; two chat routes remain pending; the stack synthesizes locally.
+[Español](ci-cd.es.md) · 2026-10-25. The workflows cover document validation, test planning and branch integration. The local application includes all six contracts with tests; the stack synthesizes locally.
 
 ## CI
 
@@ -8,7 +8,7 @@
 
 The documentation job validates language pairs/links and detects application/infrastructure separately. package.json requires lock, tsconfig and a real entry; orphan application files fail. cdk.json enables infrastructure and requires its scripts.
 
-Application runs `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` and `test:package` on Node 24.22.1. Vitest runs 235 application cases and 12 tooling cases migrated from unittest. No fixing lint/source mutation. The network guard loads before application imports with no inherited credentials. [Coverage and QA report](testing.md).
+Application runs `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` and `test:package` on Node 24.22.1. Vitest runs 456 application cases and 12 tooling cases migrated from unittest. No fixing lint/source mutation. The network guard loads before application imports with no inherited credentials. [Coverage and cases](testing.md).
 
 Infrastructure is active because cdk.json exists; it runs 11 `test:infra` cases and `cdk -- synth --no-lookups --context stage=test`, without AWS credentials. [Local stack and prerequisites](infrastructure.md).
 

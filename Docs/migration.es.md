@@ -32,7 +32,7 @@ La base está implementada con health, configuración/composición explícitas, 
 
 Revisar los archivos locales antes de reutilizarlos. Recuperar del origen únicamente lo necesario, con commit, rutas y hashes. Mantener el runtime sin dependencias transitivas Nest/Express; conservar class-validator/class-transformer u otras utilidades existentes cuando reduzcan riesgo de cambiar contratos. No introducir un framework nuevo, plataforma genérica o capa multicloud.
 
-Las etapas 2/3 avanzaron con [contacto](contact.es.md): lógica/DTO y casos del SHA fijado, procedencia, proveedor simulado y cuota local. Starters/chat permanecen en 404. Alta y baja se completan en el incremento de [suscripciones](subscriptions.es.md), con cuotas independientes y proveedor HTTP simulado. La siguiente sección completa otro contrato con mocks; falta compatibilidad completa y endurecimiento antes de exposición.
+Las etapas 2/3 avanzaron con [contacto](contact.es.md): lógica/DTO y casos del SHA fijado, procedencia, proveedor simulado y cuota local. El incremento de [chat](chat.es.md) completa las dos rutas restantes y su procedencia. Alta y baja se completan en el incremento de [suscripciones](subscriptions.es.md), con cuotas independientes y proveedor HTTP simulado. Los seis contratos tienen pruebas locales y diferencias explícitas; sigue etapa 4 e integración administrada antes de exposición.
 
 ## Datos, efectos y convivencia
 

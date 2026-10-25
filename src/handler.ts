@@ -1,3 +1,6 @@
+import { createChat } from './chat/chat.providers.js';
+import type { ChatService } from './chat/chat.service.js';
+
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { createApplication } from './application.js';
 import {
@@ -8,6 +11,8 @@ import {
 import { createContactSender, createResendProvider } from './contact.js';
 import { createSubscriptionSender } from './subscriptions.js';
 
+let chat: ChatService | undefined;
+
 const application = createApplication(
   readConfiguration(process.env),
   async (dto) => {
@@ -17,6 +22,12 @@ const application = createApplication(
   async (method, dto) => {
     const config = readSubscriptionConfiguration(process.env);
     return createSubscriptionSender(config, fetch)(method, dto);
+  },
+  {
+    reply: (dto) => {
+      chat ??= createChat(process.env, fetch);
+      return chat.reply(dto);
+    },
   },
 );
 

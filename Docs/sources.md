@@ -114,3 +114,12 @@ Versions verified in npm and installed in the lock: Vitest 5.0.5, aws-cdk 2.1146
 ## Subscriptions — 2026-10-25
 
 [Pinned blobs, hashes, reference versions and results](subscriptions.md). Integration uses Node 24 fetch and AbortSignal.timeout without a new dependency. The [official release index](https://nodejs.org/en/blog/release) reconfirmed 24.22.1 as latest LTS; Node 26 remains Current.
+
+## Chat — 2026-10-25
+
+[Contracts, hashes and tests](chat.md)
+
+- [OpenAI Docs: Responses/text](https://developers.openai.com/api/docs/guides/text)
+- [Node 24.22.1 LTS](https://nodejs.org/en/blog/release)
+- [S3 SDK 3.1156.0](https://registry.npmjs.org/@aws-sdk/client-s3/3.1156.0)
+- [reflect-metadata 0.2.2](https://registry.npmjs.org/reflect-metadata/0.2.2)

@@ -1,3 +1,6 @@
+import { validateChat } from './chat/chat.dto.js';
+import { ChatUnavailableError } from './chat/chat.errors.js';
+import { getChatStarters, type ChatService } from './chat/chat.service.js';
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import type { Configuration } from './config.js';
 import type { ContactDto } from './contact.dto.js';
@@ -12,10 +15,15 @@ export function createApplication(
   config: Configuration,
   sendContact?: (dto: ContactDto) => Promise<void>,
   sendSubscription?: SubscriptionSender,
+  chat?: Pick<ChatService, 'reply'>,
 ) {
   const corsOrigins =
     typeof config.corsOrigins === 'boolean' ? config.corsOrigins : [...config.corsOrigins];
   const contactQuota = createQuota(5, 'contact');
+  const chatQuotas = {
+    starters: createQuota(20, 'starters', 60),
+    chat: createQuota(20, 'chat', 60),
+  };
   const subscriptionQuotas = {
     POST: createQuota(10, 'subscribe'),
     DELETE: createQuota(10, 'unsubscribe'),
@@ -143,6 +151,37 @@ export function createApplication(
             statusCode: error.statusCode,
           });
         }
+        return reply(500, { statusCode: 500, message: 'Internal server error' });
+      }
+    }
+
+    const isStarters =
+      (method === 'GET' || method === 'HEAD') && /^\/api\/chat\/starters\/?$/i.test(event.rawPath);
+    const isChat = method === 'POST' && /^\/api\/chat\/?$/i.test(event.rawPath);
+    if (isStarters || isChat) {
+      const quota = await chatQuotas[isStarters ? 'starters' : 'chat'](
+        event.requestContext.http.sourceIp,
+      );
+      Object.assign(headers, quota.headers);
+      if (quota.blocked)
+        return reply(429, {
+          statusCode: 429,
+          message: 'ThrottlerException: Too Many Requests',
+        });
+      try {
+        if (isStarters) return reply(200, await getChatStarters());
+        const { dto, errors } = validateChat(body);
+        if (errors.length)
+          return reply(400, { message: errors, error: 'Bad Request', statusCode: 400 });
+        if (!chat) throw new Error('Chat provider is not configured');
+        return reply(201, await chat.reply(dto));
+      } catch (error) {
+        if (error instanceof ChatUnavailableError)
+          return reply(503, {
+            message: error.message,
+            error: 'Service Unavailable',
+            statusCode: 503,
+          });
         return reply(500, { statusCode: 500, message: 'Internal server error' });
       }
     }
