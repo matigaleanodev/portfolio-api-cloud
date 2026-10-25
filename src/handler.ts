@@ -11,7 +11,7 @@ import {
   readContactConfiguration,
   readSubscriptionConfiguration,
 } from './config.js';
-import { createContactSender, createResendProvider } from './contact.js';
+import { createContactSender, createResendProvider, type SendEmail } from './contact.js';
 import { createSubscriptionSender } from './subscriptions.js';
 import { createChat } from './chat/chat.providers.js';
 import {
@@ -32,6 +32,8 @@ interface RuntimeDependencies {
   readonly readSecret?: SecretReader;
   readonly store?: ControlStore;
   readonly request?: typeof fetch;
+  readonly sendEmail?: SendEmail;
+  readonly validateSecret?: (env: RuntimeEnvironment) => void;
 }
 export function createManagedHandler(
   env: RuntimeEnvironment,
@@ -109,6 +111,7 @@ export function createManagedHandler(
               dependencies.readSecret ?? createSecretReader(),
             );
             const secrets = await load();
+            dependencies.validateSecret?.(secrets);
             if (
               secrets.OPENAI_API_KEY &&
               Date.parse(secrets.AI_PRICING_VALID_UNTIL ?? '') <= Date.now()
@@ -131,7 +134,10 @@ export function createManagedHandler(
               const contact = readContactConfiguration(secrets);
               application = createApplication(
                 config,
-                createContactSender(contact, createResendProvider(contact)),
+                createContactSender(
+                  contact,
+                  dependencies.sendEmail ?? createResendProvider(contact),
+                ),
                 createSubscriptionSender(readSubscriptionConfiguration(secrets), request),
                 chat,
                 createSharedQuota(store, secrets.QUOTA_KEY_SECRET!),

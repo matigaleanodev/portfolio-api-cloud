@@ -1,0 +1,86 @@
+name: Execute reviewed test change set
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: Destino del changeset revisado
+        type: choice
+        options: [application, foundation]
+        required: true
+      stack_arn:
+        description: StackId completo observado
+        type: string
+        required: true
+      changeset_arn:
+        description: ChangeSetId completo observado
+        type: string
+        required: true
+      reviewed_digest:
+        description: sha256 del recibo revisado de preparación
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: portfolio-api-cloud-test-mutation
+  cancel-in-progress: false
+jobs:
+  execute:
+    if: github.repository == 'matigaleanodev/portfolio-api-cloud' && github.ref == 'refs/heads/main' && vars.TEST_EXECUTE_ENABLED == 'true'
+    environment: test-execute
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: us-east-1
+      KIND: ${{ inputs.kind }}
+      STACK_ARN: ${{ inputs.stack_arn }}
+      CHANGESET_ARN: ${{ inputs.changeset_arn }}
+      REVIEWED_DIGEST: ${{ inputs.reviewed_digest }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Restrict this session to the observed stack and change set
+        id: policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REVIEWED_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          mkdir -p .tmp
+          python3 scripts/review_changeset.py policy "$STACK_ARN" "$CHANGESET_ARN" "$KIND" .tmp/session-policy.json
+          echo "json=$(jq -c . .tmp/session-policy.json)" >> "$GITHUB_OUTPUT"
+      - uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::650387442642:role/PortfolioApiCloudTestGitHubExecuteRole
+          allowed-account-ids: '650387442642'
+          inline-session-policy: ${{ steps.policy.outputs.json }}
+          role-session-name: PortfolioApiCloudTestExecute-${{ github.run_id }}
+      - name: Revalidate the live change set and execute once
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(aws sts get-caller-identity --query Account --output text)" == 650387442642 ]]
+          caller_arn=$(aws sts get-caller-identity --query Arn --output text)
+          [[ "$caller_arn" == arn:aws:sts::650387442642:assumed-role/PortfolioApiCloudTestGitHubExecuteRole/* ]]
+          digest=$(python3 scripts/review_changeset.py snapshot "$STACK_ARN" "$CHANGESET_ARN" "$KIND" .tmp/live-review.json)
+          [[ "$digest" == "$REVIEWED_DIGEST" ]]
+          status=$(aws cloudformation describe-stacks --region us-east-1 --stack-name "$STACK_ARN" --query 'Stacks[0].StackStatus' --output text)
+          if [[ "$status" == REVIEW_IN_PROGRESS ]]; then waiter=stack-create-complete; else waiter=stack-update-complete; fi
+          aws cloudformation execute-change-set --region us-east-1 --stack-name "$STACK_ARN" --change-set-name "$CHANGESET_ARN" --client-request-token "github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          aws cloudformation wait "$waiter" --region us-east-1 --stack-name "$STACK_ARN"
+          aws cloudformation describe-stacks --region us-east-1 --stack-name "$STACK_ARN" --query 'Stacks[0].{StackId:StackId,Status:StackStatus,Role:RoleARN,Outputs:Outputs}' > .tmp/result.json
+          jq -e '.Status == "CREATE_COMPLETE" or .Status == "UPDATE_COMPLETE"' .tmp/result.json
+          echo "Operación administrada completada; validar contratos y readiness por separado." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: execution-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .tmp/live-review.json
+            .tmp/result.json
+          if-no-files-found: error
+          retention-days: 30

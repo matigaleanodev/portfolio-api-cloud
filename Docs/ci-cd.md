@@ -2,6 +2,8 @@
 
 [Español](ci-cd.es.md) · 2026-10-25. The workflows cover document validation, test planning and branch integration. The local application includes all six contracts with tests; the stack synthesizes locally.
 
+**Current increment:** [first installation with doubles and Actions delivery](managed-validation.md), implemented locally. main/v0.1.0 exist; provisioning, execution and managed validation remain pending.
+
 **Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
 
 ## CI

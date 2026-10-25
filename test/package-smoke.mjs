@@ -18,6 +18,8 @@ import { createSubscriptionSender } from './dist/subscriptions.js';
 console.info = () => undefined;
 
 assert.equal(existsSync('node_modules'), true);
+assert.equal(existsSync('dist/validation'), false);
+assert.equal(existsSync('validation.json'), false);
 
 for (const name of [
   'typescript',

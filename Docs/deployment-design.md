@@ -2,6 +2,8 @@
 
 [Español](deployment-design.es.md) · 2026-10-25.
 
+**Current increment:** [first installation with doubles and Actions delivery](managed-validation.md), implemented locally. main/v0.1.0 exist; provisioning, execution and managed validation remain pending.
+
 ## Audit and scope
 
 TypeScript CDK and the grouped stack already existed. I kept the IAM-protected HTTP API v2, one Lambda outside a VPC, the control table, external secrets and runtime limits. I completed scoped table/alarm names, identity and invocation assertions, and assembly preservation. I added no provisioning stack or second API.
@@ -51,7 +53,7 @@ Expected OIDC trust for GitHubDeployRole:
 }
 ```
 
-With an environment, sub does not itself establish the branch. The environment must allow main only; the workflow additionally requires the exact repository, main, manual dispatch and TEST_PLAN_ENABLED=true. The current absence of main leaves this path pending; dev is not enabled as a shortcut. Do not trust the whole account or use wildcards in Principal/sub. CI receives no OIDC. [OIDC and environments](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws).
+With an environment, sub does not itself establish the branch. The environment must allow main only; the workflow additionally requires the exact repository, main, manual dispatch and TEST_PLAN_ENABLED=true. main now exists; effective environments and roles leave activation pending; dev is not enabled as a shortcut. Do not trust the whole account or use wildcards in Principal/sub. CI receives no OIDC. [OIDC and environments](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws).
 
 CdkDeployRole PassRole requires Resource `arn:aws:iam::650387442642:role/PortfolioApiCloudTestCloudFormationExecutionRole` and StringEquals `iam:PassedToService=cloudformation.amazonaws.com`. The executor may only pass `arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntimeRole` with `iam:PassedToService=lambda.amazonaws.com`. GitHub and the publisher receive no PassRole. [IAM delegation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_passrole.html).
 
@@ -84,7 +86,7 @@ Preparation grants no ExecuteChangeSet, CreateStack, UpdateStack, DeleteStack or
 
 Dedicated bucket `cdk-papiatest-assets-650387442642-us-east-1`, all four public access blocks, BucketOwnerEnforced ownership, SSE-S3 encryption, TLS requirement and versioning. Retain bucket/objects; do not add a CMK, ECR, Docker publisher, lookup role or cross-account trust for this ZIP. Outputs BucketName, BucketDomainName and BootstrapVersion. Version parameter `/cdk-bootstrap/papiatest/version` with a version compatible with the pinned assembly. Provision the roles/policies/boundaries above outside the application stack and review them before use.
 
-Do not use the standard template with AdministratorAccess or interpret a dedicated qualifier as permission isolation. Do not automate bootstrap from CI. The final administrative definition must check compatibility with the pinned CLI and its auxiliary reads; local tests do not establish effective compatibility. [Customization](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping-customizing.html), [security](https://docs.aws.amazon.com/cdk/v2/guide/best-practices-security.html).
+Do not use the standard template with AdministratorAccess or interpret a dedicated qualifier as permission isolation. Prepare and execute foundation only through separate manual GitHub Actions workflows after establishing the initial trust identity. The final administrative definition must check compatibility with the pinned CLI and its auxiliary reads; local tests do not establish effective compatibility. [Customization](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping-customizing.html), [security](https://docs.aws.amazon.com/cdk/v2/guide/best-practices-security.html).
 
 ## Verifiable preservation and recovery
 

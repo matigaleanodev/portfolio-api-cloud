@@ -2,6 +2,8 @@
 
 [English](test-operations.md) · 25/10/2026.
 
+**Incremento vigente:** [primera instalación con dobles y circuito Actions](managed-validation.es.md), implementados localmente. main/v0.1.0 ya existen; provisioning, ejecución y validación administrada siguen pendientes.
+
 ## Estado y orden
 
 La entrega protegida está operativa en dev. La actualización local fija Ubuntu 24.04 y actions/checkout 7.0.1, setup-node 7.1.0 y upload-artifact 7.0.2; sus manifests oficiales usan Node 24 y requieren runner 2.327.1 o posterior. Node de la aplicación permanece en 24.22.1. La transición de ubuntu-latest hacia 26.04 está en curso entre el 19/10 y el 19/11/2026. La imagen fijada evita depender de esa transición; la ejecución remota de este incremento sigue pendiente. [Checkout](https://github.com/actions/checkout/releases/tag/v7.0.1), [setup-node](https://github.com/actions/setup-node/releases/tag/v7.1.0), [artifact](https://github.com/actions/upload-artifact/releases/tag/v7.0.2), [runner](https://github.com/actions/runner-images/issues/14748).
@@ -10,7 +12,7 @@ Las etapas 7–10 tienen preparación local revisable. No equivalen a bootstrap 
 
 ## Promoción a main
 
-La auditoría remota del 25/10 confirma dev en 832be8883aaae40b660d7605bf87cd8bb1ff82df y ausencia de main. Los rulesets activos siguen aplicando a ambas ramas: updates solo permite al usuario 99203645 integrar por PR; calidad exige verify de GitHub Actions, base actualizada, conversaciones resueltas y merge commit, sin bypass. No aparece una regla de creación; eso no demuestra por sí solo que una futura operación vaya a ser aceptada.
+La auditoría previa a v0.1.0 registró dev en 832be8883aaae40b660d7605bf87cd8bb1ff82df y ausencia de main. El cierre posterior creó main y publicó v0.1.0 en 6f993417a0a9785b7ee3dbf120a9493a99e23c22; ambas ramas/remotos se revalidaron al iniciar este incremento. Los rulesets activos siguen aplicando a ambas ramas: updates solo permite al usuario 99203645 integrar por PR; calidad exige verify de GitHub Actions, base actualizada, conversaciones resueltas y merge commit, sin bypass. No aparece una regla de creación; eso no demuestra por sí solo que una futura operación vaya a ser aceptada.
 
 El camino preparado es integrar primero el incremento en dev, inicializar main exactamente en un SHA integrado de dev con CI aprobada, volver a comprobar sus reglas efectivas y usar después PR dev→main con merge por workflow. La inicialización no modifica los rulesets ni crea una excepción permanente. Registrar SHA, actor y CI de creación. Si la creación es rechazada, detener esa operación y revisar el motivo. No relajar reglas ni cambiar el plan a dev.
 
@@ -58,9 +60,9 @@ Registrar comando, token de idempotencia cuando corresponda, actor, hora, ARN y 
 
 ## Dobles para validación administrada
 
-Primera variante propuesta: un entrypoint exclusivo de validación empaquetado como asset separado, con su propio digest y handler, desplegado únicamente en la stack test. Reutiliza createManagedHandler con Secrets Manager y DynamoDB reales y dobles explícitos de contacto, suscripciones e IA. No agrega un servicio simulador ni un selector público de proveedores.
+Variante implementada localmente: un entrypoint exclusivo de validación empaquetado como asset separado, con su propio digest y handler, desplegado únicamente en la stack test. Reutiliza createManagedHandler con Secrets Manager y DynamoDB reales y dobles explícitos de contacto, suscripciones e IA. No agrega un servicio simulador ni un selector público de proveedores.
 
-Ese entrypoint y el empaquetador todavía no están implementados. Deben exigir nombre de función/tabla y referencia de secreto test, rechazar destinos distintos de dominios .invalid y credenciales ficticias, e impedir fallback a transportes reales. Contacto necesita una dependencia SendEmail explícita en la composición administrada; suscripciones/IA ya tienen request inyectable. En el primer pase se omite R2 remoto y se usa fallback empaquetado. Los casos R2 posteriores deben inyectar su lector explícito, sin credenciales R2 reales. El paquete normal debe excluir el entrypoint, escenarios y dobles; probar ambos paquetes con red bloqueada.
+El entrypoint y el empaquetador ya están implementados y comprobados localmente; el detalle vigente está en [primera instalación](managed-validation.es.md). Deben exigir nombre de función/tabla y referencia de secreto test, rechazar destinos distintos de dominios .invalid y credenciales ficticias, e impedir fallback a transportes reales. Contacto necesita una dependencia SendEmail explícita en la composición administrada; suscripciones/IA ya tienen request inyectable. En el primer pase se omite R2 remoto y se usa fallback empaquetado. Los casos R2 posteriores deben inyectar su lector explícito, sin credenciales R2 reales. El paquete normal debe excluir el entrypoint, escenarios y dobles; probar ambos paquetes con red bloqueada.
 
 Los dobles cubren éxito, error, cuerpo pendiente y resultado ambiguo sin llamadas externas. La selección de escenario pertenece a un paquete/configuración test revisados, nunca a headers, query o sessionId del visitante. Registrar que ese asset permite comprobar gateway/IAM/Secrets/Dynamo y comportamiento con proveedores simulados; no prueba disponibilidad de Resend, R2 u OpenAI ni el transporte real de esos SDK.
 
@@ -122,4 +124,4 @@ La API nueva empieza con una única stack. No se prepara otra instalación paral
 
 Conservé los identificadores existentes test, PortfolioApiCloudTest y portfolio-api-cloud-test; son los nombres del único destino actual, no la promesa de un segundo entorno. Las ramas dev/main describen integración y publicación de Git. El environment GitHub test-plan es un control de ejecución del workflow y no una segunda infraestructura AWS. El primer despliegue sigue sin ejecutarse; main/v0.1.0 no habilitan automáticamente el workflow ni providers reales.
 
-La instalación definitiva necesita validar permisos, contratos y recuperación antes de recibir tráfico real. Los dobles administrados permanecen como preparación pendiente; no se agrega LocalStack ni otra simulación local de AWS en este corte.
+La instalación definitiva necesita validar permisos, contratos y recuperación antes de recibir tráfico real. El despliegue y la validación de los dobles en AWS permanecen pendientes; no se agrega LocalStack ni otra simulación local de AWS en este corte.

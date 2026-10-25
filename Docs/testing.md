@@ -2,9 +2,11 @@
 
 [Español](testing.es.md) · 2026-10-25.
 
+**Current increment:** [first installation with doubles and Actions delivery](managed-validation.md), implemented locally. main/v0.1.0 exist; provisioning, execution and managed validation remain pending.
+
 **Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
 
-Vitest **5.0.5** runs all **580 cases**: 513 application, 49 tooling and 18 infrastructure cases. The original 155 node:test and 12 unittest cases were migrated. Production CI scripts remain Python and Vitest exercises their real validations against local fixtures. The package smoke remains an executable Node verifier without development dependencies.
+Vitest **5.0.5** runs all **614 cases**: 529 application, 66 tooling and 19 infrastructure cases. The original 155 node:test and 12 unittest cases were migrated. Production CI scripts remain Python and Vitest exercises their real validations against local fixtures. The package smoke remains an executable Node verifier without development dependencies.
 
 Case titles are Spanish with a **Given/When/Then** narrative (Dado/Cuando/Entonces). Historical fixtures retain their original values; readable titles describe the scenario without rewriting the baseline.
 
@@ -17,16 +19,16 @@ npm test
 
 | Family               | Cases | Coverage                                                                             |
 | -------------------- | ----: | ------------------------------------------------------------------------------------ |
-| Health and HTTP      |    18 | health, routing, CORS and body limits                                                |
+| Health and HTTP      |    19 | health, routing, CORS and body limits                                                |
 | Contact validation   |    69 | types, required fields, boundaries, Unicode, extra fields and honeypot               |
 | Body parsing         |    36 | MIME, charset, forms, base64, compression and parser errors                          |
-| Contact and provider |    18 | mocked delivery, concurrency, configuration and provider errors                      |
+| Contact and provider |    19 | mocked delivery, concurrency, configuration and provider errors                      |
 | Quota                |     5 | window, blocking, logical expiry and IP independence                                 |
 | Isolation            |     5 | environment, composition and network fence                                           |
 | Subscriptions        |    82 | subscribe/unsubscribe: DTO, upstream, timeout, transport, quotas and composition     |
-| Tooling              |    49 | scope detection and real workflow validation with fake GitHub responses              |
+| Tooling              |    66 | scope detection and real workflow validation with fake GitHub responses              |
 | Hardening            |    57 | concurrency, global budget, sessions, startup, cancellation and fallback             |
-| Infrastructure       |    18 | resources, IAM, payload v2, limits, logs, roles and asset                            |
+| Infrastructure       |    19 | resources, IAM, payload v2, limits, logs, roles and asset                            |
 | Chat                 |   223 | DTO, FAQ, context/history, publication, AI, R2/local, caches, quotas and composition |
 
 The wrapper removes inherited environment values and disables AWS metadata and `.env` loading. Application/infrastructure projects load the network guard before imports, blocking providers, sockets, DNS and child processes. Tooling tests require local Python subprocesses, use a minimal environment and synthetic responses, and never execute gh/workflows. Compilation happens before the fence to preserve build decorator semantics.
@@ -43,4 +45,6 @@ The managed handler uses shared quotas, Secrets Manager configuration validated 
 
 The phase 5/6 increment adds 19 tests: thirteen bundle tests, two preparation workflow tests and four infrastructure assertions. [Design and subsequent criteria](deployment-design.md).
 
-Current preparation adds 22 cases: seven IAM/foundation ceiling checks and fifteen run/digest recovery cases, including failed CI, PR artifacts, foreign revision/run/attempt, expiration, unsafe ZIP and alterations. Total: 580 (513 application, 49 tooling, 18 infrastructure). The template was also checked with cfn-lint 1.57.2; this does not simulate IAM or prove effective AWS compatibility.
+The previous preparation added 22 cases: seven IAM/foundation ceiling checks and fifteen run/digest recovery cases, including failed CI, PR artifacts, foreign revision/run/attempt, expiration, unsafe ZIP and alterations. Total: 614 (529 application, 66 tooling, 19 infrastructure). The template was also checked with cfn-lint 1.57.2; this does not simulate IAM or prove effective AWS compatibility.
+
+Isolated validation adds 16 application cases, 17 change set/tooling review cases and one infrastructure assertion. Current total: 614 (529 application, 66 tooling, 19 infrastructure). Both packages run behind a network fence; the validation entrypoint smoke keeps real SDKs and simulates their responses only inside the test.

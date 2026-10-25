@@ -2,6 +2,8 @@
 
 [Español](infrastructure.es.md) · 2026-10-24.
 
+**Current increment:** [first installation with doubles and Actions delivery](managed-validation.md), implemented locally. main/v0.1.0 exist; provisioning, execution and managed validation remain pending.
+
 **Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
 
 AWS CDK v2 is selected for this repository. Pinned local development dependencies: CLI **2.1146.1**, aws-cdk-lib **2.274.0**, constructs **10.8.1**. No global install. [Stack](../infra/stack.ts), [entry](../infra/app.ts), [tests](../test/infra/stack.test.ts).
