@@ -113,6 +113,7 @@ test('Dado un ID generado, cuando no se eligió excepción regional ni ID concre
   expect(api[0]['Fn::If'][1].Condition).toEqual({
     StringEquals: { 'apigateway:Request/ApiName': 'portfolio-api-cloud-test' },
   });
+  expect(api[1]['Fn::If'][1].Action).toContain('apigateway:TagResource');
   expect(api[1]['Fn::If'][1].Resource['Fn::If']).toEqual([
     'HasApiId',
     [
@@ -169,7 +170,11 @@ test('Dadas las policies revisables, cuando se comprueba tamaño y excepciones, 
     for (const statement of statements(name)) {
       expect(statement.Action ?? []).not.toContain('*');
       if (statement.Resource?.includes('*')) {
-        expect(statement.Action).toEqual(['logs:DescribeLogGroups']);
+        expect(statement.Action).toEqual([
+          'logs:DescribeLogGroups',
+          'logs:DescribeResourcePolicies',
+          'logs:DescribeIndexPolicies',
+        ]);
         expect(statement.Condition.StringEquals['aws:RequestedRegion']).toBe('us-east-1');
       }
     }

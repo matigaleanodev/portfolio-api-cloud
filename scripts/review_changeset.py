@@ -42,8 +42,12 @@ def validate(change, stack_data, template, stack, changeset, kind):
         raise ValueError('Identidad del changeset alterada')
     if change.get('Status') != 'CREATE_COMPLETE' or change.get('ExecutionStatus') != 'AVAILABLE' or change.get('NextToken'):
         raise ValueError('Changeset incompleto o no disponible')
-    if change.get('IncludeNestedStacks') or change.get('ImportExistingResources') or change.get('NotificationARNs'):
+    if change.get('ImportExistingResources') or change.get('NotificationARNs'):
         raise ValueError('Alcance adicional no permitido')
+    if change.get('ParentChangeSetId') or change.get('RootChangeSetId') not in (None, changeset):
+        raise ValueError('Jerarquía de changesets no permitida')
+    if any(resource['Type']=='AWS::CloudFormation::Stack' for resource in template['Resources'].values()):
+        raise ValueError('Stacks anidadas no permitidas')
     role='PortfolioApiCloudTest' + ('FoundationCloudFormationRole' if kind=='foundation' else 'CloudFormationExecutionRole')
     if stack_data.get('StackId') != stack or stack_data.get('RoleARN') != 'arn:aws:iam::650387442642:role/' + role:
         raise ValueError('Ejecutor CloudFormation inesperado')
@@ -53,6 +57,8 @@ def validate(change, stack_data, template, stack, changeset, kind):
     if not changes: raise ValueError('Changeset vacío')
     for item in changes:
         resource=item.get('ResourceChange',{})
+        if resource.get('ResourceType')=='AWS::CloudFormation::Stack' or resource.get('ChangeSetId'):
+            raise ValueError('Cambios anidados no permitidos')
         if resource.get('ResourceType')=='AWS::DynamoDB::Table' and (resource.get('Action')=='Remove' or resource.get('Replacement') in ('True','Conditional')):
             raise ValueError('El control compartido no se elimina ni reemplaza')
     if kind=='application':
