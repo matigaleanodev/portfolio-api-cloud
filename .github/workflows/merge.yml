@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   merge:
-    if: github.repository == 'matigaleanodev/portfolio-api-cloud' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || (github.ref == 'refs/heads/feat/migration-evidence-docs' && vars.MERGE_RECOVERY_HEAD_SHA != '' && github.sha == vars.MERGE_RECOVERY_HEAD_SHA)) && vars.MERGE_WORKFLOW_ENABLED == 'true'
+    if: github.repository == 'matigaleanodev/portfolio-api-cloud' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') && vars.MERGE_WORKFLOW_ENABLED == 'true'
     environment: merge
     runs-on: ubuntu-latest
     timeout-minutes: 10
