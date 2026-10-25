@@ -2,7 +2,7 @@
 
 [English](subscriptions.md) · 25/10/2026.
 
-POST y DELETE /api/subscriptions devuelven **200** con el JSON validado del upstream: message string y email string opcional. DELETE conserva el correo en el body JSON; no lo obtiene del query. El proveedor se espera antes de responder. Health y contacto siguen disponibles; GET /api/chat/starters y POST /api/chat permanecen en 404.
+POST y DELETE /api/subscriptions devuelven **200** con el JSON validado del upstream: message string y email string opcional. DELETE conserva el correo en el body JSON; no lo obtiene del query. El proveedor se espera antes de responder. Health y contacto siguen disponibles; [starters/chat](chat.es.md) completan los seis contratos locales.
 
 ## Validación y transporte
 
@@ -81,6 +81,8 @@ Ambos repos son mantenidos por matigaleanodev. El origen declara UNLICENSED; ser
 
 **82 pruebas nuevas** de suscripciones: 36 de DTO/controlador, 28 de respuestas upstream y 18 de transporte/configuración/timeout/cuota/composición; cada familia de referencia cubre alta y baja. Las tres diferencias de validación se declaran sin cambiar los resultados de origen. Dos tests previos que exigían 404 para suscripciones se reemplazan por los contratos reales.
 
-Total: **258 pruebas aprobadas** (235 aplicación, 12 tooling, 11 infraestructura), con ambiente aislado y red bloqueada. Tipos estrictos, build ESM, formato, smoke fuera del checkout, documentación bilingüe, workflows y synth sin lookups se comprueban localmente. El smoke empaquetado ejercita alta/baja, normalización, body DELETE, ausencia de configuración y cuotas, sin devDependencies. Node ejecutado: 24.22.1 LTS; [registro oficial consultado el 25/10/2026](https://nodejs.org/en/blog/release). No se cambió el lock ni se agregó dependencia.
+Al cierre de este incremento de suscripciones: **258 pruebas aprobadas** (235 aplicación, 12 tooling, 11 infraestructura), con ambiente aislado y red bloqueada. Tipos estrictos, build ESM, formato, smoke fuera del checkout, documentación bilingüe, workflows y synth sin lookups se comprueban localmente. El smoke empaquetado ejercita alta/baja, normalización, body DELETE, ausencia de configuración y cuotas, sin devDependencies. Node ejecutado: 24.22.1 LTS; [registro oficial consultado el 25/10/2026](https://nodejs.org/en/blog/release). No se cambió el lock ni se agregó dependencia.
 
-Esto no demuestra integración AWS, permisos efectivos, disponibilidad upstream o transporte administrado. Faltan starters/chat, cuota compartida/atómica, validación de proxies/IP administrados, deadline total, secretos/startup y recuperación. La stack sigue sin desplegar; no se habilita exposición pública. La renovación editorial permanece inmediatamente antes de producción.
+Esto no demuestra integración AWS, permisos efectivos, disponibilidad upstream o transporte administrado. Faltan cuota compartida/atómica, validación de proxies/IP administrados, deadline total, secretos/startup y recuperación. La stack sigue sin desplegar; no se habilita exposición pública. La renovación editorial permanece inmediatamente antes de producción.
+
+[Estado actual y suite de 479 casos](chat.es.md). Los 258 anteriores son el cierre histórico de suscripciones; el lock nuevo del incremento de chat se audita por separado.

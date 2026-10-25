@@ -6,7 +6,7 @@ Implementación alternativa de la API pública de Portfolio con handlers TypeScr
 
 ## Estado actual
 
-Aplicación local con composición explícita y entrada HTTP API v2: `GET /api/health` → 200 `{"status":"ok"}` y `POST /api/contact` → 204 vacío, con validación, honeypot, proveedor simulado en pruebas y cuota local 5/h/IP. POST y DELETE /api/subscriptions devuelven 200 con normalización del email, proveedor HTTP y cuotas locales independientes de 10/h/IP. Starters/chat siguen pendientes y devuelven 404. La cobertura contractual es parcial. La stack CDK de test está definida y sintetizada localmente; no se desplegó.
+Aplicación local con composición explícita y entrada HTTP API v2: `GET /api/health` → 200 `{"status":"ok"}` y `POST /api/contact` → 204 vacío, con validación, honeypot, proveedor simulado en pruebas y cuota local 5/h/IP. POST y DELETE /api/subscriptions devuelven 200 con normalización del email, proveedor HTTP y cuotas locales independientes de 10/h/IP. GET /api/chat/starters devuelve 200 y POST /api/chat devuelve 201 con FAQ/IA/fallback, historial y cuotas independientes de 20/min/IP. Los seis contratos tienen cobertura local; la integración administrada permanece pendiente. La stack CDK de test está definida y sintetizada localmente; no se desplegó.
 
 El prototipo comparativo fue descartado. Sus [resultados](Docs/local-runtime.es.md) se conservan como evidencia histórica y no son mediciones de esta base, cold starts AWS ni prueba de ahorro mensual.
 
@@ -21,7 +21,7 @@ npm run check
 
 `check` verifica el formato y ejecuta tipos estrictos, build ESM, tests sin red, smoke fuera del checkout y validación documental. Los comandos de verificación no corrigen fuentes. El paquete usa `dist/handler.js`, export `handler`, y requiere el `package.json` con `type: module`. Requiere `node_modules` de producción según el lock y `LICENSE`. No carga `.env`; únicamente la entrada Lambda lee el ambiente para CORS y contacto (`RESEND_API_KEY`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`). Health sigue disponible sin esas claves. [Contrato, procedencia y límites](Docs/contact.es.md).
 
-[Stack de test y requisitos](Docs/infrastructure.es.md) · [Casos de prueba en español](Docs/testing.es.md). Vitest ejecuta 258 casos (235 aplicación, 12 tooling, 11 infraestructura).
+[Stack de test y requisitos](Docs/infrastructure.es.md) · [Casos de prueba en español](Docs/testing.es.md). Vitest ejecuta 479 casos (456 aplicación, 12 tooling, 11 infraestructura).
 
 Formato legible con Prettier **3.9.10** y reglas explícitas en `.prettierrc.json`: 2 espacios, comillas simples, punto y coma, comas finales y ancho orientativo de 100 columnas. Los scripts separan preparación, ejecución y comprobación con líneas en blanco; Prettier conserva esa separación. `npm run format` aplica el formato; `npm run format:check` verifica sin modificar archivos y es obligatorio en CI. `.gitignore` y `.prettierignore` excluyen privados, generados, lock y fixture histórico con hash fijado.
 
@@ -31,7 +31,7 @@ Formato legible con Prettier **3.9.10** y reglas explícitas en `.prettierrc.jso
 - portfolio conserva frontend, contenido editorial estático y hosting.
 - portfolio-cloud conserva suscriptores, notificaciones, OG, releases y publicación de knowledge.
 - La sustitución de implementación conserva HTTP y comportamiento; URL/routing pueden requerir configuración.
-- La compatibilidad completa todavía requiere migrar las dos rutas de chat restantes y sus escenarios.
+- Los seis contratos están implementados; la compatibilidad completa requiere endurecimiento e integración administrada.
 
 ## Documentación
 
@@ -59,3 +59,7 @@ La renovación de perfil/proyectos del bot sigue siendo el último paso previo a
 [MIT](LICENSE). LICENSE contiene la licencia de la implementación propia y la autoría de Matias Galeano; no se mantiene un archivo de atribuciones de terceros. Las dependencias mantienen sus licencias dentro de sus paquetes.
 
 Suscripciones utiliza PORTFOLIO_CLOUD_API_URL, leída únicamente al invocar esa sección. [Contratos, configuración, errores y procedencia](Docs/subscriptions.es.md). Sin esa configuración devuelve 500 controlado; health sigue disponible.
+
+[Starters/chat: contratos, configuración, referencias, diferencias y procedencia](Docs/chat.es.md). Dependencias nuevas: SDK S3 3.1156.0 para R2 y reflect-metadata 0.2.2 para historial anidado. Perfil/proyectos/prompts conservan el SHA auditado; renovación editorial pendiente.
+
+La ubicación profesional del chat se corrige puntualmente a Posadas, Misiones, Argentina, con diferencia explícita frente al SHA fijado. El resto del contenido conserva su alcance anterior y la renovación editorial general sigue inmediatamente antes de producción. [Detalle y referencias históricas](Docs/chat.es.md).

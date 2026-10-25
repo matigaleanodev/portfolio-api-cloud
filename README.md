@@ -6,7 +6,7 @@ Alternative implementation of Portfolio's public API using TypeScript handlers. 
 
 ## Current status
 
-Local application with explicit composition and HTTP API v2 events: `GET /api/health` → 200 `{"status":"ok"}` and `POST /api/contact` → empty 204, with validation, honeypot, a mocked provider in tests and local 5/h/IP quota. POST and DELETE /api/subscriptions return 200 with email normalization, an HTTP provider and independent local 10/h/IP quotas. Starters/chat remain pending and return 404. Contract coverage is partial. The CDK test stack is defined and locally synthesized; it is not deployed.
+Local application with explicit composition and HTTP API v2 events: `GET /api/health` → 200 `{"status":"ok"}` and `POST /api/contact` → empty 204, with validation, honeypot, a mocked provider in tests and local 5/h/IP quota. POST and DELETE /api/subscriptions return 200 with email normalization, an HTTP provider and independent local 10/h/IP quotas. GET /api/chat/starters returns 200 and POST /api/chat returns 201 with FAQ/AI/fallback, history and independent 20/min/IP quotas. All six contracts have local coverage; managed integration remains pending. The CDK test stack is defined and locally synthesized; it is not deployed.
 
 The comparison prototype was discarded. Its [results](Docs/local-runtime.md) remain historical evidence, not measurements of this foundation, AWS cold starts or proof of monthly savings.
 
@@ -21,7 +21,7 @@ npm run check
 
 `check` validates formatting and runs strict types, ESM build, network-blocked tests, an out-of-checkout smoke test and document validation. Verification commands do not fix sources. The package uses `dist/handler.js`, export `handler`, and requires `package.json` with `type: module`. Runtime requires production `node_modules` from the lock and `LICENSE`. It does not load `.env`; only the Lambda entry reads environment for CORS and contact (`RESEND_API_KEY`, `CONTACT_FROM_EMAIL`, `CONTACT_TO_EMAIL`). Health remains available without these keys. [Contract, provenance and limits](Docs/contact.md).
 
-[Test stack and prerequisites](Docs/infrastructure.md) · [Spanish test cases](Docs/testing.md). Vitest runs 258 cases (235 application, 12 tooling, 11 infrastructure).
+[Test stack and prerequisites](Docs/infrastructure.md) · [Spanish test cases](Docs/testing.md). Vitest runs 479 cases (456 application, 12 tooling, 11 infrastructure).
 
 Readable formatting with Prettier **3.9.10** and explicit `.prettierrc.json` rules: two spaces, single quotes, semicolons, trailing commas and an advisory 100-column print width. Scripts separate preparation, execution and checks with blank lines preserved by Prettier. `npm run format` writes changes; `npm run format:check` checks without writing and is required in CI. `.gitignore` and `.prettierignore` exclude private/generated files, the lockfile and the pinned historical fixture.
 
@@ -31,7 +31,7 @@ Readable formatting with Prettier **3.9.10** and explicit `.prettierrc.json` rul
 - portfolio retains frontend, static editorial content and hosting.
 - portfolio-cloud retains subscribers, notifications, OG, releases and knowledge publication.
 - Replacing this API's implementation preserves HTTP and behavior; URL/routing may require configuration.
-- Full compatibility still requires migrating the two remaining chat routes and their scenarios.
+- All six contracts are implemented; full compatibility requires hardening and managed integration.
 
 ## Documentation
 
@@ -59,3 +59,7 @@ Refreshing bot profile/project data remains the final step before production dep
 [MIT](LICENSE). LICENSE covers the application's own implementation and Matias Galeano's authorship; no third-party attribution file is maintained. Dependencies retain their licenses within their packages.
 
 Subscriptions uses PORTFOLIO_CLOUD_API_URL, read only when invoking that slice. [Contracts, configuration, errors and provenance](Docs/subscriptions.md). Missing configuration yields controlled 500; health remains available.
+
+[Starters/chat: contracts, configuration, references, differences and provenance](Docs/chat.md). New dependencies: S3 SDK 3.1156.0 for R2 and reflect-metadata 0.2.2 for nested history. Profile/projects/prompts retain audited SHA content; editorial refresh remains pending.
+
+Chat professional location is corrected specifically to Posadas, Misiones, Argentina, with an explicit difference from the pinned SHA. Other content retains its previous scope; general editorial renewal remains immediately before production. [Details and historical references](Docs/chat.md).

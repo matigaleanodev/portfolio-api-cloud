@@ -100,3 +100,9 @@ Status: **implemented and locally verified**. Vitest 5.0.5 replaces node:test/un
 ## ADR-012 — Subscriptions with native HTTP
 
 Status: **local slice implemented; managed integration pending**. POST/DELETE retain JSON bodies, normalization, 200 responses and exact error mappings from the pinned source. Explicit native fetch and AbortSignal.timeout(8000), no new dependency. Independent 10/h/IP quotas reuse RateLimiterMemory; contact remains 5/h/IP. The three accepted contact validation differences are declared here too. Lazy configuration/500 and omitted free-form logs are explicit differences; total deadline/distribution remain pending. [Contract, evidence and provenance](subscriptions.md).
+
+## ADR-013 — Chat with pinned domain and explicit providers
+
+Status: **implemented and locally verified**. Required a0ef80fa starters/chat modules, content and prompts are retained without refresh. Direct/nested DTO uses reflect-metadata; R2 repository uses current pinned S3 SDK; OpenAI fetch is preserved. Independent 20/min/IP quotas reuse the local fixed-window/block decision. Original R2 timeout, stale and AI retention limits are preserved/tested; free-form logs are omitted while bounded metrics remain. [Contracts, differences, provenance and stage 4 prerequisites](chat.md). Local evidence does not establish AWS deployment/integration.
+
+Chat professional location is corrected specifically to Posadas, Misiones, Argentina, with an explicit difference from the pinned SHA. Other content retains its previous scope; general editorial renewal remains immediately before production. [Details and historical references](chat.md).

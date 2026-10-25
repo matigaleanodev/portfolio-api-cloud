@@ -13,9 +13,9 @@
 - src/contact.ts: message/date/awaited send and direct official Resend SDK usage.
 - src/subscriptions.dto.ts: subscribe/unsubscribe DTO and email normalization.
 - src/subscriptions.ts: native HTTP provider, upstream JSON validation and custom errors.
-- src/quota.ts: local rate-limiter-flexible quotas: contact 5/h/IP, independent subscribe/unsubscribe 10/h/IP; fixed windows and independent IP expiry.
+- src/quota.ts: local rate-limiter-flexible quotas: contact 5/h/IP, independent subscribe/unsubscribe 10/h/IP and starters/chat 20/min/IP; fixed windows and independent IP expiry.
 
-`GET /api/health` → 200 {status:ok}; `POST /api/contact` → empty 204. POST and DELETE /api/subscriptions return 200; starters/chat return 404. General preflight does not register pending routes. Health does not check provider availability. Full original startup validation remains pending: health stays available without credentials; missing contact keys produce 500 when sending is attempted.
+`GET /api/health` → 200 {status:ok}; `POST /api/contact` → empty 204. POST and DELETE /api/subscriptions return 200; starters returns 200 and chat 201. Health does not check provider availability. Full original startup validation remains pending: health stays available without credentials; missing contact keys produce 500 when sending is attempted.
 
 CORS preserves lists, disabled behavior when absent and reflected origins for wildcard. Unlisted origins receive no Allow-Origin; this is not authentication. Parser before CORS/security and preflight before security follow source bootstrap. 204 omits Content-Type. [Contact contract, limits and differences](contact.md).
 
@@ -41,7 +41,7 @@ actionlint
 npm audit
 ```
 
-**235 application tests passed**, including 82 new subscription tests (36 DTO references, 28 upstream and 18 additional cases), 69 DTO/controller references (66 unchanged, 3 explicit direct-validator differences) and 36 parser references; 12 tooling tests (5 CI scope, 7 merge workflow). Types, build, separate ESM smoke, documentation pairs/links and actionlint passed on Node 24.22.1. npm audit of the current lock: **0 reported vulnerabilities**, including development; this does not guarantee freedom from future issues.
+**456 application tests passed**, including 82 new subscription tests (36 DTO references, 28 upstream and 18 additional cases), 69 DTO/controller references (66 unchanged, 3 explicit direct-validator differences) and 36 parser references; 12 tooling tests (5 CI scope, 7 merge workflow). Types, build, separate ESM smoke, documentation pairs/links and actionlint passed on Node 24.22.1. npm audit of the current lock: **0 reported vulnerabilities**, including development; this does not guarantee freedom from future issues.
 
 The suite clears inherited environment and loads the network guard before importing application code. It blocks fetch/WebSocket, HTTP(S), socket/TLS/UDP connections, DNS and child processes. Parsing uses in-memory streams without listening on ports. Providers are explicit mocks; no emails are sent. The guard prevents accidental calls, not hostile code.
 
@@ -57,10 +57,10 @@ npm ci and validation are reproduced from a temporary tree of public files witho
 | Parsing           | JSON/extended forms, base64/UTF-8/UTF-16/Latin1/BOM, compression/errors, decoded 16 KiB                                       |
 | Local quota       | 5/h/IP, sourceIp versus XFF, concurrent reservation, fixed windows/blocking, logical expiration and independent IP expiry     |
 | Headers           | original CORS/security order, rate-limit/Retry-After, no Content-Type on 204                                                  |
-| Pending routes    | two routes return 404 without fabricated success                                                                              |
+| Pending routes    | six local contracts; managed integration pending                                                                              |
 | Isolation/package | fake configuration, blocked network, ignored .env, production without dev dependencies                                        |
 
-The differential scope is finite, not full API parity. Actual framing/proxies/gateway, distributed quotas, deadline/cancellation, two contracts, full startup, secrets/IAM and recovery remain unverified. Local quota is lost on restart and not shared across environments; it does not make public exposure acceptable. [Detailed limits and new provenance](contact.md).
+The differential scope is finite, not full API parity. Actual framing/proxies/gateway, distributed quotas, deadline/cancellation, full startup, secrets/IAM and recovery remain unverified. Local quota is lost on restart and not shared across environments; it does not make public exposure acceptable. [Detailed limits and new provenance](contact.md).
 
 ## Provenance and ownership
 
@@ -73,16 +73,20 @@ Reference: [portfolio-api](https://github.com/matigaleanodev/portfolio-api/tree/
 | src/config/runtime.config.ts | 366b7c532275fda3aaee639db60884999e3a0ee8f268b4a983124f6f6f672890 | CORS semantics; minimal explicit configuration    |
 | package.json                 | 38599e23e6b9910f24f157ae19a55c30dcbf5e9e3d179d9dcdb4ab2f275e3961 | license and dependency comparison                 |
 
-Both repositories are maintained by matigaleanodev. The source declares UNLICENSED and has no LICENSE/LICENSE.md at that SHA. This implementation is distributed under [MIT](../LICENSE) by its copyright holder's decision; this does not change the original repository's license. A public repository does not imply a third-party license grant. TypeScript declares Apache-2.0; type packages declare MIT. No wholesale API or professional/editorial content copy.
+Both repositories are maintained by matigaleanodev. The source declares UNLICENSED and has no LICENSE/LICENSE.md at that SHA. This implementation is distributed under [MIT](../LICENSE) by its copyright holder's decision; this does not change the original repository's license. A public repository does not imply a third-party license grant. TypeScript declares Apache-2.0; type packages declare MIT. No wholesale API copy; chat carries only its pinned curated content without editorial refresh.
 
-The contact increment adds [per-blob and reference-package provenance](contact.md). The next stage incrementally completes another contract with simulated providers; bot refresh remains reserved for immediately before production.
+The contact increment adds [per-blob and reference-package provenance](contact.md). The [chat increment](chat.md) completes all six contracts with simulated providers; bot refresh remains reserved for immediately before production.
 
 ## Vitest and local infrastructure
 
-All suites use Vitest 5.0.5: 235 application cases, 12 tooling cases migrated from unittest and 11 infrastructure cases, **258 passing**. Package smoke remains a Node verifier without devDependencies. Spanish Given/When/Then titles and [test case format](testing.md). CDK v2 is installed and the test stack synthesizes without lookups; [resources and limits](infrastructure.md). Only infrastructure disables exactOptionalPropertyTypes due to CDK declaration incompatibility; application retains it. No deployment.
+All suites use Vitest 5.0.5: 456 application cases, 12 tooling cases migrated from unittest and 11 infrastructure cases, **479 passing**. Package smoke remains a Node verifier without devDependencies. Spanish Given/When/Then titles and [test case format](testing.md). CDK v2 is installed and the test stack synthesizes without lookups; [resources and limits](infrastructure.md). Only infrastructure disables exactOptionalPropertyTypes due to CDK declaration incompatibility; application retains it. No deployment.
 
 ## Code formatting
 
 Prettier 3.9.10 is pinned as a development dependency, with explicit readability rules: advisory 100 columns, two spaces and single quotes. It formats supported sources, tests, infrastructure, JavaScript scripts, configuration and documentation. `format` writes changes; `format:check` only checks and is part of `check` and CI. The historical fixture and its hash are preserved. Python is outside Prettier's scope.
 
 [Subscription contracts, configuration, timeout, differences and hashes](subscriptions.md). src/subscriptions.dto.ts validates and normalizes; src/subscriptions.ts composes the HTTP provider without new dependencies. The package preserves both methods and quotas; AWS validation remains pending.
+
+src/chat/ composes DTO, FAQ, context, AI and R2/local repository from the pinned SHA. S3 SDK 3.1156.0 and reflect-metadata 0.2.2 are new direct dependencies; bounded JSON metrics without Nest. handler.ts retains composition from the first valid POST. Smoke now exercises 201/503, quotas and synthetic local/remote knowledge. [223 new cases, differences and hashes](chat.md).
+
+Chat professional location is corrected specifically to Posadas, Misiones, Argentina, with an explicit difference from the pinned SHA. Other content retains its previous scope; general editorial renewal remains immediately before production. [Details and historical references](chat.md).

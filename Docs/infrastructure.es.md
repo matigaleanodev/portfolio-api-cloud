@@ -16,7 +16,7 @@ Stack `PortfolioApiCloudTest`, nombre físico `portfolio-api-cloud-test`, cuenta
 
 IAM es aislamiento de esta API de test; todavía no es el contrato público del frontend. Health también requiere firma. No se habilita negocio público mientras falten cuota compartida y deadline/cancelación. Los límites de gateway/concurrencia no reemplazan cuota por IP ni son un tope monetario.
 
-La stack no introduce DB, NAT, VPC, dominio, frontend, alarmas ni proveedores nuevos. Health funciona; contacto no dispone de secretos en AWS y devuelve 500 controlado si se intenta enviar sin configuración. La recuperación segura de secretos y permisos correspondientes permanece pendiente; no se ingresan claves en parámetros, contextos, templates ni outputs. Starters/chat siguen en 404. Suscripciones sin PORTFOLIO_CLOUD_API_URL produce 500 controlado al invocar la ruta; no se agrega esa configuración a la stack. [Contrato local](subscriptions.es.md).
+La stack no introduce DB, NAT, VPC, dominio, frontend, alarmas ni proveedores nuevos. Health funciona; contacto no dispone de secretos en AWS y devuelve 500 controlado si se intenta enviar sin configuración. La recuperación segura de secretos y permisos correspondientes permanece pendiente; no se ingresan claves en parámetros, contextos, templates ni outputs. Starters devuelve 200; chat mantiene perfil/FAQ sin proveedores y 503 editorial sin knowledge. La stack no configura R2/OpenAI ni empaqueta un fallback editorial. [Contrato local](chat.es.md). Suscripciones sin PORTFOLIO_CLOUD_API_URL produce 500 controlado al invocar la ruta; no se agrega esa configuración a la stack. [Contrato local](subscriptions.es.md).
 
 ## Paquete y síntesis local
 

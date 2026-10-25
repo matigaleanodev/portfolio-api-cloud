@@ -100,3 +100,9 @@ Estado: **implementados y verificados localmente**. Vitest 5.0.5 reemplaza node:
 ## ADR-012 — Suscripciones con HTTP nativo
 
 Estado: **sección local implementada; integración administrada pendiente**. POST/DELETE conservan body JSON, normalización, respuestas 200 y mapeos exactos del SHA auditado. fetch nativo explícito y AbortSignal.timeout(8000), sin dependencia nueva. Cuotas independientes 10/h/IP reutilizan RateLimiterMemory; contacto permanece en 5/h/IP. Las tres diferencias de validación aceptadas para contacto se declaran también aquí. Configuración lazy/500 y omisión de logs libres son diferencias explícitas; deadline total/distribución siguen pendientes. [Contrato, evidencia y procedencia](subscriptions.es.md).
+
+## ADR-013 — Chat con dominio fijado y proveedores explícitos
+
+Estado: **implementado y verificado localmente**. Se conservan los módulos necesarios de a0ef80fa para starters/chat, contenido y prompts sin renovación. DTO directo/anidado con reflect-metadata; repositorio R2 mediante SDK S3 vigente fijado; fetch OpenAI conservado. Cuotas independientes 20/min/IP reutilizan la decisión de ventana/bloqueo local. Se mantienen y prueban límites originales de timeout R2, stale y retención IA; se omiten logs libres y se conservan métricas acotadas. [Contratos, diferencias, procedencia y requisitos de etapa 4](chat.es.md). Ninguna evidencia local equivale a despliegue/integración AWS.
+
+La ubicación profesional del chat se corrige puntualmente a Posadas, Misiones, Argentina, con diferencia explícita frente al SHA fijado. El resto del contenido conserva su alcance anterior y la renovación editorial general sigue inmediatamente antes de producción. [Detalle y referencias históricas](chat.es.md).
