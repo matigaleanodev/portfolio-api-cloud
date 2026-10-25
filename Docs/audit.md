@@ -108,3 +108,7 @@ Inspected tests cover config/DTOs, mocked Resend contact, mocked subscription fe
 | Medium | fragmented cache changes provider cost/cold latency | measure hits, billed duration and tokens before adding shared cache |
 | Medium | shallow health/missing per-route metrics | body-free logging, latency/errors/timeouts/429/fallback/cost and test thresholds |
 | Medium | recovery depends on preserved images/config/shared EC2 | pin image and verify restore plan; do not stop EC2 after Portfolio alone |
+
+## Subsequent local implementation evidence
+
+The audit above describes the initial inspection. The [first local experiment](local-runtime.md) reuses that commit and executes its unit tests and differential contracts with simulated providers. It adds no AWS, billing or production evidence.

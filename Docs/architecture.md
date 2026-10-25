@@ -4,9 +4,9 @@
 
 ## Recommendation
 
-Use **AWS CDK v2 with TypeScript** for the new repository. Preserve contracts, domain, content and providers. Choose the runtime by comparing adapted NestJS/Express with lightweight Node.js handlers using [the evaluation protocol](runtime-evaluation.md). Common infrastructure candidate: **one Lambda Event Function outside a VPC behind regional API Gateway HTTP API**, using a separate test endpoint. Six routes without a database/workers do not justify one function per endpoint.
+Serverless migration is decided. Build the API with **TypeScript handlers**, preserving contracts, domain, content and providers. Adapted NestJS/Express remains the [local experiment](local-runtime.md) reference. **TypeScript AWS CDK v2** remains the preferred infrastructure tool; final selection and bootstrap are open. Common infrastructure candidate: **one Lambda Event Function outside a VPC behind regional API Gateway HTTP API**, using a separate test endpoint. Six routes without a database/workers do not justify one function per endpoint.
 
-For the Nest candidate, separate HTTP application setup from listen, cache Nest initialization per execution environment and test an Express-to-Lambda adapter compatible with Express 5. No adapter is selected or installed yet; the [Nest serverless guide](https://docs.nestjs.com/faq/serverless) informs that experiment. Start with tsc/decorator metadata; bundle/minify only after validating ZIP, optional imports and cold latency. Node 22/x86_64 provides the initial comparison against Docker. Compare 512/1024 MiB and ARM afterward; do not start with provisioned concurrency.
+The documentary Nest control separated HTTP bootstrap from listen and used serverless-express 4.17.0 with TypeScript metadata. That prototype was discarded after results were recorded; it is not a dependency required by the initial handler structure. Local tests used Node 24.19.0 for both variants. Future AWS validation must fix architecture/memory and distinguish INIT from provider latency. [Method and limits](local-runtime.md).
 
 Preserve `/api/*`, status codes, DELETE bodies and errors. Own CORS in one layer, with explicit test/frontend origins, Content-Type and GET/POST/DELETE/OPTIONS. Verify headers on platform errors too. Preserve rawPath without doubling stage prefixes. Do not expose a parallel Function URL bypassing protection.
 
@@ -24,7 +24,7 @@ Preserve `/api/*`, status codes, DELETE bodies and errors. Own CORS in one layer
 | Option | Concrete advantage | Tradeoff | Proposed position |
 | --- | --- | --- | --- |
 | Full Nest + Event Function + HTTP API | high reuse, inexpensive ingress, route/global throttling, familiar IAM | cold start, paid external waiting time, adapter and 30 s timeout | comparison baseline, gated by packaging/latency/abuse tests |
-| Grouped lightweight Node.js handlers | fewer imports/DI/server layers and potentially faster startup | preserve validation/errors/quotas/composition/contracts | strong candidate; choose from measurement without rewriting the domain |
+| Grouped lightweight Node.js handlers | fewer imports/DI/server layers and potentially faster startup | preserve validation/errors/quotas/composition/contracts | initial-structure baseline; preserve the domain |
 | Two functions: chat and everything else | separate concurrency/memory/secrets; chat cannot consume all contact slots | two packages/cold starts; shared limiter still required | split only if measured contention or permission needs justify it |
 | One function per endpoint | fine isolation | six deployments without independent domains/traffic needs | reject initially |
 | Regional REST API + Lambda | native WAF integration, extra controls and current response streaming | more expensive ingress and different timeout/quota behavior | choose if native WAF/streaming becomes a requirement |
@@ -63,3 +63,11 @@ Tool choice does not remove AWS service charges. CDK is not a local AWS emulator
 **Prefer SAM instead** if a single ecosystem toolchain/minimal template matters more or the operational overhead of CDK bootstrap is not justified. Do not migrate portfolio-cloud solely for uniformity. Serverless v4's added licensing/authentication has no demonstrated benefit here; do not choose unmaintained v3 to avoid it. Current SST is not CDK and does not require Pulumi Cloud, but its separate state model does not solve a proven need.
 
 Free Serverless CLI does not imply free Dashboard. SST Console is optional: current reference includes free workspaces up to 350 active resources, then resource-based charges; recheck terms at adoption. [Serverless pricing](https://www.serverless.com/pricing), [SST Console](https://sst.dev/docs/console/), [SST state](https://sst.dev/docs/state/).
+
+## Status and transition
+
+A local comparison of handlers and adapted Nest was completed using pinned logic, mocks and differential contracts. This publication contains its documentation, not experiment sources or tooling. The next increment builds the initial API structure. [Evidence](local-runtime.md).
+
+All three current APIs remain operational throughout migration. After completion and verified recovery, EC2 will be stopped and retained without termination or dismantling, together with a recoverable backup. Traffic switching and restoration must be verified before shutdown.
+
+Refreshing profile/project data used by the bot is the final step before production deployment. [Stages and recovery](migration.md).

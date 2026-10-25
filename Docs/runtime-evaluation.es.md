@@ -12,7 +12,7 @@ El acoplamiento Nest verificado incluye decoradores/DI, ConfigService, Logger, e
 
 La [guía oficial Nest serverless](https://docs.nestjs.com/faq/serverless) muestra que framework y bundling influyen en startup. Sus microbenchmarks de ejemplo en una máquina local **no son cold starts AWS de esta API**. No extrapolar sus milisegundos ni inventar una diferencia en segundos. Un cold start incluye runtime/imports/DI/config/secretos/knowledge; una respuesta chat añade red y generación. Optimizar el framework puede no resolver la latencia dominante.
 
-## Comparación propuesta
+## Comparación técnica documentada
 
 | Candidata | Qué reutiliza | Trabajo/riesgo | Hipótesis a verificar |
 | --- | --- | --- | --- |
@@ -22,12 +22,12 @@ La [guía oficial Nest serverless](https://docs.nestjs.com/faq/serverless) muest
 
 No agregar otro framework HTTP, librería de validación o una arquitectura de ports/adapters por defecto. Empezar B con la menor superficie de composición/ruteo suficiente, sin reescribir el conocimiento. A es control comparativo real, no implementación descartada de antemano.
 
-## Experimento y regla de elección
+## Experimento y criterios técnicos
 
-Primera etapa futura local: misma versión Node para A/B, lockfiles reproducibles, mismo artifact, memoria, contratos y respuestas mock deterministas. Medir tamaño ZIP/dependencias, tiempo de import/inicialización en procesos nuevos y p50/p95, luego invocación caliente. Al menos 30 arranques alternados por candidata para exploración; reportar dispersión y advertir que no equivale a Lambda.
+Primera etapa local implementada: misma versión Node para A/B, lockfiles reproducibles, mismo artifact, memoria, contratos y respuestas mock deterministas. Medir tamaño ZIP/dependencias, tiempo de import/inicialización en procesos nuevos y p50/p95, luego invocación caliente. Al menos 30 arranques alternados por candidata para exploración; reportar dispersión y advertir que no equivale a Lambda.
 
 En un entorno AWS de prueba: mismas región/arquitectura/memoria (512 y 1024 MiB), red, secretos/cache y protección; comprobar frío mediante INIT/telemetría, no asumir que cada request lo es. Medir rutas rápidas y chat separadas, p50/p95/p99 cuando haya muestra suficiente, errores/fallback, billed duration y costo. Mantener proveedores simulados para aislar framework; una muestra real con presupuesto definido valida la experiencia final. No usar carga ni llamadas pagas en producción.
 
-Elegir B si conserva todos los contratos/protecciones, cumple objetivos medidos y reduce de manera material la inicialización/costo o simplifica operación sin crear más complejidad de mantenimiento. Elegir A si cumple objetivos y la diferencia medida de B no justifica adaptar validación/errores/tests. Si ambas fallan, revisar entradas/deadlines y C/contenedor. No comprar provisioned concurrency antes de comparar alternativas.
+La migración está decidida y la estructura inicial se construirá con handlers TypeScript. Nest adaptado queda como control documental y la implementación NestJS original se conserva como alternativa independiente. La comparación no se usa para reabrir la decisión de migrar.
 
-**Estado:** CDK recomendado; runtime pendiente de evidencia. Handlers livianos son una candidata fuerte para este tamaño, no un ganador demostrado. No se implementaron prototipos ni benchmarks.
+Los resultados locales, compatibilidad y límites están registrados en el [experimento](local-runtime.es.md) y su [evidencia](runtime-evidence.es.md). Las protecciones distribuidas, el comportamiento en AWS, los costos observados y la recuperación siguen siendo requisitos de aceptación de la implementación. No se deducen cold starts ni ahorro mensual de estos arranques locales.

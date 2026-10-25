@@ -73,3 +73,21 @@ Container reference: App Runner lists 0.007/GB-hour provisioned memory and 0.064
 5. Asset/log/secret retention metadata and external plan information, without GetSecretValue or private subscriber reads.
 
 Agree USD alerts, daily AI quota, ingress controls and operational cutoff before public enablement. Alerts may arrive late and do not impose a spending cap.
+
+## Total comparison and next-increment criterion
+
+Adapted Nest and handlers share infrastructure/providers; Lambda has no Nest-specific tariff. [Local measurements](local-runtime.md) do not establish billed duration, token savings or AWS budget. Migration is decided; runtime comparison remains technical evidence.
+
+Adding the hypothetical assumptions above gives **USD 2.44/month + P** for low use (1.00 infrastructure + 1.44 AI) and **158.58 + P** for higher use (14.58 + 144). Assuming the entire stated Lambda allowance, these become **2.34 + P** and **151.71 + P**. P includes actual Resend, R2, Firebase, domain, portfolio-cloud and CI/retention charges not already counted. P is unknown: these expressions are not final totals or invoices. Free plans and full allowances for each environment are not assumed.
+
+| Alternative | Total cost to compare | Floor/condition |
+| --- | --- | --- |
+| Shared EC2 | instance + IPv4 + EBS + observability + providers | continuous compute/network; the list-price example is not Portfolio-only cost |
+| Event Function + HTTP API | requests/duration + limiter + logs + assets + secrets/alarms + P | lower proposed floor; secret and alarms add ~0.80/month/environment before usage in this model |
+| App Runner | continuous memory + active CPU + logs/network + P | provisioned minimum even with little traffic |
+| Fargate + ALB | compute + load balancer/network + observability + P | disproportionate floor for assumed demo workload |
+| Coexistence | existing EC2 + new infrastructure and incremental providers | no fixed savings while EC2 remains running |
+
+Final savings must subtract the incremental cost of all three migrated APIs and retained resources from avoidable EC2 cost. Foodly Notes and Modo Playa have no closed estimates here. After all three migrate and recovery is verified, EC2 will be stopped and retained, without termination/dismantling and with a recoverable backup. Storage and backups may still be charged; zero spending is not assumed.
+
+Provider minimums/overages must also be counted: [Resend](https://resend.com/pricing), [R2](https://developers.cloudflare.com/r2/pricing/). Private plans were not inspected and personal amounts were not reconstructed. [Shutdown and recovery](migration.md#stopped-ec2-and-recoverable-backup).

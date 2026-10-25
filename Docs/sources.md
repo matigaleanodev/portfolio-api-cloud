@@ -51,3 +51,7 @@ The audit links the repositories and exact inspected commits. Infrastructure evi
 
 - [CDK CLI role versus CloudFormation execution role](https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd.html)
 - [DefaultStackSynthesizer execution/deploy roles](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.DefaultStackSynthesizer.html)
+
+## Experiment evidence
+
+[Provenance, hashes and samples](runtime-evidence.md) and [method/results](local-runtime.md), collected on 2026-10-24 in WSL. The comparison adapter was [serverless-express](https://github.com/CodeGenieApp/serverless-express). This is local evidence, separate from pricing sources and AWS documentation. Experimental code is discarded rather than published as the initial API structure.

@@ -108,3 +108,7 @@ Pruebas existentes inspeccionadas: DTO/config, contacto con Resend mock, suscrip
 | Medio | caché IA fragmentada aumenta costo/proveedor y cold start | medir hit rate, billed duration y tokens; no garantizar ahorro ni agregar Redis anticipadamente |
 | Medio | salud superficial y métricas de API por ruta ausentes | logs sin cuerpos, latencia/error/timeout/429/fallback, costo; umbrales en entorno test |
 | Medio | recuperación depende de artifacts/imagen/config y EC2 compartida | pin de imagen y documentación de restore; no apagar al terminar solo Portfolio |
+
+## Evidencia posterior de implementación local
+
+La auditoría anterior describe la lectura inicial. El [primer experimento local](local-runtime.es.md) reutiliza ese SHA y ejecuta sus pruebas unitarias y contratos diferenciales con proveedores simulados. No agrega evidencia de AWS, facturación o producción.
