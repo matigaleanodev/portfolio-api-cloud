@@ -1,14 +1,20 @@
 # CI/CD preparado
 
-[English](ci-cd.md) · 24/10/2026. Los workflows cubren validación documental, preparación de test e integración de ramas. Esta entrega versiona documentación; la aplicación y el stack productivos todavía no están implementados.
+[English](ci-cd.md) · 24/10/2026. Los workflows cubren validación documental, preparación de test e integración de ramas. La base local incluye health y pruebas; las rutas de negocio y la stack siguen pendientes.
 
 ## CI
 
-`.github/workflows/ci.yml`: PR hacia main/dev, push a esas ramas y dispatch manual. Permisos de lectura; sin OIDC, secretos ni credenciales AWS. Valida documentos y sus pares/enlaces. Mientras no exista package.json informa explícitamente que no hubo tests/build/synth; no simula pruebas exitosas de una API inexistente.
+`.github/workflows/ci.yml`: PR hacia main/dev, push a esas ramas y dispatch manual. Permisos de lectura; sin OIDC, secretos ni credenciales AWS.
 
-Cuando se agregue aplicación, requiere también lockfile/cdk.json y el contrato de scripts: `lint` sin --fix, `test -- --ci --runInBand`, `test:e2e`, `build`, `cdk -- synth --no-lookups --context stage=test`. Este contrato es futuro, no comandos ya disponibles. Las pruebas deben ignorar .env, usar configuración ficticia y bloquear proveedores/red externa por defecto, tanto si el runtime elegido es Nest como si usa handlers nativos. Adaptar runner/scripts expresamente si cambia la elección.
+El job documentation valida pares/enlaces y ejecuta cinco pruebas de `scripts/ci_scope.py` y siete de las validaciones de identidad/reglas del workflow de merge. La detección informa aplicación e infraestructura por separado: package.json requiere lock, tsconfig y entrada real; restos de aplicación sin manifiesto fallan. cdk.json activa infraestructura y exige sus scripts específicos.
 
-El job agregado `verify` es el check obligatorio configurado en GitHub, ligado a la App GitHub Actions. Falla si documentación o aplicación presente fallan. En etapa documental, el job application se omite y el summary lo aclara. La validación local se hace con `python3 scripts/check_docs.py` y actionlint disponible en el entorno del mantenedor.
+Application ejecuta `npm ci --ignore-scripts`, `typecheck`, `build`, `test` y `test:package` en Node 24.22.1 LTS. El runner nativo reemplaza el contrato Jest anterior; no hay lint con --fix ni modificación automática de fuentes. El cerco de red se carga antes de la aplicación, con configuración ficticia y ambiente sin credenciales heredadas. [Cobertura parcial](application.es.md).
+
+Infrastructure se omite mientras no exista cdk.json. Cuando exista, ejecutará `test:infra` y `cdk -- synth --no-lookups --context stage=test`. Agregar aplicación no exige CDK ficticio.
+
+El check obligatorio sigue llamándose `verify`, ligado a GitHub Actions: exige documentation exitosa y éxito de cada ámbito presente; solo admite skipped para un ámbito ausente. El job de aplicación debe aprobar completo. El summary distingue aplicación y synth; no declara infraestructura comprobada si falta la stack.
+
+Validación local: `npm run check`, `python3 -m unittest discover -s scripts -p 'test_*.py'` y actionlint. La CI de la base se comprobó también en el PR #4; cada nuevo head debe volver a aprobar los checks requeridos.
 
 ## Preparación de despliegue test
 
@@ -29,21 +35,21 @@ No contiene execute-change-set, deploy directo, bootstrap, destroy, imports clou
 
 ## Merges y sincronización de dev
 
-`.github/workflows/merge.yml`: dispatch desde main o dev, `MERGE_WORKFLOW_ENABLED=true`, environment `merge`, PR existente y SHA completo revisado. Verifica PR abierto/no draft, mismo repo, base main/dev y origen permitido; consulta checks requeridos y solicita el merge por API con `merge_method=merge` y `sha` exacto, sin --admin. GitHub aplica sus reglas al token de la App.
+El workflow `.github/workflows/merge.yml` exige dispatch por matigaleanodev desde main/dev, environment merge, PR existente del mismo repositorio y SHA completo revisado. Valida checks con GITHUB_TOKEN de solo lectura y usa `MERGE_USER_TOKEN` exclusivamente para comprobar la identidad y solicitar el merge por API. Rechaza bots, otra cuenta, acceso insuficiente o bypass amplio; confirma merged_by y el commit devueltos por GitHub. No altera autoría ni fechas del merge y no tiene fallback al token de instalación.
 
-Obtiene token de la **GitHub App privada dedicada** `matigaleanodev-portfolio-merge` (5461240), instalada solo en este repo. Permisos: Contents/Pull requests/Workflows write; Checks/Metadata read. Las variables de repositorio MERGE_APP_ID y MERGE_WORKFLOW_ENABLED están configuradas. La clave está en MERGE_APP_PRIVATE_KEY del environment `merge`, limitado a ramas main/dev; su copia local queda fuera de Git con permisos privados. El ID de la App es el único bypass `pull_request` del ruleset de updates; PR/CI conserva cero bypass. [Reglas efectivas](branch-protection.es.md).
+MERGE_USER_TOKEN está provisionado con la credencial OAuth de usuario existente, verificada como matigaleanodev, sin ampliar scopes. El PR #5 instaló el mecanismo mediante una última integración por la App. El actor de updates es ahora User 99203645, solo pull_request; PR/CI sigue sin bypass. El environment conserva main/dev y no admite ejecución desde feat/. [Credencial, permisos, comprobaciones y limitaciones de la transición](integration.es.md).
 
-Para sincronizar main→dev sin violar el requisito de estar actualizado, crear una rama release/sync-main-to-dev desde dev, integrar main en esa rama de trabajo, abrir PR release/...→dev y pasarlo por este mismo workflow con su head revisado. Un PR directo main→dev puede quedar detrás de dev por sus merge commits propios. Aplicar el mismo criterio de rama basada en destino a otros cruces protegidos cuando corresponda. No hay push directo, force, PAT, merge automático al margen de los checks ni creación automática de PR mediante token. **dev no se declara espejo SHA exacto de main**: un merge commit puede darle historia propia; si se quiere espejo exacto se necesita un mecanismo compatible con esa política. No se configura `can_approve_pull_request_reviews`; la App no aprueba reviews.
+Para sincronizar main→dev, mantener una rama release/sync-main-to-dev basada en dev, integrar main allí y abrir PR a dev. No hacer push directo, force, merge manual ni --admin. dev no se declara espejo SHA exacto de main: conserva merge commits propios.
 
 ## Pendientes operativos
 
-El repositorio tiene dev como rama predeterminada; main todavía no existe. La App y el environment de merge están configurados y su alcance fue verificado. La primera ejecución se registra en el PR #2; la configuración por sí sola no demuestra un merge exitoso. Siguen pendientes el environment test-plan, la implementación npm/stack y los roles/bootstrap. El despliegue no se validó end-to-end. La integración inicial del PR #1 consumió la excepción temporal limitada a dev descrita en [protección de ramas](branch-protection.es.md).
+El repositorio tiene dev como rama predeterminada; main todavía no existe. El environment de merge conserva main/dev; el workflow usa identidad de usuario tras la transición del PR #5. La primera ejecución se registra en el PR #2; la configuración por sí sola no demuestra un merge exitoso. Siguen pendientes el environment test-plan, la implementación de stack y los roles/bootstrap. El despliegue no se validó end-to-end. La integración inicial del PR #1 consumió la excepción temporal limitada a dev descrita en [protección de ramas](branch-protection.es.md).
 
 Branches: solo feat/, fix/, release/; codex/ prohibido. main/dev se integran por PR fusionado desde workflow. Mantener ejecución serial, permisos por job y artifacts/versiones inmutables. Producción continúa fuera del alcance.
 
 ## Evidencia local separada
 
-La comparación local ejecutó pruebas con mocks y ensayó una detección separada de aplicación/CDK. Esos cambios de workflow, scripts y paquetes no forman parte de estos commits documentales y se descartaron del checkout. El siguiente incremento debe adaptar expresamente la CI a la estructura inicial y evitar exigir una stack ficticia solo por incorporar package.json. [Estado y límites](local-runtime.es.md).
+Los cambios del experimento fueron descartados. Esta base incorpora una nueva detección aplicación/infraestructura con pruebas propias; no recupera los scripts comparativos. El plan test conserva sus restricciones de repo, rama, environment, roles, identidad y changeset. Sus comandos ahora coinciden con typecheck, build, test y test:package; test:infra y CDK siguen siendo requisitos futuros. [Base local](application.es.md).
 
 ## Recuperación del primer merge con App
 

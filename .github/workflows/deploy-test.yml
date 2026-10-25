@@ -44,13 +44,14 @@ jobs:
           [[ "$TEST_CDK_DEPLOY_ROLE_ARN" == arn:aws:iam::650387442642:role/PortfolioApiCloudTestCdkDeployRole ]]
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '24.22.1'
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test -- --ci --runInBand
-      - run: npm run test:e2e
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm test
       - run: npm run build
+      - run: npm run test:package
+      - run: npm run test:infra
       - run: npm run cdk -- synth --no-lookups --context stage=test
       - name: Validate the synthesized target
         run: |

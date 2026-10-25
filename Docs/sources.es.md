@@ -55,3 +55,21 @@ La auditoría enlaza los repositorios y commits inspeccionados. La evidencia de 
 ## Evidencia propia del experimento
 
 [Procedencia, hashes y muestras](runtime-evidence.es.md) y [método/resultados](local-runtime.es.md), obtenidos el 24/10/2026 en WSL. El adaptador de comparación fue [serverless-express](https://github.com/CodeGenieApp/serverless-express). Son evidencia local, separada de fuentes de precios y documentación AWS. El código experimental se descarta; no se publica como estructura inicial de la API.
+
+## Fuentes de la base local
+
+- [Eventos y respuesta HTTP API v2](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)
+- [TypeScript strict](https://www.typescriptlang.org/tsconfig/strict.html)
+- [Runner de tests Node 22](https://nodejs.org/docs/latest-v22.x/api/test.html)
+- [Registro npm: TypeScript 6.0.3](https://registry.npmjs.org/typescript/6.0.3)
+- [Procedencia, dependencias y cobertura actual](application.es.md)
+
+El formato de eventos y strict se contrastaron con documentación primaria. Versiones, engines y licencias se consultaron en metadata npm; la compatibilidad se comprobó ejecutando Node 22.23.4 y 24.19.0. La selección del compilador JS 6 evita dependencias binarias por plataforma que reporta TypeScript 7.0.2.
+
+## Actualización de Node e integración
+
+- [LTS vigente: Node 24.22.1](https://nodejs.org/en/blog/release/v24.22.1)
+- [LTS frente a Current](https://nodejs.org/en/about/previous-releases)
+- [Identidad humana, credenciales y rulesets](integration.es.md)
+
+Al 24/10/2026 se verificó Node 24.22.1 como última LTS y Node 26 como Current; se ejecutó la nueva suite en 24.22.1. Los resultados históricos del experimento no se modifican.

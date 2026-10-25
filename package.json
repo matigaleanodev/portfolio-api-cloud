@@ -1,0 +1,23 @@
+{
+  "name": "portfolio-api-cloud",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": "^24.22.1"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/test.mjs",
+    "check:docs": "python3 scripts/check_docs.py",
+    "check": "npm run typecheck && npm run build && npm test && npm run test:package && npm run check:docs",
+    "test:package": "node scripts/test-package.mjs"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.164",
+    "@types/node": "24.19.2",
+    "typescript": "6.0.3"
+  }
+}

@@ -26,13 +26,13 @@ Serverless migration is decided. This plan covers Portfolio; Foodly Notes and Mo
 
 Stage 11 is the final step before production deployment. Knowledge and final-package checks belong to that same stage; no other delivery is inserted between its completion and production.
 
-## Next increment: initial structure
+## Stage 1 implemented locally
 
-Build a maintainable TypeScript handler and local-test foundation. The earlier experiment documented compatibility and Nest differences, but its sources/tooling are not included in this documentary delivery. Do not treat experimental structure as a completed production runtime.
+The foundation is implemented with health, explicit configuration/composition, strict types, ESM build, network guard and separate CI scopes. [Coverage, provenance and checks](application.md). The experiment remains historical evidence; its sources were not recovered.
 
 Review local files before reuse. Recover only necessary source files with commit, paths and hashes. Keep runtime free of transitive Nest/Express dependencies; retain class-validator/class-transformer or existing utilities when they reduce contract risk. Do not introduce a new framework, generic platform or multicloud layer.
 
-The first delivery must compile and test reproducibly without paid calls or remote writes. Incomplete logic remains explicitly pending, without fictitious successful production paths.
+The next stage incrementally recovers logic/DTOs from the pinned SHA and implements a business slice using mocks. Five routes remain 404; complete compatibility and hardening are required before exposure.
 
 ## Data, effects and coexistence
 

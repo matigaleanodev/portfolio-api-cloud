@@ -1,14 +1,20 @@
 # Prepared CI/CD
 
-[Español](ci-cd.es.md) · 2026-10-24. The workflows cover document validation, test planning and branch integration. This delivery versions documentation; the production application and stack are not implemented yet.
+[Español](ci-cd.es.md) · 2026-10-24. The workflows cover document validation, test planning and branch integration. The local foundation includes health and tests; business routes and the stack remain pending.
 
 ## CI
 
-`.github/workflows/ci.yml` handles PRs to main/dev, pushes to those branches and manual dispatch. Read-only permissions; no OIDC, secrets or AWS credentials. It validates document pairs/local links. Until package.json exists, the summary explicitly says application tests/build/synth did not run.
+`.github/workflows/ci.yml` handles PRs to main/dev, pushes to those branches and manual dispatch. Read-only permissions; no OIDC, secrets or AWS credentials.
 
-A future application requires lockfile/cdk.json plus this script contract: non-fixing `lint`, `test -- --ci --runInBand`, `test:e2e`, `build`, `cdk -- synth --no-lookups --context stage=test`. These commands do not exist yet. Tests must ignore .env, use dummy config and block real providers/network by default, whether the runtime is Nest or native handlers. Adapt the runner/script contract explicitly if selected tooling changes.
+The documentation job checks pairs/links and runs five tests of `scripts/ci_scope.py` and seven of merge-workflow identity/rule validation. Detection reports application and infrastructure independently: package.json requires a lock, tsconfig and real entry; orphan application files without a manifest fail. cdk.json activates infrastructure and requires its specific scripts.
 
-Aggregate job `verify` is the required GitHub check, bound to the GitHub Actions App. Documentation or present-application failure fails it. During documentation-only preparation the application job is skipped and clearly reported. Local validation uses `python3 scripts/check_docs.py` and the maintainer environment's actionlint.
+Application runs `npm ci --ignore-scripts`, `typecheck`, `build`, `test` and `test:package` on Node 24.22.1 LTS. The native runner replaces the previous Jest contract; no fixing lint or automatic source changes. The network guard loads before application code, with dummy configuration and no inherited credentials. [Partial coverage](application.md).
+
+Infrastructure skips until cdk.json exists. Once present it will run `test:infra` and `cdk -- synth --no-lookups --context stage=test`. Adding application code does not require placeholder CDK.
+
+The required check remains `verify`, bound to GitHub Actions: documentation must succeed and each present scope must pass; skipped is accepted only for an absent scope. The application job must pass in full. Its summary distinguishes application from synth and does not claim verified infrastructure without a stack.
+
+Local checks: `npm run check`, `python3 -m unittest discover -s scripts -p 'test_*.py'` and actionlint. Foundation CI was also verified in PR #4; every new head must pass required checks again.
 
 ## Test deployment preparation
 
@@ -29,21 +35,21 @@ There is no execute-change-set, direct deploy, bootstrap, destroy, existing-clou
 
 ## Merges and dev synchronization
 
-`.github/workflows/merge.yml` requires main or dev dispatch, MERGE_WORKFLOW_ENABLED=true, environment merge, an existing PR and full reviewed head SHA. It verifies open/nondraft state, same repository, protected base/allowed source, required checks and requests the merge through the API with `merge_method=merge` and the exact `sha`, without --admin. GitHub applies its rules to the App token.
+The `.github/workflows/merge.yml` workflow requires dispatch by matigaleanodev from main/dev, environment merge, an existing same-repository PR and a full reviewed SHA. It checks required checks with the read-only GITHUB_TOKEN and uses `MERGE_USER_TOKEN` only to verify identity and request the API merge. It rejects bots, other accounts, insufficient access or broad bypass and confirms GitHub's merged_by and commit. It changes no merge authorship or dates and has no installation-token fallback.
 
-It uses private **dedicated GitHub App** `matigaleanodev-portfolio-merge` (5461240), installed only on this repo. Permissions: Contents/Pull requests/Workflows write; Checks/Metadata read. Repository variables MERGE_APP_ID and MERGE_WORKFLOW_ENABLED are configured. The key is stored in MERGE_APP_PRIVATE_KEY within environment `merge`, restricted to main/dev branches; its local copy stays outside Git with private permissions. The App ID is the update ruleset's sole `pull_request` bypass; PR/CI retains zero bypass actors. [Effective rules](branch-protection.md).
+MERGE_USER_TOKEN is provisioned using the existing user OAuth credential, verified as matigaleanodev, without expanding scopes. PR #5 installed the mechanism through one final App merge. The update actor is now User 99203645, pull_request only; PR/CI still has no bypass. The environment retains main/dev and does not admit execution from feat/. [Credentials, permissions, checks and transition limits](integration.md).
 
-To synchronize main→dev while satisfying strict up-to-date checks, create release/sync-main-to-dev from dev, merge main into that work branch, open its PR to dev and dispatch this workflow with the reviewed head. Direct main→dev PRs may be behind dev because of its own merge commits. Use the same target-based work-branch approach for other protected-branch crossings when needed. No direct push/force/PAT, bypassed checks or token-created PR is used. **dev is not promised to be an exact-SHA main mirror**: merge commits may give it its own history; exact mirroring would require a compatible integration mechanism. can_approve_pull_request_reviews was not changed; the App does not approve reviews.
+To synchronize main→dev, retain a release/sync-main-to-dev branch based on dev, merge main there and open a PR to dev. No direct push, force, manual merge or --admin. dev is not declared an exact-SHA main mirror: it retains its own merge commits.
 
 ## Pending operational setup
 
-The repository uses dev as its default branch; main does not exist yet. The App and merge environment are configured and their scope has been verified. The first execution is tracked in PR #2; configuration alone does not demonstrate a successful merge. The test-plan environment, npm/stack implementation and AWS roles/bootstrap remain pending. Deployment has not been validated end to end. Initial PR #1 integration consumed the temporary dev-only exception described in [branch protection](branch-protection.md).
+The repository uses dev as its default branch; main does not exist yet. The merge environment retains main/dev; the workflow uses user identity after the PR #5 transition. The first execution is tracked in PR #2; configuration alone does not demonstrate a successful merge. The test-plan environment, stack implementation and AWS roles/bootstrap remain pending. Deployment has not been validated end to end. Initial PR #1 integration consumed the temporary dev-only exception described in [branch protection](branch-protection.md).
 
 Only feat/, fix/, release/ work branches; codex/ forbidden. main/dev integrate through workflow-merged PRs. Preserve serial execution, scoped job permissions and immutable artifacts/versions. Production remains outside scope.
 
 ## Separate local evidence
 
-The local comparison ran mocked tests and exercised separate application/CDK detection. Those workflow changes, scripts and packages are not part of these documentary commits and were discarded from the checkout. The next increment must explicitly adapt CI to the initial structure and avoid requiring a placeholder stack merely because package.json is added. [Status and limits](local-runtime.md).
+Experiment changes were discarded. This foundation adds new application/infrastructure detection with its own tests rather than recovering comparison scripts. The test plan retains repository, branch, environment, role, identity and change-set restrictions. Commands now match typecheck, build, test and test:package; test:infra and CDK remain future requirements. [Local foundation](application.md).
 
 ## Recovery of the first App merge
 
