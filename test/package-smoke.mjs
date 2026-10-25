@@ -2,8 +2,13 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { handler } from './dist/handler.js';
 import { createApplication } from './dist/application.js';
-import { readConfiguration, readContactConfiguration } from './dist/config.js';
+import {
+  readConfiguration,
+  readContactConfiguration,
+  readSubscriptionConfiguration,
+} from './dist/config.js';
 import { createContactSender, createResendProvider } from './dist/contact.js';
+import { createSubscriptionSender } from './dist/subscriptions.js';
 
 assert.equal(existsSync('node_modules'), true);
 
@@ -93,6 +98,42 @@ assert.equal(
   500,
 );
 
+const subscriptionConfig = readSubscriptionConfiguration({
+  PORTFOLIO_CLOUD_API_URL: ' https://cloud.example.invalid/base/// ',
+});
+const subscriptionCalls = [];
+const subscriptions = createApplication(
+  readConfiguration({}),
+  undefined,
+  createSubscriptionSender(subscriptionConfig, async (url, options) => {
+    subscriptionCalls.push(options.method);
+    assert.equal(url, 'https://cloud.example.invalid/base/subscriptions');
+    assert.equal(options.body, '{"email":"test@example.com"}');
+    return new Response('{"message":"ok","email":"test@example.com"}');
+  }),
+);
+
+for (const method of ['POST', 'DELETE']) {
+  const subscriptionEvent = {
+    ...event,
+    rawPath: '/api/subscriptions',
+    requestContext: { http: { method, sourceIp: '192.0.2.2' } },
+    body: '{"email":" TEST@Example.com "}',
+  };
+  const response = await subscriptions(subscriptionEvent);
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body, '{"message":"ok","email":"test@example.com"}');
+  assert.equal(response.headers['x-ratelimit-remaining'], '9');
+  assert.equal((await handler(subscriptionEvent)).statusCode, 500);
+
+  for (let index = 1; index < 10; index++)
+    assert.equal((await subscriptions(subscriptionEvent)).statusCode, 200);
+  assert.equal((await subscriptions(subscriptionEvent)).statusCode, 429);
+}
+assert.equal(subscriptionCalls.filter((method) => method === 'POST').length, 10);
+assert.equal(subscriptionCalls.filter((method) => method === 'DELETE').length, 10);
+await assert.rejects(fetch('https://example.invalid'), /Red y proveedores reales bloqueados/);
+
 console.log(
-  'Paquete ESM verificado fuera del checkout: dependencias de producción, health/contacto, .env ignorado y red bloqueada.',
+  'Paquete ESM verificado fuera del checkout: dependencias de producción, health/contacto/suscripciones, cuotas, .env ignorado y red bloqueada.',
 );
