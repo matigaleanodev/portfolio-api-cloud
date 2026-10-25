@@ -79,3 +79,7 @@ Se adelantó la definición local de la etapa 5: CDK elegido, stack de test con 
 ## Actualización de fase 4
 
 El handler administrado usa cuotas compartidas, configuración de Secrets Manager validada antes de negocio, deadline total y cancelación de proveedores. Las descripciones de memoria local, configuración lazy/500 y timeouts parciales corresponden al traslado inicial o al adaptador de composición local. Los controles actuales y diferencias están en [endurecimiento](runtime-hardening.es.md); permisos/proxies/proveedores reales siguen pendientes de validación administrada.
+
+## Cierre local de infraestructura y preparación posterior
+
+Etapa 5 completa como implementación/diseño local, con retención de assembly y ampliación local de etapa 6. Las etapas 7–10 tienen [prerrequisitos y criterios documentados](deployment-design.es.md), sin provisioning, despliegue, validación administrada ni ensayo remoto de recuperación. La etapa 11 mantiene su lugar inmediatamente antes de producción.

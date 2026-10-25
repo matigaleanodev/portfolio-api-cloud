@@ -4,7 +4,7 @@
 
 **Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
 
-Vitest **5.0.5** runs all **539 cases**: 513 application, 12 tooling and 14 infrastructure cases. The original 155 node:test and 12 unittest cases were migrated. Production CI scripts remain Python and Vitest exercises their real validations against local fixtures. The package smoke remains an executable Node verifier without development dependencies.
+Vitest **5.0.5** runs all **558 cases**: 513 application, 27 tooling and 18 infrastructure cases. The original 155 node:test and 12 unittest cases were migrated. Production CI scripts remain Python and Vitest exercises their real validations against local fixtures. The package smoke remains an executable Node verifier without development dependencies.
 
 Case titles are Spanish with a **Given/When/Then** narrative (Dado/Cuando/Entonces). Historical fixtures retain their original values; readable titles describe the scenario without rewriting the baseline.
 
@@ -24,9 +24,9 @@ npm test
 | Quota                |     5 | window, blocking, logical expiry and IP independence                                 |
 | Isolation            |     5 | environment, composition and network fence                                           |
 | Subscriptions        |    82 | subscribe/unsubscribe: DTO, upstream, timeout, transport, quotas and composition     |
-| Tooling              |    12 | scope detection and real workflow validation with fake GitHub responses              |
+| Tooling              |    27 | scope detection and real workflow validation with fake GitHub responses              |
 | Hardening            |    57 | concurrency, global budget, sessions, startup, cancellation and fallback             |
-| Infrastructure       |    14 | resources, IAM, payload v2, limits, logs, roles and asset                            |
+| Infrastructure       |    18 | resources, IAM, payload v2, limits, logs, roles and asset                            |
 | Chat                 |   223 | DTO, FAQ, context/history, publication, AI, R2/local, caches, quotas and composition |
 
 The wrapper removes inherited environment values and disables AWS metadata and `.env` loading. Application/infrastructure projects load the network guard before imports, blocking providers, sockets, DNS and child processes. Tooling tests require local Python subprocesses, use a minimal environment and synthetic responses, and never execute gh/workflows. Compilation happens before the fence to preserve build decorator semantics.
@@ -40,3 +40,5 @@ Chat adds 223 tests: 59 DTO references, 18 domain/effect references, five conten
 ## Phase 4 update
 
 The managed handler uses shared quotas, Secrets Manager configuration validated before business, a total deadline and provider cancellation. Descriptions of local memory, lazy configuration/500 and partial timeouts refer to the initial migration or local composition adapter. [Hardening](runtime-hardening.md) records current controls and differences; effective permissions/proxies/providers still require managed validation.
+
+The phase 5/6 increment adds 19 tests: thirteen bundle tests, two preparation workflow tests and four infrastructure assertions. [Design and subsequent criteria](deployment-design.md).

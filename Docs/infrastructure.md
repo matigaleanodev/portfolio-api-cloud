@@ -37,3 +37,7 @@ Required RuntimePermissionsBoundaryArn has no default and accepts only `arn:aws:
 The preparation workflow remains manually gated. Its command supplies the expected boundary ARN; the actual policy, reviewed bootstrap and configured roles are required before activation; it was not executed. [CI/CD](ci-cd.md). Eleven assertions and synth do not verify effective permissions, drift or deployed behavior.
 
 RuntimeSecretArn is mandatory without a default, restricted to portfolio-api-cloud/test/ in the fixed account/region. Runtime policy adds only GetItem/PutItem/UpdateItem on its table and GetSecretValue on that ARN. Neither the boundary nor the secret is created by the stack; effective permissions require review before preparing a change set.
+
+## Phase 5 local completion
+
+Table named portfolio-api-cloud-test-control and alarms portfolio-api-cloud-test-errors/throttles/duration scope the IAM design. The 18 assertions cover resources, exact runtime trust, allowed actions, invocation scope and absent additional resources. [External roles/bootstrap and preservation design](deployment-design.md). No external roles are provisioned or effective permissions established.

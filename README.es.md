@@ -23,7 +23,7 @@ npm run check
 
 `check` verifica el formato y ejecuta tipos estrictos, build ESM, tests sin red, smoke fuera del checkout y validación documental. Los comandos de verificación no corrigen fuentes. El paquete usa `dist/handler.js`, export `handler`, y requiere el `package.json` con `type: module`. Requiere `node_modules` de producción según el lock y `LICENSE`. No carga `.env`; la entrada Lambda lee CORS y referencias no secretas del ambiente y valida un snapshot de Secrets Manager antes de negocio. Health sigue disponible como liveness sin esas claves. [Contrato, procedencia y límites](Docs/contact.es.md).
 
-[Stack de test y requisitos](Docs/infrastructure.es.md) · [Casos de prueba en español](Docs/testing.es.md). Vitest ejecuta 539 casos (513 aplicación, 12 tooling, 14 infraestructura).
+[Stack de test y requisitos](Docs/infrastructure.es.md) · [Casos de prueba en español](Docs/testing.es.md). Vitest ejecuta 558 casos (513 aplicación, 27 tooling, 18 infraestructura).
 
 Formato legible con Prettier **3.9.10** y reglas explícitas en `.prettierrc.json`: 2 espacios, comillas simples, punto y coma, comas finales y ancho orientativo de 100 columnas. Los scripts separan preparación, ejecución y comprobación con líneas en blanco; Prettier conserva esa separación. `npm run format` aplica el formato; `npm run format:check` verifica sin modificar archivos y es obligatorio en CI. `.gitignore` y `.prettierignore` excluyen privados, generados, lock y fixture histórico con hash fijado.
 
@@ -66,4 +66,8 @@ Suscripciones utiliza PORTFOLIO_CLOUD_API_URL, leída únicamente al invocar esa
 
 La ubicación profesional del chat se corrige puntualmente a Posadas, Misiones, Argentina, con diferencia explícita frente al SHA fijado. FAQ y contexto también incluyen el correo profesional contacto@matiasgaleano.dev desde un único dato compartido. El resto del contenido conserva su alcance anterior y la renovación editorial general sigue inmediatamente antes de producción. [Detalle y referencias históricas](Docs/chat.es.md).
 
-La fase 4 implementa el control compartido del handler administrado. La suite actual tiene 539 pruebas: 513 de aplicación, 12 de tooling y 14 de infraestructura. [Configuración, presupuesto global, sesiones, fallback y límites de validación](Docs/runtime-hardening.es.md).
+La fase 4 implementa el control compartido del handler administrado. La suite actual tiene 558 pruebas: 513 de aplicación, 27 de tooling y 18 de infraestructura. [Configuración, presupuesto global, sesiones, fallback y límites de validación](Docs/runtime-hardening.es.md).
+
+## Infraestructura y entrega revisables
+
+La etapa 5 se completa como diseño local; la etapa 6 incorpora retención del assembly y pruebas del plan. [Trust, PassRole, boundaries, bootstrap mínimo y recuperación](Docs/deployment-design.es.md). La preparación AWS y la validación administrada siguen pendientes.

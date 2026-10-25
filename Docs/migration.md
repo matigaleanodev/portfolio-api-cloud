@@ -79,3 +79,7 @@ Stage 5 local definition was brought forward: CDK selected, IAM-isolated test st
 ## Phase 4 update
 
 The managed handler uses shared quotas, Secrets Manager configuration validated before business, a total deadline and provider cancellation. Descriptions of local memory, lazy configuration/500 and partial timeouts refer to the initial migration or local composition adapter. [Hardening](runtime-hardening.md) records current controls and differences; effective permissions/proxies/providers still require managed validation.
+
+## Local infrastructure completion and subsequent preparation
+
+Phase 5 complete as local implementation/design, with assembly retention and local phase 6 additions. Phases 7–10 have [documented prerequisites and criteria](deployment-design.md), without provisioning, deployment, managed validation or remote recovery rehearsal. Phase 11 remains immediately before production.

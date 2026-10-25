@@ -120,3 +120,9 @@ sessionId and history come from the client and currently establish neither a ses
 ## ADR-015 — Shared controls, deadline and packaged fallback
 
 Status: **implemented locally; not deployed**. DynamoDB CAS for quotas and a transaction for AI admission; 25-second total deadline with cancellation; validated secret and bounded refresh; v1 fallback with checksum and maximum age; logs without PII and alarms without actions. DynamoDB and Secrets Manager SDKs are pinned at 3.1156.0. The memory limiter remains only a local composition adapter. [Decisions, configuration and exit criteria](runtime-hardening.md).
+
+## ADR-016 — Reviewable delivery and assembly recovery
+
+Status: **locally implemented and verified; managed preparation pending**.
+
+I kept one grouped function and the existing CDK. The assembly is retained with a hash inventory and revision, without rebuilding during recovery. I separated trust/PassRole/boundaries by responsibility in the [delivery design](deployment-design.md). Final administrative policies are materialized and verified in phase 7; production, secrets and shared controls are not restored from the bundle.

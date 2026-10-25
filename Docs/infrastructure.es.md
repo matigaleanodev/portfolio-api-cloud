@@ -46,6 +46,10 @@ El synthesizer usa qualifier `papiatest`, bucket esperado `cdk-papiatest-assets-
 
 La boundary obligatoria es `arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary`, recibida en `RuntimePermissionsBoundaryArn` sin default. Revisar su contenido y permisos/trust/PassRole/bootstrap antes de cualquier ejecución. No usar el bootstrap por defecto con AdministratorAccess. No se necesita rol de publicación Docker para este asset.
 
-El workflow de preparación permanece manual, con environment y activación explícita. El comando proporciona el ARN de boundary esperado; antes de habilitarlo se debe revisar/provisionar esa política, el bootstrap y los roles; no se ejecutó. [CI/CD](ci-cd.es.md). La síntesis y 14 assertions no demuestran permisos efectivos, ausencia de drift ni funcionamiento del servicio desplegado.
+El workflow de preparación permanece manual, con environment y activación explícita. El comando proporciona el ARN de boundary esperado; antes de habilitarlo se debe revisar/provisionar esa política, el bootstrap y los roles; no se ejecutó. [CI/CD](ci-cd.es.md). La síntesis y 18 assertions no demuestran permisos efectivos, ausencia de drift ni funcionamiento del servicio desplegado.
 
 RuntimeSecretArn es obligatorio, sin default, y restringido al secreto portfolio-api-cloud/test/ en la cuenta/región fijadas. La política runtime suma únicamente GetItem/PutItem/UpdateItem sobre su tabla y GetSecretValue sobre ese ARN. Ni la boundary ni el secreto se crean en la stack; sus permisos efectivos deben revisarse antes de preparar un changeset.
+
+## Cierre local de etapa 5
+
+Tabla con nombre portfolio-api-cloud-test-control y alarmas portfolio-api-cloud-test-errors/throttles/duration para acotar el diseño IAM. Las 18 assertions cubren recursos, trust runtime exacto, acciones permitidas, alcance de invocación y ausencia de recursos adicionales. [Diseño externo de roles/bootstrap y conservación](deployment-design.es.md). No se provisionan roles externos ni se comprueban permisos efectivos.
