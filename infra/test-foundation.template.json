@@ -280,6 +280,10 @@
                 "lambda:CreateFunction",
                 "lambda:GetFunction",
                 "lambda:GetFunctionConfiguration",
+                "lambda:GetFunctionCodeSigningConfig",
+                "lambda:GetFunctionRecursionConfig",
+                "lambda:GetRuntimeManagementConfig",
+                "lambda:GetFunctionScalingConfig",
                 "lambda:UpdateFunctionCode",
                 "lambda:UpdateFunctionConfiguration",
                 "lambda:DeleteFunction",
@@ -308,7 +312,11 @@
                 "dynamodb:UpdateTimeToLive",
                 "dynamodb:TagResource",
                 "dynamodb:UntagResource",
-                "dynamodb:ListTagsOfResource"
+                "dynamodb:ListTagsOfResource",
+                "dynamodb:DescribeContinuousBackups",
+                "dynamodb:DescribeContributorInsights",
+                "dynamodb:DescribeKinesisStreamingDestination",
+                "dynamodb:GetResourcePolicy"
               ],
               "Resource": [
                 "arn:aws:dynamodb:us-east-1:650387442642:table/portfolio-api-cloud-test-control"
@@ -323,7 +331,8 @@
                 "logs:DeleteRetentionPolicy",
                 "logs:TagResource",
                 "logs:UntagResource",
-                "logs:ListTagsForResource"
+                "logs:ListTagsForResource",
+                "logs:GetDataProtectionPolicy"
               ],
               "Resource": [
                 "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test",
@@ -333,7 +342,11 @@
             {
               "Sid": "DiscoverLogGroups",
               "Effect": "Allow",
-              "Action": ["logs:DescribeLogGroups"],
+              "Action": [
+                "logs:DescribeLogGroups",
+                "logs:DescribeResourcePolicies",
+                "logs:DescribeIndexPolicies"
+              ],
               "Resource": ["*"],
               "Condition": {
                 "StringEquals": {
@@ -347,7 +360,10 @@
               "Action": [
                 "cloudwatch:PutMetricAlarm",
                 "cloudwatch:DeleteAlarms",
-                "cloudwatch:DescribeAlarms"
+                "cloudwatch:DescribeAlarms",
+                "cloudwatch:TagResource",
+                "cloudwatch:UntagResource",
+                "cloudwatch:ListTagsForResource"
               ],
               "Resource": [
                 "arn:aws:cloudwatch:us-east-1:650387442642:alarm:portfolio-api-cloud-test-*"
@@ -375,7 +391,8 @@
                 "iam:DeleteRolePolicy",
                 "iam:ListRolePolicies",
                 "iam:TagRole",
-                "iam:UntagRole"
+                "iam:UntagRole",
+                "iam:ListAttachedRolePolicies"
               ],
               "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntimeRole"]
             },
@@ -448,6 +465,62 @@
                         }
                       ],
                       ["arn:aws:apigateway:us-east-1::/apis/*"]
+                    ]
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Fn::If": [
+                "ApiManagementEnabled",
+                {
+                  "Sid": "ManageApiTags",
+                  "Effect": "Allow",
+                  "Action": [
+                    "apigateway:GET",
+                    "apigateway:POST",
+                    "apigateway:PATCH",
+                    "apigateway:PUT",
+                    "apigateway:DELETE"
+                  ],
+                  "Resource": {
+                    "Fn::If": [
+                      "HasApiId",
+                      [
+                        {
+                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/${TestApiId}"
+                        },
+                        {
+                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/${TestApiId}/*"
+                        },
+                        {
+                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/${TestApiId}"
+                        },
+                        {
+                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/${TestApiId}/*"
+                        },
+                        {
+                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F${TestApiId}"
+                        },
+                        {
+                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F${TestApiId}%2F*"
+                        },
+                        {
+                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F${TestApiId}"
+                        },
+                        {
+                          "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F${TestApiId}%2F*"
+                        }
+                      ],
+                      [
+                        "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/*",
+                        "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/*",
+                        "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F*",
+                        "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F*"
+                      ]
                     ]
                   }
                 },
@@ -723,6 +796,10 @@
                     "lambda:CreateFunction",
                     "lambda:GetFunction",
                     "lambda:GetFunctionConfiguration",
+                    "lambda:GetFunctionCodeSigningConfig",
+                    "lambda:GetFunctionRecursionConfig",
+                    "lambda:GetRuntimeManagementConfig",
+                    "lambda:GetFunctionScalingConfig",
                     "lambda:UpdateFunctionCode",
                     "lambda:UpdateFunctionConfiguration",
                     "lambda:DeleteFunction",
@@ -751,7 +828,11 @@
                     "dynamodb:UpdateTimeToLive",
                     "dynamodb:TagResource",
                     "dynamodb:UntagResource",
-                    "dynamodb:ListTagsOfResource"
+                    "dynamodb:ListTagsOfResource",
+                    "dynamodb:DescribeContinuousBackups",
+                    "dynamodb:DescribeContributorInsights",
+                    "dynamodb:DescribeKinesisStreamingDestination",
+                    "dynamodb:GetResourcePolicy"
                   ],
                   "Resource": [
                     "arn:aws:dynamodb:us-east-1:650387442642:table/portfolio-api-cloud-test-control"
@@ -766,7 +847,8 @@
                     "logs:DeleteRetentionPolicy",
                     "logs:TagResource",
                     "logs:UntagResource",
-                    "logs:ListTagsForResource"
+                    "logs:ListTagsForResource",
+                    "logs:GetDataProtectionPolicy"
                   ],
                   "Resource": [
                     "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test",
@@ -776,7 +858,11 @@
                 {
                   "Sid": "DiscoverLogGroups",
                   "Effect": "Allow",
-                  "Action": ["logs:DescribeLogGroups"],
+                  "Action": [
+                    "logs:DescribeLogGroups",
+                    "logs:DescribeResourcePolicies",
+                    "logs:DescribeIndexPolicies"
+                  ],
                   "Resource": ["*"],
                   "Condition": {
                     "StringEquals": {
@@ -790,7 +876,10 @@
                   "Action": [
                     "cloudwatch:PutMetricAlarm",
                     "cloudwatch:DeleteAlarms",
-                    "cloudwatch:DescribeAlarms"
+                    "cloudwatch:DescribeAlarms",
+                    "cloudwatch:TagResource",
+                    "cloudwatch:UntagResource",
+                    "cloudwatch:ListTagsForResource"
                   ],
                   "Resource": [
                     "arn:aws:cloudwatch:us-east-1:650387442642:alarm:portfolio-api-cloud-test-*"
@@ -818,7 +907,8 @@
                     "iam:DeleteRolePolicy",
                     "iam:ListRolePolicies",
                     "iam:TagRole",
-                    "iam:UntagRole"
+                    "iam:UntagRole",
+                    "iam:ListAttachedRolePolicies"
                   ],
                   "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntimeRole"]
                 },
@@ -891,6 +981,62 @@
                             }
                           ],
                           ["arn:aws:apigateway:us-east-1::/apis/*"]
+                        ]
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                },
+                {
+                  "Fn::If": [
+                    "ApiManagementEnabled",
+                    {
+                      "Sid": "ManageApiTags",
+                      "Effect": "Allow",
+                      "Action": [
+                        "apigateway:GET",
+                        "apigateway:POST",
+                        "apigateway:PATCH",
+                        "apigateway:PUT",
+                        "apigateway:DELETE"
+                      ],
+                      "Resource": {
+                        "Fn::If": [
+                          "HasApiId",
+                          [
+                            {
+                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/${TestApiId}"
+                            },
+                            {
+                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/${TestApiId}/*"
+                            },
+                            {
+                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/${TestApiId}"
+                            },
+                            {
+                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/${TestApiId}/*"
+                            },
+                            {
+                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F${TestApiId}"
+                            },
+                            {
+                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F${TestApiId}%2F*"
+                            },
+                            {
+                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F${TestApiId}"
+                            },
+                            {
+                              "Fn::Sub": "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F${TestApiId}%2F*"
+                            }
+                          ],
+                          [
+                            "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/apis/*",
+                            "arn:aws:apigateway:us-east-1::/tags/arn:aws:apigateway:us-east-1::/v2/apis/*",
+                            "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fapis%2F*",
+                            "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fv2%2Fapis%2F*"
+                          ]
                         ]
                       }
                     },
