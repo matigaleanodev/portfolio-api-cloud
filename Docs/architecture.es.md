@@ -4,7 +4,7 @@
 
 ## Recomendación
 
-La migración a serverless está decidida. Construir la API con **handlers TypeScript**, conservando contratos, dominio, contenido y proveedores. NestJS/Express adaptado queda como referencia del [experimento local](local-runtime.es.md). **AWS CDK v2 con TypeScript** sigue como herramienta de infraestructura preferida; su decisión final y bootstrap permanecen abiertos. Candidata de infraestructura común: **una Lambda Event Function**, fuera de VPC, detrás de **API Gateway HTTP API regional**, sin dominio productivo durante pruebas. El tamaño real (seis rutas, sin DB ni workers) no justifica repartir por endpoint.
+La migración a serverless está decidida. Construir la API con **handlers TypeScript**, conservando contratos, dominio, contenido y proveedores. NestJS/Express adaptado queda como referencia del [experimento local](local-runtime.es.md). **AWS CDK v2 con TypeScript** queda elegido; la [stack de test](infrastructure.es.md) está definida y sintetizada localmente, sin bootstrap ni despliegue. Candidata de infraestructura común: **una Lambda Event Function**, fuera de VPC, detrás de **API Gateway HTTP API regional**, sin dominio productivo durante pruebas. El tamaño real (seis rutas, sin DB ni workers) no justifica repartir por endpoint.
 
 El control documental Nest separó bootstrap HTTP de listen y usó serverless-express 4.17.0 con metadata TypeScript. Ese prototipo se descartó después de registrar resultados; no es una dependencia requerida para la estructura inicial de handlers. La prueba local usó Node 24.19.0 en ambas variantes. La validación AWS futura debe fijar arquitectura/memoria y distinguir INIT de latencia de proveedores. [Método y límites](local-runtime.es.md).
 
@@ -56,7 +56,7 @@ No hay DB privada ni servicio interno que justifique VPC. La salida pública nec
 
 Los cuatro pueden definir recursos cuyo costo AWS es el mismo. CDK no vuelve gratis Lambda, logs, secrets o red. Tampoco es una emulación local. CloudFormation drift no cubre todo recurso/propiedad ni valida datos externos R2; una reversión del stack no recupera datos borrados.
 
-**Finalistas: CDK y SAM. Opción preferida: CDK.** Motivos: experiencia práctica del mantenedor, TypeScript compartido con Nest, policies explícitas y tests de infraestructura sin sumar SaaS. Permite dejar SAM existente independiente. La infraestructura se define de forma independiente y reproducible en este repositorio.
+**Elección cerrada: CDK. Comparación considerada: CDK y SAM.** Motivos: experiencia práctica del mantenedor, TypeScript compartido con Nest, policies explícitas y tests de infraestructura sin sumar SaaS. Permite dejar SAM existente independiente. La infraestructura se define de forma independiente y reproducible en este repositorio.
 
 **Desventajas:** bootstrap S3/ECR/roles requiere diseño de permisos y recursos; CLI/library/constructs suman versiones; bundling Nest no es automático; nuevos roles deben respetar boundaries y restricciones de acceso de la cuenta. La boundary del ejecutor no se aplica sola a los roles runtime.
 
@@ -66,7 +66,7 @@ Serverless CLI gratis y Dashboard gratis no son lo mismo. SST Console también e
 
 ## Estado y transición
 
-Se completó una comparación local de handlers y Nest adaptado con lógica de un SHA fijado, mocks y contratos diferenciales. Esta publicación contiene su documentación, no las fuentes ni herramientas del experimento. La base local actual implementa health y composición mínima; las cinco rutas de negocio siguen pendientes. [Implementación y cobertura parcial](application.es.md). [Evidencia](local-runtime.es.md).
+Se completó una comparación local de handlers y Nest adaptado con lógica de un SHA fijado, mocks y contratos diferenciales. Esta publicación contiene su documentación, no las fuentes ni herramientas del experimento. La aplicación local implementa health y contacto con composición explícita, validación/proveedor simulado y cuota local; las otras cuatro rutas de negocio siguen pendientes. [Sección de contacto y límites](contact.es.md). [Implementación y cobertura parcial](application.es.md). [Evidencia](local-runtime.es.md).
 
 Las tres APIs actuales siguen operativas durante toda la migración. Al finalizar y validar recuperación, EC2 se apaga y se conserva detenida, sin terminarla ni desmantelarla, junto con un backup recuperable. El mecanismo de corte y la restauración deben verificarse antes de ese apagado.
 

@@ -73,3 +73,40 @@ El formato de eventos y strict se contrastaron con documentación primaria. Vers
 - [Identidad humana, credenciales y rulesets](integration.es.md)
 
 Al 24/10/2026 se verificó Node 24.22.1 como última LTS y Node 26 como Current; se ejecutó la nueva suite en 24.22.1. Los resultados históricos del experimento no se modifican.
+
+## Fuentes del incremento de contacto
+
+- [Contrato, hashes, adaptaciones y pruebas](contact.es.md)
+- [Índice oficial Node: LTS frente a Current](https://nodejs.org/dist/index.json)
+- [Resend: envío REST de email](https://resend.com/docs/api-reference/emails/send-email)
+- [body-parser 2.4.0: metadata npm](https://registry.npmjs.org/body-parser/2.4.0)
+- [class-validator 0.15.1: metadata npm](https://registry.npmjs.org/class-validator/0.15.1)
+- [class-transformer 0.5.1: metadata npm](https://registry.npmjs.org/class-transformer/0.5.1)
+
+Metadata de versiones/licencias/engines consultada al implementar. La evidencia contractual nueva usa blobs y versiones fijados; sus casos finitos no reemplazan validación administrada ni implican paridad de toda la API.
+
+## Dependencias directas y cuota — 24/10/2026
+
+- [rate-limiter-flexible: API y mantenimiento](https://github.com/animir/node-rate-limiter-flexible)
+- [Opciones de duración y bloqueo](https://github.com/animir/node-rate-limiter-flexible/wiki/Options)
+- [Metadata npm 11.2.3](https://registry.npmjs.org/rate-limiter-flexible/11.2.3)
+- [Descargas npm: 24/9–23/10/2026](https://api.npmjs.org/downloads/point/2026-09-24:2026-10-23/rate-limiter-flexible)
+- [SDK oficial Resend para Node](https://resend.com/docs/send-with-nodejs)
+- [Resend 6.34.1: metadata](https://registry.npmjs.org/resend/6.34.1)
+- [Validación directa](https://github.com/typestack/class-validator)
+- [Transformación directa](https://github.com/typestack/class-transformer)
+- [Tipos y errores de body-parser](https://github.com/expressjs/body-parser)
+
+La selección conserva snapshots fechados de publicación/actividad/adopción; las descargas no son usuarios únicos. La validación usa directamente las dependencias. El cambio de cuota y tres diferencias respecto de ValidationPipe están registrados en [contacto](contact.es.md).
+
+## Vitest y stack CDK local — 24/10/2026
+
+Versiones verificadas en npm e instaladas en el lock: Vitest 5.0.5, aws-cdk 2.1146.1, aws-cdk-lib 2.274.0 y constructs 10.8.1. Solo desarrollo; la licencia de cada paquete permanece en su distribución.
+
+- [Vitest configuration](https://vitest.dev/config/).
+- [Vitest projects](https://vitest.dev/config/projects).
+- [Vitest mock utilities](https://vitest.dev/api/vi.html).
+- [CDK synth](https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-synth.html).
+- [DefaultStackSynthesizer](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.DefaultStackSynthesizer.html).
+- [CDK assertions](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.assertions-readme.html).
+- [CDK bootstrap](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html).

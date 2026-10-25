@@ -1,20 +1,20 @@
 # Prepared CI/CD
 
-[Español](ci-cd.es.md) · 2026-10-24. The workflows cover document validation, test planning and branch integration. The local foundation includes health and tests; business routes and the stack remain pending.
+[Español](ci-cd.es.md) · 2026-10-24. The workflows cover document validation, test planning and branch integration. The local application includes health and contact with tests; four business routes remain pending; the stack synthesizes locally.
 
 ## CI
 
 `.github/workflows/ci.yml` handles PRs to main/dev, pushes to those branches and manual dispatch. Read-only permissions; no OIDC, secrets or AWS credentials.
 
-The documentation job checks pairs/links and runs five tests of `scripts/ci_scope.py` and seven of merge-workflow identity/rule validation. Detection reports application and infrastructure independently: package.json requires a lock, tsconfig and real entry; orphan application files without a manifest fail. cdk.json activates infrastructure and requires its specific scripts.
+The documentation job validates language pairs/links and detects application/infrastructure separately. package.json requires lock, tsconfig and a real entry; orphan application files fail. cdk.json enables infrastructure and requires its scripts.
 
-Application runs `npm ci --ignore-scripts`, `typecheck`, `build`, `test` and `test:package` on Node 24.22.1 LTS. The native runner replaces the previous Jest contract; no fixing lint or automatic source changes. The network guard loads before application code, with dummy configuration and no inherited credentials. [Partial coverage](application.md).
+Application runs `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` and `test:package` on Node 24.22.1. Vitest runs 155 application cases and 12 tooling cases migrated from unittest. No fixing lint/source mutation. The network guard loads before application imports with no inherited credentials. [Coverage and QA report](testing.md).
 
-Infrastructure skips until cdk.json exists. Once present it will run `test:infra` and `cdk -- synth --no-lookups --context stage=test`. Adding application code does not require placeholder CDK.
+Infrastructure is active because cdk.json exists; it runs 11 `test:infra` cases and `cdk -- synth --no-lookups --context stage=test`, without AWS credentials. [Local stack and prerequisites](infrastructure.md).
 
 The required check remains `verify`, bound to GitHub Actions: documentation must succeed and each present scope must pass; skipped is accepted only for an absent scope. The application job must pass in full. Its summary distinguishes application from synth and does not claim verified infrastructure without a stack.
 
-Local checks: `npm run check`, `python3 -m unittest discover -s scripts -p 'test_*.py'` and actionlint. Foundation CI was also verified in PR #4; every new head must pass required checks again.
+Local checks: `npm run check` and actionlint. Foundation CI was also verified in PR #4; every new head must pass required checks again.
 
 ## Test deployment preparation
 
@@ -27,11 +27,13 @@ Environment setup must protect the environment and restrict OIDC to `repo:matiga
 - TEST_EXECUTION_ROLE_ARN: PortfolioApiCloudTestCloudFormationExecutionRole.
 - One stack: CDK ID PortfolioApiCloudTest, physical name portfolio-api-cloud-test, account 650387442642, us-east-1.
 
-The future synthesizer must configure cloudFormationExecutionRole and deployRoleArn separately. The workflow asserts cloudFormationExecutionRoleArn/assumeRoleArn in the manifest rather than passing the service execution role as CLI --role-arn. Asset-publishing roles and bootstrap trust require separate review before activation.
+The synthesizer configures cloudFormationExecutionRole and deployRoleArn separately. The workflow asserts cloudFormationExecutionRoleArn/assumeRoleArn in the manifest rather than passing the service execution role as CLI --role-arn. Asset-publishing roles and bootstrap trust require separate review before activation.
 
 The workflow checks files/scripts/tests/offline synth before authentication, verifies the assembly and exact identity, then uses `cdk deploy --method prepare-change-set` with a unique SHA/run name. **This is a future mutation:** it can publish S3/ECR assets/create a change set or preparatory stack even without executing infrastructure. It is not read-only and was not run. `--require-approval never` removes the CLI prompt; review is enforced through the environment and the change set.
 
 There is no execute-change-set, direct deploy, bootstrap, destroy, existing-cloud import or generic role. Executing the reviewed change set needs an execution step binding exact ARN/stack/SHA/assets/review. Default CDK diff can also create a change set; do not assume it is read-only in audits.
+
+The command supplies required `RuntimePermissionsBoundaryArn` with the expected ARN. Review/provision that boundary and constrained bootstrap/publishing roles before enabling preparation. The stack does not create these automatically. No preparation run occurred.
 
 ## Merges and dev synchronization
 
@@ -43,13 +45,13 @@ To synchronize main→dev, retain a release/sync-main-to-dev branch based on dev
 
 ## Pending operational setup
 
-The repository uses dev as its default branch; main does not exist yet. The merge environment retains main/dev; the workflow uses user identity after the PR #5 transition. The first execution is tracked in PR #2; configuration alone does not demonstrate a successful merge. The test-plan environment, stack implementation and AWS roles/bootstrap remain pending. Deployment has not been validated end to end. Initial PR #1 integration consumed the temporary dev-only exception described in [branch protection](branch-protection.md).
+The repository uses dev as its default branch; main does not exist yet. The merge environment retains main/dev; the workflow uses user identity after the PR #5 transition. The first execution is tracked in PR #2; configuration alone does not demonstrate a successful merge. The test-plan environment, AWS roles/bootstrap remain pending. Deployment has not been validated end to end. Initial PR #1 integration consumed the temporary dev-only exception described in [branch protection](branch-protection.md).
 
 Only feat/, fix/, release/ work branches; codex/ forbidden. main/dev integrate through workflow-merged PRs. Preserve serial execution, scoped job permissions and immutable artifacts/versions. Production remains outside scope.
 
 ## Separate local evidence
 
-Experiment changes were discarded. This foundation adds new application/infrastructure detection with its own tests rather than recovering comparison scripts. The test plan retains repository, branch, environment, role, identity and change-set restrictions. Commands now match typecheck, build, test and test:package; test:infra and CDK remain future requirements. [Local foundation](application.md).
+Experiment changes were discarded. This foundation adds new application/infrastructure detection with its own tests rather than recovering comparison scripts. The test plan retains repository, branch, environment, role, identity and change-set restrictions. Commands now match typecheck, build, test and test:package; test:infra and CDK now run local checks; their AWS prerequisites remain pending. [Local foundation](application.md).
 
 ## Recovery of the first App merge
 

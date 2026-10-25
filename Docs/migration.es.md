@@ -32,7 +32,7 @@ La base está implementada con health, configuración/composición explícitas, 
 
 Revisar los archivos locales antes de reutilizarlos. Recuperar del origen únicamente lo necesario, con commit, rutas y hashes. Mantener el runtime sin dependencias transitivas Nest/Express; conservar class-validator/class-transformer u otras utilidades existentes cuando reduzcan riesgo de cambiar contratos. No introducir un framework nuevo, plataforma genérica o capa multicloud.
 
-La siguiente etapa es recuperar progresivamente lógica/DTOs desde el SHA fijado e implementar una sección de negocio con mocks. Cinco rutas permanecen en 404; falta compatibilidad completa y endurecimiento antes de exposición.
+Las etapas 2/3 avanzaron con [contacto](contact.es.md): lógica/DTO y casos del SHA fijado, procedencia, proveedor simulado y cuota local. Cuatro rutas permanecen en 404. La siguiente sección completa otro contrato con mocks; falta compatibilidad completa y endurecimiento antes de exposición.
 
 ## Datos, efectos y convivencia
 
@@ -69,3 +69,7 @@ EC2 se apaga solo después de completar las tres migraciones, estabilizar y comp
 Definir contenido, destino y retención del respaldo: volúmenes/snapshots o AMI pertinentes, imágenes por digest, Compose/Traefik, scripts, configuración privada segura y dependencias de arranque/acceso. Los secretos no se copian a este repositorio. Los datos R2 se recuperan con el procedimiento de su owner, no con un snapshot EC2.
 
 El retorno desde una instancia detenida exige arranque y comprobación de red, volúmenes, Docker, acceso, ingress y health; no equivale al rollback inmediato durante convivencia. Los recursos y backups retenidos deben formar parte del costo total.
+
+## Avance local de infraestructura
+
+Se adelantó la definición local de la etapa 5: CDK elegido, stack de test con IAM y 11 assertions/synth sin lookups. No altera los requisitos de etapas 3/4 ni habilita test AWS o producción. [Recursos, paquete y prerrequisitos](infrastructure.es.md).

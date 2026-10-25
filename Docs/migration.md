@@ -32,7 +32,7 @@ The foundation is implemented with health, explicit configuration/composition, s
 
 Review local files before reuse. Recover only necessary source files with commit, paths and hashes. Keep runtime free of transitive Nest/Express dependencies; retain class-validator/class-transformer or existing utilities when they reduce contract risk. Do not introduce a new framework, generic platform or multicloud layer.
 
-The next stage incrementally recovers logic/DTOs from the pinned SHA and implements a business slice using mocks. Five routes remain 404; complete compatibility and hardening are required before exposure.
+Stages 2/3 progressed with [contact](contact.md): pinned logic/DTO/cases, provenance, mocked provider and local quota. Four routes remain 404. The next slice completes another contract with mocks; full compatibility and hardening remain required before exposure.
 
 ## Data, effects and coexistence
 
@@ -69,3 +69,7 @@ Stop EC2 only after all three migrations, stabilization and verified recovery. R
 Define backup contents/destination/retention: relevant volumes/snapshots or AMI, images by digest, Compose/Traefik, scripts, securely held private configuration and startup/access dependencies. Secrets are not copied to this repository. R2 data is recovered through its owner's procedure, not an EC2 snapshot.
 
 Returning from a stopped instance requires startup and validation of network, volumes, Docker, access, ingress and health; it is not immediate coexistence rollback. Retained resources and backups belong in total cost.
+
+## Local infrastructure progress
+
+Stage 5 local definition was brought forward: CDK selected, IAM-isolated test stack, 11 assertions and synth without lookups. This does not waive stages 3/4 or enable AWS test/production. [Resources, package and prerequisites](infrastructure.md).

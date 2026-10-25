@@ -4,7 +4,7 @@
 
 ## Recommendation
 
-Serverless migration is decided. Build the API with **TypeScript handlers**, preserving contracts, domain, content and providers. Adapted NestJS/Express remains the [local experiment](local-runtime.md) reference. **TypeScript AWS CDK v2** remains the preferred infrastructure tool; final selection and bootstrap are open. Common infrastructure candidate: **one Lambda Event Function outside a VPC behind regional API Gateway HTTP API**, using a separate test endpoint. Six routes without a database/workers do not justify one function per endpoint.
+Serverless migration is decided. Build the API with **TypeScript handlers**, preserving contracts, domain, content and providers. Adapted NestJS/Express remains the [local experiment](local-runtime.md) reference. **TypeScript AWS CDK v2** is selected; the [test stack](infrastructure.md) is defined and locally synthesized without bootstrap/deployment. Common infrastructure candidate: **one Lambda Event Function outside a VPC behind regional API Gateway HTTP API**, using a separate test endpoint. Six routes without a database/workers do not justify one function per endpoint.
 
 The documentary Nest control separated HTTP bootstrap from listen and used serverless-express 4.17.0 with TypeScript metadata. That prototype was discarded after results were recorded; it is not a dependency required by the initial handler structure. Local tests used Node 24.19.0 for both variants. Future AWS validation must fix architecture/memory and distinguish INIT from provider latency. [Method and limits](local-runtime.md).
 
@@ -56,7 +56,7 @@ No private database/internal service currently requires VPC connectivity. Public
 
 Tool choice does not remove AWS service charges. CDK is not a local AWS emulator. CloudFormation drift detection covers supported properties/resources, not all drift or external R2 data; stack rollback does not restore deleted data.
 
-**Finalists: CDK and SAM. Preferred option: CDK.** Reasons: maintainer experience, TypeScript shared with Nest, explicit policies and infrastructure assertions without mandatory SaaS. Existing SAM remains independent. Infrastructure is defined independently and reproducibly in this repository.
+**Selected: CDK. Compared finalists: CDK and SAM.** Reasons: maintainer experience, TypeScript shared with Nest, explicit policies and infrastructure assertions without mandatory SaaS. Existing SAM remains independent. Infrastructure is defined independently and reproducibly in this repository.
 
 **Costs of this choice:** S3/ECR/role bootstrap needs resource and permission design; CLI/library/construct versions add maintenance; Nest bundling is not automatic; new roles must respect account boundaries and access restrictions. Execution-role boundaries do not automatically constrain runtime roles.
 
@@ -66,7 +66,7 @@ Free Serverless CLI does not imply free Dashboard. SST Console is optional: curr
 
 ## Status and transition
 
-A local comparison of handlers and adapted Nest was completed using pinned logic, mocks and differential contracts. This publication contains its documentation, not experiment sources or tooling. The current local foundation implements health and minimal composition; the five business routes remain pending. [Implementation and partial coverage](application.md). [Evidence](local-runtime.md).
+A local comparison of handlers and adapted Nest was completed using pinned logic, mocks and differential contracts. This publication contains its documentation, not experiment sources or tooling. The local application implements health and contact with explicit composition, validation/mocked provider and local quota; the other four business routes remain pending. [Contact slice and limits](contact.md). [Implementation and partial coverage](application.md). [Evidence](local-runtime.md).
 
 All three current APIs remain operational throughout migration. After completion and verified recovery, EC2 will be stopped and retained without termination or dismantling, together with a recoverable backup. Traffic switching and restoration must be verified before shutdown.
 
