@@ -1,6 +1,6 @@
 # CI/CD preparado
 
-[English](ci-cd.md) · 24/10/2026. Los workflows cubren validación documental, preparación de test e integración de ramas. La aplicación local incluye health y contacto con pruebas; cuatro rutas de negocio siguen pendientes; la stack se sintetiza localmente.
+[English](ci-cd.md) · 25/10/2026. Los workflows cubren validación documental, preparación de test e integración de ramas. La aplicación local incluye health, contacto y suscripciones con pruebas; dos rutas de chat siguen pendientes; la stack se sintetiza localmente.
 
 ## CI
 
@@ -8,7 +8,7 @@
 
 El job documentation valida pares/enlaces y detecta aplicación e infraestructura por separado. package.json exige lock, tsconfig y entrada real; restos de aplicación sin manifiesto fallan. cdk.json activa infraestructura y exige sus scripts específicos.
 
-Application ejecuta `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` y `test:package` en Node 24.22.1. Vitest ejecuta 155 casos de aplicación y 12 de tooling migrados desde unittest. No hay lint con --fix ni modificación automática de fuentes. El cerco de red se carga antes de la aplicación, con ambiente sin credenciales heredadas. [Cobertura y reporte QA](testing.es.md).
+Application ejecuta `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` y `test:package` en Node 24.22.1. Vitest ejecuta 235 casos de aplicación y 12 de tooling migrados desde unittest. No hay lint con --fix ni modificación automática de fuentes. El cerco de red se carga antes de la aplicación, con ambiente sin credenciales heredadas. [Cobertura y reporte QA](testing.es.md).
 
 Infrastructure está activo porque ya existe cdk.json; ejecuta 11 casos en `test:infra` y `cdk -- synth --no-lookups --context stage=test`, sin credenciales AWS. [Stack local y prerrequisitos](infrastructure.es.md).
 

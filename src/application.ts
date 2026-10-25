@@ -3,16 +3,23 @@ import type { Configuration } from './config.js';
 import type { ContactDto } from './contact.dto.js';
 import { validateContact } from './contact.dto.js';
 import { parseBody, bodyError } from './body.js';
-import { createContactQuota } from './contact-quota.js';
+import { createQuota } from './quota.js';
+import { validateSubscription } from './subscriptions.dto.js';
+import { SubscriptionError, type SubscriptionSender } from './subscriptions.js';
 import { health } from './health.js';
 
 export function createApplication(
   config: Configuration,
   sendContact?: (dto: ContactDto) => Promise<void>,
+  sendSubscription?: SubscriptionSender,
 ) {
   const corsOrigins =
     typeof config.corsOrigins === 'boolean' ? config.corsOrigins : [...config.corsOrigins];
-  const contactQuota = createContactQuota();
+  const contactQuota = createQuota(5, 'contact');
+  const subscriptionQuotas = {
+    POST: createQuota(10, 'subscribe'),
+    DELETE: createQuota(10, 'unsubscribe'),
+  };
 
   return async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStructuredResultV2> => {
     const headers: Record<string, string> = {};
@@ -100,6 +107,43 @@ export function createApplication(
           error: 'Internal Server Error',
           statusCode: 500,
         });
+      }
+    }
+
+    if (
+      (method === 'POST' || method === 'DELETE') &&
+      /^\/api\/subscriptions\/?$/i.test(event.rawPath)
+    ) {
+      const quota = await subscriptionQuotas[method](event.requestContext.http.sourceIp);
+      Object.assign(headers, quota.headers);
+      if (quota.blocked)
+        return reply(429, {
+          statusCode: 429,
+          message: 'ThrottlerException: Too Many Requests',
+        });
+
+      try {
+        const { dto, errors } = validateSubscription(body);
+        if (errors.length)
+          return reply(400, { message: errors, error: 'Bad Request', statusCode: 400 });
+
+        if (!sendSubscription) throw new Error('Subscription provider is not configured');
+        return reply(200, await sendSubscription(method, dto));
+      } catch (error) {
+        if (error instanceof SubscriptionError) {
+          const names = { 400: 'Bad Request', 502: 'Bad Gateway', 503: 'Service Unavailable' };
+          if (!error.message)
+            return reply(error.statusCode, {
+              message: names[error.statusCode],
+              statusCode: error.statusCode,
+            });
+          return reply(error.statusCode, {
+            message: error.message,
+            error: names[error.statusCode],
+            statusCode: error.statusCode,
+          });
+        }
+        return reply(500, { statusCode: 500, message: 'Internal server error' });
       }
     }
 

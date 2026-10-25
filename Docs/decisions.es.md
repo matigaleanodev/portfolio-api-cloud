@@ -96,3 +96,7 @@ La selección no resuelve cuotas compartidas entre Lambdas: distribución/atomic
 ## ADR-011 — Vitest y stack local de test
 
 Estado: **implementados y verificados localmente**. Vitest 5.0.5 reemplaza node:test/unittest en las suites; títulos QA en español con Dado/Cuando/Entonces. CDK CLI 2.1146.1, library 2.274.0 y constructs 10.8.1 solo de desarrollo. Stack única de test, IAM, boundaries externas y roles separados; synth sin lookups. [Pruebas](testing.es.md) y [stack](infrastructure.es.md). Bootstrap, provisión de roles/secretos y despliegue no se ejecutaron.
+
+## ADR-012 — Suscripciones con HTTP nativo
+
+Estado: **sección local implementada; integración administrada pendiente**. POST/DELETE conservan body JSON, normalización, respuestas 200 y mapeos exactos del SHA auditado. fetch nativo explícito y AbortSignal.timeout(8000), sin dependencia nueva. Cuotas independientes 10/h/IP reutilizan RateLimiterMemory; contacto permanece en 5/h/IP. Las tres diferencias de validación aceptadas para contacto se declaran también aquí. Configuración lazy/500 y omisión de logs libres son diferencias explícitas; deadline total/distribución siguen pendientes. [Contrato, evidencia y procedencia](subscriptions.es.md).

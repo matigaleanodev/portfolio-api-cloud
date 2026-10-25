@@ -35,3 +35,15 @@ export function readContactConfiguration(
     toEmail: env.CONTACT_TO_EMAIL!,
   });
 }
+
+export interface SubscriptionConfiguration {
+  readonly baseUrl: string;
+}
+
+export function readSubscriptionConfiguration(
+  env: Readonly<Record<string, string | undefined>>,
+): SubscriptionConfiguration {
+  const value = env.PORTFOLIO_CLOUD_API_URL?.trim();
+  if (!value) throw new Error('Missing required environment variable: PORTFOLIO_CLOUD_API_URL');
+  return Object.freeze({ baseUrl: value.replace(/\/+$/, '') });
+}
