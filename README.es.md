@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-**Incremento vigente:** [primera instalación con dobles y circuito Actions](Docs/managed-validation.es.md), implementados localmente. main/v0.1.0 ya existen; provisioning, ejecución y validación administrada siguen pendientes.
+**Incremento vigente:** [primera instalación con dobles y circuito Actions](Docs/managed-validation.es.md), desplegada y comprobada en AWS con proveedores simulados. [Resultado del primer deploy privado](Docs/first-private-deploy.es.md). Las secciones de diseño y auditoría conservan su contexto previo.
 
 **Estado vigente de fase 4:** [controles del runtime](Docs/runtime-hardening.es.md), implementados y probados localmente: cuota compartida, presupuesto GLOBAL de IA, sesión/origen, cancelación, fallback versionado, configuración y observabilidad. Las referencias al traslado inicial conservan su evidencia histórica; no implican validación AWS.
 
@@ -10,7 +10,7 @@ Implementación alternativa de la API pública de Portfolio con handlers TypeScr
 
 ## Estado actual
 
-Aplicación local con composición explícita y entrada HTTP API v2: `GET /api/health` → 200 `{"status":"ok"}` y `POST /api/contact` → 204 vacío, con validación, honeypot, proveedor simulado en pruebas y cuota compartida 5/h/IP en el handler administrado. POST y DELETE /api/subscriptions devuelven 200 con normalización del email, proveedor HTTP y cuotas compartidas independientes de 10/h/IP. GET /api/chat/starters devuelve 200 y POST /api/chat devuelve 201 con FAQ/IA/fallback, historial y cuotas independientes de 20/min/IP. Los seis contratos tienen cobertura local; la integración administrada permanece pendiente. La stack CDK de test está definida y sintetizada localmente; no se desplegó.
+Aplicación local con composición explícita y entrada HTTP API v2: `GET /api/health` → 200 `{"status":"ok"}` y `POST /api/contact` → 204 vacío, con validación, honeypot, proveedor simulado en pruebas y cuota compartida 5/h/IP en el handler administrado. POST y DELETE /api/subscriptions devuelven 200 con normalización del email, proveedor HTTP y cuotas compartidas independientes de 10/h/IP. GET /api/chat/starters devuelve 200 y POST /api/chat devuelve 201 con FAQ/IA/fallback, historial y cuotas independientes de 20/min/IP. Los seis contratos tienen cobertura local y una comprobación administrada en la stack de test con proveedores simulados. La stack está desplegada con acceso IAM.
 
 El prototipo comparativo fue descartado. Sus [resultados](Docs/local-runtime.es.md) se conservan como evidencia histórica y no son mediciones de esta base, cold starts AWS ni prueba de ahorro mensual.
 
@@ -56,7 +56,7 @@ Formato legible con Prettier **3.9.10** y reglas explícitas en `.prettierrc.jso
 
 Las tres APIs actuales permanecen operativas durante toda la migración. Después de migrar y estabilizar las tres y validar recuperación, EC2 se apagará conservando instancia y backup recuperable. Sus recursos retenidos forman parte del costo total.
 
-La renovación de perfil/proyectos del bot sigue siendo el último paso previo al despliegue productivo. Las ramas main/dev requieren PR, CI y merge por workflow. La [integración atribuida a matigaleanodev](Docs/integration.es.md) utiliza una credencial de usuario y mantiene PR/CI obligatorios. CDK TypeScript queda elegido; roles/bootstrap y conmutación de tráfico permanecen abiertos.
+La renovación de perfil/proyectos del bot sigue siendo el último paso previo al despliegue productivo. Las ramas main/dev requieren PR, CI y merge por workflow. La [integración atribuida a matigaleanodev](Docs/integration.es.md) utiliza una credencial de usuario y mantiene PR/CI obligatorios. CDK TypeScript queda elegido; roles/bootstrap de test instalados; conmutación de tráfico pendiente.
 
 ## Licencia
 
@@ -72,10 +72,10 @@ La fase 4 implementa el control compartido del handler administrado. La suite ac
 
 ## Infraestructura y entrega revisables
 
-La etapa 5 se completa como diseño local; la etapa 6 incorpora retención del assembly y pruebas del plan. [Trust, PassRole, boundaries, bootstrap mínimo y recuperación](Docs/deployment-design.es.md). La preparación AWS y la validación administrada siguen pendientes.
+La etapa 5 se completa como diseño local; la etapa 6 incorpora retención del assembly y pruebas del plan. [Trust, PassRole, boundaries, bootstrap mínimo y recuperación](Docs/deployment-design.es.md). La primera validación privada en AWS está comprobada con proveedores simulados.
 
-[Preparación de etapas 6–10: controles Git, auditoría AWS, policies/bootstrap revisables y runbook](Docs/test-operations.es.md). Sin provisioning ni validación administrada.
+[Preparación de etapas 6–10: controles Git, auditoría AWS, policies/bootstrap revisables y runbook](Docs/test-operations.es.md). Runbook de diseño; el resultado actual está en el registro del primer deploy privado.
 
 ## Versiones
 
-[0.1.0 — primera revisión para inicializar main](Docs/releases/v0.1.0.es.md). El despliegue y la validación administrada siguen pendientes.
+[0.1.0 — primera revisión para inicializar main](Docs/releases/v0.1.0.es.md). Evidencia histórica de la release original; el primer deploy privado utiliza un artifact posterior.

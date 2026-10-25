@@ -2,7 +2,7 @@
 
 [Español](ci-cd.es.md) · 2026-10-25. The workflows cover document validation, test planning and branch integration. The local application includes all six contracts with tests; the stack synthesizes locally.
 
-**Current increment:** [first installation with doubles and Actions delivery](managed-validation.md), implemented locally. main/v0.1.0 exist; provisioning, execution and managed validation remain pending.
+**Current increment:** [first installation with doubles and Actions delivery](managed-validation.md), deployed and verified on AWS with simulated providers. [First private deployment result](first-private-deploy.md). Design and audit sections retain their earlier context.
 
 **Current phase 4 status:** [runtime controls](runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
 
@@ -12,9 +12,9 @@
 
 The documentation job validates language pairs/links and detects application/infrastructure separately. package.json requires lock, tsconfig and a real entry; orphan application files fail. cdk.json enables infrastructure and requires its scripts.
 
-Application runs `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` and `test:package` on Node 24.22.1. Vitest runs 513 application cases and 49 tooling cases. No fixing lint/source mutation. The network guard loads before application imports with no inherited credentials. [Coverage and cases](testing.md).
+Application runs `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` and `test:package` on Node 24.22.1. Vitest runs 529 application cases and 69 tooling cases. No fixing lint/source mutation. The network guard loads before application imports with no inherited credentials. [Coverage and cases](testing.md).
 
-Infrastructure is active because cdk.json exists; it runs 18 `test:infra` cases and `cdk -- synth --no-lookups --context stage=test`, without AWS credentials. [Local stack and prerequisites](infrastructure.md).
+Infrastructure is active because cdk.json exists; it runs 19 `test:infra` cases and `cdk -- synth --no-lookups --context stage=test`, without AWS credentials. [Local stack and prerequisites](infrastructure.md).
 
 The required check remains `verify`, bound to GitHub Actions: documentation must succeed and each present scope must pass; skipped is accepted only for an absent scope. The application job must pass in full. Its summary distinguishes application from synth and does not claim verified infrastructure without a stack.
 

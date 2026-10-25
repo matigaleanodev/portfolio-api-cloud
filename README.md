@@ -2,7 +2,7 @@
 
 [Español](README.es.md)
 
-**Current increment:** [first installation with doubles and Actions delivery](Docs/managed-validation.md), implemented locally. main/v0.1.0 exist; provisioning, execution and managed validation remain pending.
+**Current increment:** [first installation with doubles and Actions delivery](Docs/managed-validation.md), deployed and verified on AWS with simulated providers. [First private deployment result](Docs/first-private-deploy.md). Design and audit sections retain their earlier context.
 
 **Current phase 4 status:** [runtime controls](Docs/runtime-hardening.md), locally implemented and tested: shared quotas, GLOBAL AI budget, session/origin limits, cancellation, versioned fallback, configuration and observability. Initial migration references retain their historical evidence; they do not establish AWS validation.
 
@@ -10,7 +10,7 @@ Alternative implementation of Portfolio's public API using TypeScript handlers. 
 
 ## Current status
 
-Local application with explicit composition and HTTP API v2 events: `GET /api/health` → 200 `{"status":"ok"}` and `POST /api/contact` → empty 204, with validation, honeypot, a mocked provider in tests and local 5/h/IP quota. POST and DELETE /api/subscriptions return 200 with email normalization, an HTTP provider and independent local 10/h/IP quotas. GET /api/chat/starters returns 200 and POST /api/chat returns 201 with FAQ/AI/fallback, history and independent 20/min/IP quotas. All six contracts have local coverage; managed integration remains pending. The CDK test stack is defined and locally synthesized; it is not deployed.
+Local application with explicit composition and HTTP API v2 events: `GET /api/health` → 200 `{"status":"ok"}` and `POST /api/contact` → empty 204, with validation, honeypot, a mocked provider in tests and local 5/h/IP quota. POST and DELETE /api/subscriptions return 200 with email normalization, an HTTP provider and independent local 10/h/IP quotas. GET /api/chat/starters returns 200 and POST /api/chat returns 201 with FAQ/AI/fallback, history and independent 20/min/IP quotas. All six contracts have local coverage and a managed smoke check on the test stack with simulated providers. The stack is deployed with IAM access.
 
 The comparison prototype was discarded. Its [results](Docs/local-runtime.md) remain historical evidence, not measurements of this foundation, AWS cold starts or proof of monthly savings.
 
@@ -56,7 +56,7 @@ Readable formatting with Prettier **3.9.10** and explicit `.prettierrc.json` rul
 
 All three current APIs remain operational throughout migration. After all three migrate, stabilize and pass recovery validation, EC2 will be stopped with its instance and recoverable backup retained. Retained resources belong in total cost.
 
-Refreshing bot profile/project data remains the final step before production deployment. main/dev require PRs, CI and workflow merges. [Integration attributed to matigaleanodev](Docs/integration.md) uses a user credential while retaining mandatory PRs and CI. TypeScript CDK is selected; roles/bootstrap and traffic switching remain open.
+Refreshing bot profile/project data remains the final step before production deployment. main/dev require PRs, CI and workflow merges. [Integration attributed to matigaleanodev](Docs/integration.md) uses a user credential while retaining mandatory PRs and CI. TypeScript CDK is selected; test roles/bootstrap are installed; traffic switching remains pending.
 
 ## License
 
@@ -72,10 +72,10 @@ Phase 4 implements shared control for the managed handler. The current suite has
 
 ## Reviewable infrastructure and delivery
 
-Phase 5 is completed as local design; phase 6 adds assembly retention and plan tests. [Trust, PassRole, boundaries, minimum bootstrap and recovery](Docs/deployment-design.md). AWS preparation and managed validation remain pending.
+Phase 5 is completed as local design; phase 6 adds assembly retention and plan tests. [Trust, PassRole, boundaries, minimum bootstrap and recovery](Docs/deployment-design.md). The first private AWS validation is complete with simulated providers.
 
-[Phases 6–10 preparation: Git controls, AWS audit, reviewable policies/bootstrap and runbook](Docs/test-operations.md). No provisioning or managed validation.
+[Phases 6–10 preparation: Git controls, AWS audit, reviewable policies/bootstrap and runbook](Docs/test-operations.md). Design runbook; current results are recorded in the first private deployment log.
 
 ## Versions
 
-[0.1.0 — first revision for main initialization](Docs/releases/v0.1.0.md). Deployment and managed validation remain pending.
+[0.1.0 — first revision for main initialization](Docs/releases/v0.1.0.md). Historical evidence for the original release; the first private deployment uses a later artifact.
