@@ -13,9 +13,12 @@ import { ManagedPolicy, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-
 import { Architecture, Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { Construct } from 'constructs';
+
 export const TEST_ACCOUNT = '650387442642';
 export const TEST_REGION = 'us-east-1';
+
 const roleArn = (name: string) => `arn:aws:iam::${TEST_ACCOUNT}:role/PortfolioApiCloudTest${name}`;
+
 export class PortfolioApiStack extends Stack {
   constructor(scope: Construct) {
     if (scope.node.tryGetContext('stage') !== 'test')
@@ -31,22 +34,26 @@ export class PortfolioApiStack extends Stack {
         generateBootstrapVersionRule: true,
       }),
     });
+
     const boundary = new CfnParameter(this, 'RuntimePermissionsBoundaryArn', {
       type: 'String',
       allowedPattern: `arn:aws:iam::${TEST_ACCOUNT}:policy/PortfolioApiCloudTestRuntimeBoundary`,
       description:
         'Boundary de runtime previamente creada y revisada; no se provisiona por esta stack.',
     });
+
     const cors = new CfnParameter(this, 'CorsOrigin', {
       type: 'String',
       default: '',
       description: 'Origen de pruebas; vacío deshabilita CORS.',
     });
+
     const logs = new LogGroup(this, 'RuntimeLogs', {
       logGroupName: '/aws/lambda/portfolio-api-cloud-test',
       retention: RetentionDays.TWO_WEEKS,
       removalPolicy: RemovalPolicy.RETAIN,
     });
+
     const runtimeRole = new Role(this, 'RuntimeRole', {
       roleName: 'PortfolioApiCloudTestRuntimeRole',
       assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
@@ -56,12 +63,14 @@ export class PortfolioApiStack extends Stack {
         boundary.valueAsString,
       ),
     });
+
     runtimeRole.addToPolicy(
       new PolicyStatement({
         actions: ['logs:CreateLogStream', 'logs:PutLogEvents'],
         resources: [`${logs.logGroupArn}:*`],
       }),
     );
+
     const handler = new Function(this, 'Handler', {
       functionName: 'portfolio-api-cloud-test',
       runtime: Runtime.NODEJS_24_X,
@@ -75,9 +84,11 @@ export class PortfolioApiStack extends Stack {
       reservedConcurrentExecutions: 5,
       environment: { NODE_ENV: 'production', CORS_ORIGIN: cors.valueAsString },
     });
+
     const integration = new HttpLambdaIntegration('HandlerIntegration', handler, {
       timeout: Duration.seconds(29),
     });
+
     // El handler resuelve mayúsculas y errores de ruta; IAM aísla test hasta completar sus protecciones.
     const api = new HttpApi(this, 'Api', {
       apiName: 'portfolio-api-cloud-test',
@@ -85,18 +96,21 @@ export class PortfolioApiStack extends Stack {
       defaultIntegration: integration,
       defaultAuthorizer: new HttpIamAuthorizer(),
     });
+
     api.addRoutes({
       path: '/{proxy+}',
       methods: [HttpMethod.OPTIONS],
       integration,
       authorizer: new HttpNoneAuthorizer(),
     });
+
     new HttpStage(this, 'DefaultStage', {
       httpApi: api,
       stageName: '$default',
       autoDeploy: true,
       throttle: { rateLimit: 2, burstLimit: 5 },
     });
+
     new CfnOutput(this, 'ApiEndpoint', { value: api.apiEndpoint });
   }
 }
