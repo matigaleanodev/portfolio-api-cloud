@@ -1,0 +1,999 @@
+{
+  "source": {
+    "repository": "https://github.com/matigaleanodev/portfolio-api",
+    "commit": "a0ef80fa9f82d1cea5a31425a63ab0a344338c56",
+    "hashes": {
+      "src/subscriptions/subscriptions.dto.ts": "1517296d2736d996e84af9002b7ca008809050b4c7376b686a9fb24c785deabd",
+      "src/subscriptions/subscriptions.types.ts": "d8a8304c02e36f965fdf93a830646dfd46e5b6e23ec3b217586fc38330c3b2a0",
+      "src/subscriptions/subscriptions.controller.ts": "877cbe9be95ece5b04ec4b538a11c58ed1f73ea91c0b0a54572548484a47c998",
+      "src/subscriptions/subscriptions.service.ts": "d15b1c681ccb440dc819bcdeb1946ae41c5a5de7c6b5caec8985e56b05c42be9",
+      "src/subscriptions/subscriptions.module.ts": "ad73c1783e0c39cd17460f1f11acb5b371468b9d8e0691c3081293f3880be0ac",
+      "src/subscriptions/subscriptions.controller.spec.ts": "b13b230f889779f7426547b76ebc0fc15606a6ed6b11a8b55dc51f776ad5d3d7",
+      "src/subscriptions/subscriptions.service.spec.ts": "0d5a7dcacf30daa144cb0ffe49fd3309a8ef1eb8296b29cbb31a24c921c41f0e",
+      "test/subscriptions.e2e-spec.ts": "b591279a031a2e4614a4e0221269a135025b6eeda1ffe46e810b2616d32640fc",
+      "src/config/runtime.config.ts": "366b7c532275fda3aaee639db60884999e3a0ee8f268b4a983124f6f6f672890",
+      "src/config/runtime.config.spec.ts": "58563eaa8cefe638730012b3b2da9199d7bac226cfbf0a912470178c3d693845",
+      "src/main.ts": "c8aff3128c62d1c6c4925d34d494aac053748f10d68e7d8b0cb41c04424ca1f7",
+      "src/app.module.ts": "7016d793fb8f0ac2a76c3b1b06d8f23d1755142ccc2f0b935b2e9f8e8d0201df",
+      "package.json": "38599e23e6b9910f24f157ae19a55c30dcbf5e9e3d179d9dcdb4ab2f275e3961",
+      "package-lock.json": "1c8e0e7a8a82d944d61a4f6fe77c47c77bc48890ce5040e2a276010e8b7cbbd7"
+    },
+    "packages": {
+      "@nestjs/common": "11.1.13",
+      "class-validator": "0.14.3",
+      "class-transformer": "0.5.1",
+      "reflect-metadata": "0.2.2",
+      "rxjs": "7.8.2"
+    }
+  },
+  "validation": [
+    {
+      "label": "un correo válido",
+      "input": {
+        "email": "test@example.com"
+      },
+      "expected": {
+        "statusCode": 200,
+        "dto": {
+          "email": "test@example.com"
+        }
+      }
+    },
+    {
+      "label": "un correo con mayúsculas y espacios",
+      "input": {
+        "email": "  Test@EXAMPLE.com  "
+      },
+      "expected": {
+        "statusCode": 200,
+        "dto": {
+          "email": "test@example.com"
+        }
+      }
+    },
+    {
+      "label": "un correo con espacios Unicode",
+      "input": {
+        "email": " TEST@example.com "
+      },
+      "expected": {
+        "statusCode": 200,
+        "dto": {
+          "email": "test@example.com"
+        }
+      }
+    },
+    {
+      "label": "un correo con alias",
+      "input": {
+        "email": "Test+Blog@Example.com"
+      },
+      "expected": {
+        "statusCode": 200,
+        "dto": {
+          "email": "test+blog@example.com"
+        }
+      }
+    },
+    {
+      "label": "un correo con Unicode local",
+      "input": {
+        "email": "Á@example.com"
+      },
+      "expected": {
+        "statusCode": 200,
+        "dto": {
+          "email": "á@example.com"
+        }
+      }
+    },
+    {
+      "label": "un correo con dominio Unicode",
+      "input": {
+        "email": "test@例子.测试"
+      },
+      "expected": {
+        "statusCode": 200,
+        "dto": {
+          "email": "test@例子.测试"
+        }
+      }
+    },
+    {
+      "label": "un correo sin dominio completo",
+      "input": {
+        "email": "a@b"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be an email"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo con dominio local",
+      "input": {
+        "email": "a@localhost"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be an email"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo con dominio IP",
+      "input": {
+        "email": "a@127.0.0.1"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be an email"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo con puntos consecutivos",
+      "input": {
+        "email": "a..b@example.com"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be an email"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo con espacio interno",
+      "input": {
+        "email": "a b@example.com"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be an email"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo vacío",
+      "input": {
+        "email": ""
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be an email"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo con solo espacios",
+      "input": {
+        "email": "  "
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be an email"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo ausente",
+      "input": {},
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo nulo",
+      "input": {
+        "email": null
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo numérico",
+      "input": {
+        "email": 12
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo booleano",
+      "input": {
+        "email": true
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo como objeto",
+      "input": {
+        "email": {
+          "value": "test@example.com"
+        }
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo como arreglo vacío",
+      "input": {
+        "email": []
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo como arreglo de strings",
+      "input": {
+        "email": [
+          "test@example.com"
+        ]
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo como arreglo de objetos",
+      "input": {
+        "email": [
+          {
+            "email": "test@example.com"
+          }
+        ]
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un campo extra escalar",
+      "input": {
+        "email": "test@example.com",
+        "extra": true
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "property extra should not exist"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un campo extra nulo",
+      "input": {
+        "email": "test@example.com",
+        "extra": null
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "property extra should not exist"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un campo extra anidado",
+      "input": {
+        "email": "test@example.com",
+        "extra": {
+          "email": "test@example.com"
+        }
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "property extra should not exist"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "varios campos extra",
+      "input": {
+        "email": "test@example.com",
+        "name": "Test",
+        "company": ""
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "property name should not exist",
+            "property company should not exist"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un cuerpo nulo",
+      "input": null,
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un arreglo vacío en la raíz",
+      "input": [],
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un arreglo de correos en la raíz",
+      "input": [
+        {
+          "email": "test@example.com"
+        }
+      ],
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "property 0 should not exist",
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "claves constructor y __proto__",
+      "input": {
+        "email": "test@example.com",
+        "constructor": {
+          "x": 1
+        },
+        "__proto__": {
+          "x": 1
+        }
+      },
+      "expected": {
+        "statusCode": 200,
+        "dto": {
+          "email": "test@example.com"
+        }
+      }
+    },
+    {
+      "label": "una clave extra prototype",
+      "input": {
+        "email": "test@example.com",
+        "prototype": {
+          "x": 1
+        }
+      },
+      "expected": {
+        "statusCode": 200,
+        "dto": {
+          "email": "test@example.com"
+        }
+      }
+    },
+    {
+      "label": "un correo de 254 caracteres",
+      "input": {
+        "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "expected": {
+        "statusCode": 200,
+        "dto": {
+          "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      }
+    },
+    {
+      "label": "un correo de 255 caracteres",
+      "input": {
+        "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be an email"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo de 320 caracteres",
+      "input": {
+        "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be an email"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo de 321 caracteres",
+      "input": {
+        "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be shorter than or equal to 320 characters"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un correo largo rodeado de espacios",
+      "input": {
+        "email": "                                                                                                                                                                                                                                                                                                                                                                                                                TEST@example.com                                                                                                                                                                                                                                                                                                                                                                                                                "
+      },
+      "expected": {
+        "statusCode": 200,
+        "dto": {
+          "email": "test@example.com"
+        }
+      }
+    },
+    {
+      "label": "un correo con parte local de 65 caracteres",
+      "input": {
+        "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": [
+            "email must be an email"
+          ],
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    }
+  ],
+  "upstream": [
+    {
+      "label": "un éxito con correo y campos extra",
+      "status": 200,
+      "payload": {
+        "message": "Subscribed successfully",
+        "email": "UPSTREAM@example.com",
+        "ignored": true
+      },
+      "expected": {
+        "statusCode": 200,
+        "body": {
+          "message": "Subscribed successfully",
+          "email": "UPSTREAM@example.com"
+        }
+      }
+    },
+    {
+      "label": "un éxito sin correo",
+      "status": 200,
+      "payload": {
+        "message": "Already unsubscribed"
+      },
+      "expected": {
+        "statusCode": 200,
+        "body": {
+          "message": "Already unsubscribed"
+        }
+      }
+    },
+    {
+      "label": "un éxito con strings vacíos",
+      "status": 200,
+      "payload": {
+        "message": "",
+        "email": ""
+      },
+      "expected": {
+        "statusCode": 200,
+        "body": {
+          "message": "",
+          "email": ""
+        }
+      }
+    },
+    {
+      "label": "un éxito 201",
+      "status": 201,
+      "payload": {
+        "message": "Created"
+      },
+      "expected": {
+        "statusCode": 200,
+        "body": {
+          "message": "Created"
+        }
+      }
+    },
+    {
+      "label": "un éxito con JSON nulo",
+      "status": 200,
+      "payload": null,
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "El servicio de suscripciones devolvio una respuesta invalida.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un éxito sin message",
+      "status": 200,
+      "payload": {
+        "email": "test@example.com"
+      },
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "El servicio de suscripciones devolvio una respuesta invalida.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un éxito con message nulo",
+      "status": 200,
+      "payload": {
+        "message": null
+      },
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "El servicio de suscripciones devolvio una respuesta invalida.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un éxito con email nulo",
+      "status": 200,
+      "payload": {
+        "message": "ok",
+        "email": null
+      },
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "El servicio de suscripciones devolvio una respuesta invalida.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un éxito con email numérico",
+      "status": 200,
+      "payload": {
+        "message": "ok",
+        "email": 42
+      },
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "El servicio de suscripciones devolvio una respuesta invalida.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un éxito con email como objeto",
+      "status": 200,
+      "payload": {
+        "message": "ok",
+        "email": {}
+      },
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "El servicio de suscripciones devolvio una respuesta invalida.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un éxito con email como arreglo",
+      "status": 200,
+      "payload": {
+        "message": "ok",
+        "email": []
+      },
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "El servicio de suscripciones devolvio una respuesta invalida.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un éxito con JSON string",
+      "status": 200,
+      "payload": "ok",
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "El servicio de suscripciones devolvio una respuesta invalida.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un éxito con JSON arreglo",
+      "status": 200,
+      "payload": [],
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "El servicio de suscripciones devolvio una respuesta invalida.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un éxito sin JSON válido",
+      "status": 200,
+      "jsonFails": true,
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "El servicio de suscripciones devolvio una respuesta invalida.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un éxito 204 vacío",
+      "status": 204,
+      "jsonFails": true,
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "El servicio de suscripciones devolvio una respuesta invalida.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un error 400 con mensaje",
+      "status": 400,
+      "payload": {
+        "error": "Invalid email"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": "Invalid email",
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un error 401",
+      "status": 401,
+      "payload": {
+        "error": "Denied"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": "Denied",
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un error 404",
+      "status": 404,
+      "payload": {
+        "error": "Not found"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": "Not found",
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un error 429",
+      "status": 429,
+      "payload": {
+        "error": "Too many requests"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": "Too many requests",
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un error 499",
+      "status": 499,
+      "payload": {
+        "error": "Rejected"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": "Rejected",
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un error 400 con texto vacío",
+      "status": 400,
+      "payload": {
+        "error": ""
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un error 400 sin campo error",
+      "status": 400,
+      "payload": {
+        "message": "ignored"
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": "No se pudo validar la solicitud de suscripcion.",
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un error 400 con error no string",
+      "status": 400,
+      "payload": {
+        "error": [
+          "ignored"
+        ]
+      },
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": "No se pudo validar la solicitud de suscripcion.",
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un error 400 con JSON nulo",
+      "status": 400,
+      "payload": null,
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": "No se pudo validar la solicitud de suscripcion.",
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un error 400 con JSON inválido",
+      "status": 400,
+      "jsonFails": true,
+      "expected": {
+        "statusCode": 400,
+        "body": {
+          "message": "No se pudo validar la solicitud de suscripcion.",
+          "error": "Bad Request",
+          "statusCode": 400
+        }
+      }
+    },
+    {
+      "label": "un error 500",
+      "status": 500,
+      "payload": {
+        "error": "private upstream error"
+      },
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "No se pudo procesar la suscripcion en este momento.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "un error 503",
+      "status": 503,
+      "payload": {
+        "error": "private upstream error"
+      },
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "No se pudo procesar la suscripcion en este momento.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    },
+    {
+      "label": "una redirección no seguida",
+      "status": 302,
+      "payload": {
+        "error": "redirect"
+      },
+      "expected": {
+        "statusCode": 502,
+        "body": {
+          "message": "No se pudo procesar la suscripcion en este momento.",
+          "error": "Bad Gateway",
+          "statusCode": 502
+        }
+      }
+    }
+  ]
+}

@@ -47,8 +47,6 @@ test('Dadas invocaciones sucesivas de health, cuando se modifica una respuesta, 
 for (const [method, path] of [
   ['GET', '/api/chat/starters'],
   ['POST', '/api/chat'],
-  ['POST', '/api/subscriptions'],
-  ['DELETE', '/api/subscriptions'],
   ['POST', '/api/health'],
   ['GET', '/health'],
   ['GET', '/api/health/extra'],

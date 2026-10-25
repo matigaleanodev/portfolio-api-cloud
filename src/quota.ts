@@ -1,12 +1,11 @@
 import { RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
 
-const LIMIT = 5;
 const DURATION_SECONDS = 3600;
 
-export function createContactQuota() {
+export function createQuota(limit: number, keyPrefix: string) {
   const limiter = new RateLimiterMemory({
-    keyPrefix: 'contact',
-    points: LIMIT,
+    keyPrefix,
+    points: limit,
     duration: DURATION_SECONDS,
     blockDuration: DURATION_SECONDS,
   });
@@ -17,7 +16,7 @@ export function createContactQuota() {
       return {
         blocked: false,
         headers: {
-          'x-ratelimit-limit': String(LIMIT),
+          'x-ratelimit-limit': String(limit),
           'x-ratelimit-remaining': String(result.remainingPoints),
           'x-ratelimit-reset': String(Math.ceil(result.msBeforeNext / 1000)),
         },
