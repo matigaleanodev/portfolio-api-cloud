@@ -149,7 +149,7 @@ jobs:
         run: |
           set -euo pipefail
           change_set="portfolio-api-cloud-test-${REVIEWED_REVISION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          npm run cdk -- deploy PortfolioApiCloudTest --app .tmp/recovered/cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never --parameters PortfolioApiCloudTest:RuntimePermissionsBoundaryArn=arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary --parameters "PortfolioApiCloudTest:RuntimeSecretArn=$TEST_RUNTIME_SECRET_ARN"
+          npm run cdk -- deploy PortfolioApiCloudTest --app .tmp/recovered/cdk.out --exclusively --method prepare-change-set --change-set-name "$change_set" --require-approval never --parameters RuntimePermissionsBoundaryArn=arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary --parameters "RuntimeSecretArn=$TEST_RUNTIME_SECRET_ARN"
           echo "Changeset test preparado: $change_set. No se ejecutó el despliegue." >> "$GITHUB_STEP_SUMMARY"
 
       - uses: aws-actions/configure-aws-credentials@v6.2.3

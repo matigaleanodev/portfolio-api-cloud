@@ -131,3 +131,5 @@ La primera autenticación de configuración ficticia detectó la diferencia: el 
 ## Metadata del assembly recuperado
 
 El bundle conserva también `additionalMetadataFile` de cada artifact del manifest. CDK necesita esa metadata para cargar la stack desde el assembly conservado; omitirla produce `ENOENT` antes de publicar assets. La creación valida esas referencias con las mismas restricciones de rutas y enlaces que templates/assets. La recuperación rechaza un assembly con metadata referenciada ausente, incluso si su inventario de hashes es consistente. Los archivos históricos no referenciados siguen excluidos.
+
+El plan exige una única stack en el assembly y pasa RuntimePermissionsBoundaryArn y RuntimeSecretArn sin prefijo de stack. El selector CDK PortfolioApiCloudTest y el nombre físico portfolio-api-cloud-test son distintos; usar el selector como prefijo de parámetro hacía que la CLI ignorara ambos valores antes de crear el changeset.
