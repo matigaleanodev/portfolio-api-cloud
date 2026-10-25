@@ -120,3 +120,9 @@ sessionId e history provienen del cliente y hoy no acreditan una sesión ni cons
 ## ADR-015 — Controles compartidos, deadline y fallback empaquetado
 
 Estado: **implementado localmente; sin despliegue**. DynamoDB con CAS para cuotas y transacción para admisión IA; plazo total de 25 s con cancelación; secreto validado y refresco acotado; fallback v1 con checksum y edad máxima; logs sin PII y alarmas sin acciones. Los SDK DynamoDB y Secrets Manager se fijan en 3.1156.0. Conservé el limiter en memoria solo como adaptador de composición local. [Decisiones, configuración y criterios de salida](runtime-hardening.es.md).
+
+## ADR-016 — Entrega revisable y recuperación por assembly
+
+Estado: **implementada y verificada localmente; preparación administrada pendiente**.
+
+Conservé una función agrupada y CDK existente. El assembly se retiene con inventario de hashes y revisión, sin recompilar al recuperar. Separé trust/PassRole/boundaries por responsabilidad en el [diseño de entrega](deployment-design.es.md). Las policies administrativas finales se materializan y verifican en etapa 7; producción, secretos y controles compartidos no se restauran desde el bundle.

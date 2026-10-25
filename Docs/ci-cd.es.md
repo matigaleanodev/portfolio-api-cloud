@@ -10,9 +10,9 @@
 
 El job documentation valida pares/enlaces y detecta aplicación e infraestructura por separado. package.json exige lock, tsconfig y entrada real; restos de aplicación sin manifiesto fallan. cdk.json activa infraestructura y exige sus scripts específicos.
 
-Application ejecuta `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` y `test:package` en Node 24.22.1. Vitest ejecuta 513 casos de aplicación y 12 de tooling migrados desde unittest. No hay lint con --fix ni modificación automática de fuentes. El cerco de red se carga antes de la aplicación, con ambiente sin credenciales heredadas. [Cobertura y casos](testing.es.md).
+Application ejecuta `npm ci --ignore-scripts`, `format:check`, `typecheck`, `build`, `test:app`, `test:tooling` y `test:package` en Node 24.22.1. Vitest ejecuta 513 casos de aplicación y 27 de tooling (12 migrados desde unittest y 15 nuevos). No hay lint con --fix ni modificación automática de fuentes. El cerco de red se carga antes de la aplicación, con ambiente sin credenciales heredadas. [Cobertura y casos](testing.es.md).
 
-Infrastructure está activo porque ya existe cdk.json; ejecuta 14 casos en `test:infra` y `cdk -- synth --no-lookups --context stage=test`, sin credenciales AWS. [Stack local y prerrequisitos](infrastructure.es.md).
+Infrastructure está activo porque ya existe cdk.json; ejecuta 18 casos en `test:infra` y `cdk -- synth --no-lookups --context stage=test`, sin credenciales AWS. [Stack local y prerrequisitos](infrastructure.es.md).
 
 El check obligatorio sigue llamándose `verify`, ligado a GitHub Actions: exige documentation exitosa y éxito de cada ámbito presente; solo admite skipped para un ámbito ausente. El job de aplicación debe aprobar completo. El summary distingue aplicación y synth; no declara infraestructura comprobada si falta la stack.
 
@@ -60,3 +60,7 @@ Los cambios del experimento fueron descartados. Esta base incorpora una nueva de
 La [ejecución inicial](https://github.com/matigaleanodev/portfolio-api-cloud/actions/runs/40147675945) validó el PR y generó el token, pero `gh pr merge` se detuvo localmente al observar `mergeStateStatus=BLOCKED`, antes de pedir el merge al servidor. La corrección usa el endpoint de merge con SHA exacto y confirma `merged=true`. La [recuperación](https://github.com/matigaleanodev/portfolio-api-cloud/actions/runs/40153939891) integró el PR #2 con la App, conservando PR/CI. Usó una entrada temporal desde `feat/migration-evidence-docs`, ligada a su SHA exacto y al environment `merge`. Este cierre elimina esa condición; la variable de recuperación y el permiso de la rama en el environment ya fueron retirados. El flujo habitual vuelve a aceptar dispatch solo desde main/dev y el environment conserva únicamente esas ramas. No se retiró dev del bloqueo ni se cambió el ruleset de calidad.
 
 La preparación futura exige también TEST_RUNTIME_SECRET_ARN, restringido al prefijo portfolio-api-cloud/test/ de la misma cuenta/región. Se pasa como RuntimeSecretArn; no contiene el valor del secreto. Las condiciones de activación, rama, environment y separación prepare/execute no cambian.
+
+## Assembly retenido y pruebas del plan
+
+CI genera un bundle después de test:infra/synth; deploy-test conserva el suyo antes de OIDC. Artifacts por SHA/run/intento, 30 días y fallo si faltan archivos. review_bundle.py conserva assembly, lock, revisión/Node y hashes; verify rechaza alteración, faltantes, extras y revisión distinta. Dos casos prueban los prerrequisitos reales y las barreras del workflow; trece prueban creación/recuperación y rechazos del bundle. [Retención, procedencia, limitaciones y pasos siguientes](deployment-design.es.md). Estos cambios permanecen locales hasta la siguiente integración.
