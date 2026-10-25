@@ -95,7 +95,7 @@
               "Condition": {
                 "StringEquals": {
                   "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-                  "token.actions.githubusercontent.com:sub": "repo:matigaleanodev/portfolio-api-cloud:environment:test-foundation-plan"
+                  "token.actions.githubusercontent.com:sub": "repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186:environment:test-foundation-plan"
                 }
               }
             }
@@ -495,7 +495,7 @@
               "Condition": {
                 "StringEquals": {
                   "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-                  "token.actions.githubusercontent.com:sub": "repo:matigaleanodev/portfolio-api-cloud:environment:test-execute"
+                  "token.actions.githubusercontent.com:sub": "repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186:environment:test-execute"
                 }
               }
             }
