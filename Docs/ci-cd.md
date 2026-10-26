@@ -23,3 +23,5 @@ OIDC trusts use immutable owner/repository identities and exact environments; bo
 `recover_bundle.py` accepts both `api-assembly-...` and historical `test-assembly-...` artifacts with identical run, revision, digest, extraction and inventory checks. Published artifacts are not renamed and their checks remain enforced. Original version 1 metadata remains recoverable.
 
 [Domain, continuity and rollback](production.md). First installation documents preserve the names and results observed at the time.
+
+Regional domain creation requires the Project tag and `ForAllValues:StringEquals` for `apigateway:Request/EndpointType`, with mandatory presence through Null=false. This field is multivalued; a scalar operator rejects a valid regional request. Review accepts UPDATE_ROLLBACK_COMPLETE as a stable state for preparing a correction while preserving identity, template, asset and digest checks.
