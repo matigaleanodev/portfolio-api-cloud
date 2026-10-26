@@ -247,6 +247,7 @@ export class PortfolioApiStack extends Stack {
     ) as unknown as boolean;
     const domain = new CfnDomainName(this, 'CustomDomain', {
       domainName: 'api.matiasgaleano.dev',
+      tags: { Project: 'portfolio-api-cloud' },
       domainNameConfigurations: [
         {
           certificateArn: certificate.valueAsString,
