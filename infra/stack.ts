@@ -9,8 +9,12 @@ import {
   Duration,
   RemovalPolicy,
   Stack,
+  Token,
 } from 'aws-cdk-lib';
 import {
+  CfnApi,
+  CfnDomainName,
+  CfnApiMapping,
   CfnRoute,
   HttpApi,
   HttpMethod,
@@ -21,21 +25,22 @@ import { HttpIamAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { ManagedPolicy, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Architecture, Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
-import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { LogGroup, RetentionDays, MetricFilter, FilterPattern } from 'aws-cdk-lib/aws-logs';
 import type { Construct } from 'constructs';
 
-export const TEST_ACCOUNT = '650387442642';
-export const TEST_REGION = 'us-east-1';
+export const PRODUCTION_ACCOUNT = '650387442642';
+export const PRODUCTION_REGION = 'us-east-1';
 
-const roleArn = (name: string) => `arn:aws:iam::${TEST_ACCOUNT}:role/PortfolioApiCloudTest${name}`;
+const roleArn = (name: string) =>
+  `arn:aws:iam::${PRODUCTION_ACCOUNT}:role/PortfolioApiCloudTest${name}`;
 
 export class PortfolioApiStack extends Stack {
   constructor(scope: Construct) {
-    if (scope.node.tryGetContext('stage') !== 'test')
-      throw new Error('Solo se admite el ambiente test.');
+    if (scope.node.tryGetContext('stage') !== 'production')
+      throw new Error('Solo se admite el ambiente production.');
     super(scope, 'PortfolioApiCloudTest', {
       stackName: 'portfolio-api-cloud-test',
-      env: { account: TEST_ACCOUNT, region: TEST_REGION },
+      env: { account: PRODUCTION_ACCOUNT, region: PRODUCTION_REGION },
       synthesizer: new DefaultStackSynthesizer({
         qualifier: 'papiatest',
         deployRoleArn: roleArn('CdkDeployRole'),
@@ -47,7 +52,7 @@ export class PortfolioApiStack extends Stack {
 
     const boundary = new CfnParameter(this, 'RuntimePermissionsBoundaryArn', {
       type: 'String',
-      allowedPattern: `arn:aws:iam::${TEST_ACCOUNT}:policy/PortfolioApiCloudTestRuntimeBoundary`,
+      allowedPattern: `arn:aws:iam::${PRODUCTION_ACCOUNT}:policy/PortfolioApiCloudTestRuntimeBoundary`,
       description:
         'Boundary de runtime previamente creada y revisada; no se provisiona por esta stack.',
     });
@@ -55,8 +60,38 @@ export class PortfolioApiStack extends Stack {
     const cors = new CfnParameter(this, 'CorsOrigin', {
       type: 'String',
       default: '',
-      description: 'Origen de pruebas; CORS se deshabilita si no se define.',
+      description: 'Origen permitido; CORS se deshabilita si no se define.',
     });
+
+    const certificate = new CfnParameter(this, 'CertificateArn', {
+      type: 'String',
+      default: '',
+      allowedPattern: '|arn:aws:acm:us-east-1:650387442642:certificate/[a-f0-9-]+',
+    });
+    const hasDomain = new CfnCondition(this, 'HasCustomDomain', {
+      expression: Fn.conditionNot(Fn.conditionEquals(certificate.valueAsString, '')),
+    });
+    const disableDefault = new CfnParameter(this, 'DisableDefaultEndpoint', {
+      type: 'String',
+      default: 'false',
+      allowedValues: ['false', 'true'],
+    });
+    const disableDefaultCondition = new CfnCondition(this, 'CloseDefaultEndpoint', {
+      expression: Fn.conditionEquals(disableDefault.valueAsString, 'true'),
+    });
+    const alarmTopic = new CfnParameter(this, 'AlarmTopicArn', {
+      type: 'String',
+      default: '',
+      allowedPattern: '|arn:aws:sns:us-east-1:650387442642:portfolio-api-cloud-alerts',
+    });
+    const hasAlarmTopic = new CfnCondition(this, 'HasAlarmTopic', {
+      expression: Fn.conditionNot(Fn.conditionEquals(alarmTopic.valueAsString, '')),
+    });
+    const alarmActions = Fn.conditionIf(
+      hasAlarmTopic.logicalId,
+      [alarmTopic.valueAsString],
+      Fn.ref('AWS::NoValue'),
+    ) as unknown as string[];
 
     const publicAccess = new CfnParameter(this, 'PublicAccess', {
       type: 'String',
@@ -153,7 +188,7 @@ export class PortfolioApiStack extends Stack {
         24_000,
       ],
     ] as const) {
-      new Alarm(this, `Runtime${name}Alarm`, {
+      const alarm = new Alarm(this, `Runtime${name}Alarm`, {
         alarmName: `portfolio-api-cloud-test-${name.toLowerCase()}`,
         metric,
         threshold,
@@ -161,7 +196,27 @@ export class PortfolioApiStack extends Stack {
         comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         treatMissingData: TreatMissingData.NOT_BREACHING,
       });
+      (alarm.node.defaultChild as import('aws-cdk-lib/aws-cloudwatch').CfnAlarm).alarmActions =
+        alarmActions;
     }
+    const httpFailures = new MetricFilter(this, 'HttpServerFailures', {
+      logGroup: logs,
+      filterPattern: FilterPattern.literal('{ $.event = "http_request" && $.statusCode >= 500 }'),
+      metricNamespace: 'PortfolioApiCloud',
+      metricName: 'HttpServerFailures',
+      metricValue: '1',
+      defaultValue: 0,
+    });
+    const httpAlarm = new Alarm(this, 'HttpServerFailuresAlarm', {
+      alarmName: 'portfolio-api-cloud-test-http-errors',
+      metric: httpFailures.metric({ period: Duration.minutes(5), statistic: 'Sum' }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+    });
+    (httpAlarm.node.defaultChild as import('aws-cdk-lib/aws-cloudwatch').CfnAlarm).alarmActions =
+      alarmActions;
     const integration = new HttpLambdaIntegration('HandlerIntegration', handler, {
       timeout: Duration.seconds(29),
     });
@@ -181,6 +236,32 @@ export class PortfolioApiStack extends Stack {
     );
 
     handler.addEnvironment('TRUSTED_API_ID', api.apiId);
+    handler.addEnvironment(
+      'TRUSTED_CUSTOM_DOMAIN',
+      Token.asString(Fn.conditionIf(hasDomain.logicalId, 'api.matiasgaleano.dev', '')),
+    );
+    (api.node.defaultChild as CfnApi).disableExecuteApiEndpoint = Fn.conditionIf(
+      disableDefaultCondition.logicalId,
+      true,
+      false,
+    ) as unknown as boolean;
+    const domain = new CfnDomainName(this, 'CustomDomain', {
+      domainName: 'api.matiasgaleano.dev',
+      domainNameConfigurations: [
+        {
+          certificateArn: certificate.valueAsString,
+          endpointType: 'REGIONAL',
+          securityPolicy: 'TLS_1_2',
+        },
+      ],
+    });
+    domain.cfnOptions.condition = hasDomain;
+    const mapping = new CfnApiMapping(this, 'CustomDomainMapping', {
+      apiId: api.apiId,
+      domainName: domain.ref,
+      stage: '$default',
+    });
+    mapping.cfnOptions.condition = hasDomain;
 
     api.addRoutes({
       path: '/{proxy+}',
@@ -189,13 +270,20 @@ export class PortfolioApiStack extends Stack {
       authorizer: new HttpNoneAuthorizer(),
     });
 
-    new HttpStage(this, 'DefaultStage', {
+    const stage = new HttpStage(this, 'DefaultStage', {
       httpApi: api,
       stageName: '$default',
       autoDeploy: true,
       throttle: { rateLimit: 2, burstLimit: 5 },
     });
 
+    mapping.addDependency(
+      stage.node.defaultChild as import('aws-cdk-lib/aws-apigatewayv2').CfnStage,
+    );
+    new CfnOutput(this, 'RegionalDomainTarget', {
+      value: domain.attrRegionalDomainName,
+      condition: hasDomain,
+    });
     new CfnOutput(this, 'ApiEndpoint', { value: api.apiEndpoint });
   }
 }

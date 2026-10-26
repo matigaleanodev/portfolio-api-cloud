@@ -473,6 +473,41 @@
                   "Ref": "AWS::NoValue"
                 }
               ]
+            },
+            {
+              "Sid": "ManageCustomDomain",
+              "Effect": "Allow",
+              "Action": [
+                "apigateway:GET",
+                "apigateway:POST",
+                "apigateway:PATCH",
+                "apigateway:DELETE"
+              ],
+              "Resource": [
+                "arn:aws:apigateway:us-east-1::/domainnames/api.matiasgaleano.dev",
+                "arn:aws:apigateway:us-east-1::/domainnames/api.matiasgaleano.dev/*"
+              ]
+            },
+            {
+              "Sid": "ReadDomainCertificate",
+              "Effect": "Allow",
+              "Action": ["acm:DescribeCertificate"],
+              "Resource": [
+                "arn:aws:acm:us-east-1:650387442642:certificate/a5cb7eb1-ad11-404f-981b-e3d05c8c5de7"
+              ]
+            },
+            {
+              "Sid": "ManageHttpFailureMetric",
+              "Effect": "Allow",
+              "Action": [
+                "logs:PutMetricFilter",
+                "logs:DeleteMetricFilter",
+                "logs:DescribeMetricFilters"
+              ],
+              "Resource": [
+                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test",
+                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test:*"
+              ]
             }
           ]
         }
@@ -531,7 +566,7 @@
               "Condition": {
                 "StringEquals": {
                   "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-                  "token.actions.githubusercontent.com:sub": "repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186:environment:test-plan"
+                  "token.actions.githubusercontent.com:sub": "repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186:environment:production-plan"
                 }
               }
             }
@@ -933,6 +968,41 @@
                     {
                       "Ref": "AWS::NoValue"
                     }
+                  ]
+                },
+                {
+                  "Sid": "ManageCustomDomain",
+                  "Effect": "Allow",
+                  "Action": [
+                    "apigateway:GET",
+                    "apigateway:POST",
+                    "apigateway:PATCH",
+                    "apigateway:DELETE"
+                  ],
+                  "Resource": [
+                    "arn:aws:apigateway:us-east-1::/domainnames/api.matiasgaleano.dev",
+                    "arn:aws:apigateway:us-east-1::/domainnames/api.matiasgaleano.dev/*"
+                  ]
+                },
+                {
+                  "Sid": "ReadDomainCertificate",
+                  "Effect": "Allow",
+                  "Action": ["acm:DescribeCertificate"],
+                  "Resource": [
+                    "arn:aws:acm:us-east-1:650387442642:certificate/a5cb7eb1-ad11-404f-981b-e3d05c8c5de7"
+                  ]
+                },
+                {
+                  "Sid": "ManageHttpFailureMetric",
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:PutMetricFilter",
+                    "logs:DeleteMetricFilter",
+                    "logs:DescribeMetricFilters"
+                  ],
+                  "Resource": [
+                    "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test",
+                    "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test:*"
                   ]
                 }
               ]

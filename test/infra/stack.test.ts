@@ -4,14 +4,14 @@ import { Match, Template } from 'aws-cdk-lib/assertions';
 import { join } from 'node:path';
 import { readdirSync, readFileSync } from 'node:fs';
 import { PortfolioApiStack } from '../../infra/stack.js';
-const app = new App({ context: { stage: 'test' } });
+const app = new App({ context: { stage: 'production' } });
 const stack = new PortfolioApiStack(app);
 const template = Template.fromStack(stack);
 test('Dado el ambiente test, cuando se define la stack, entonces apunta únicamente a la cuenta y región acordadas', () => {
   expect(() => new PortfolioApiStack(new App({ context: { stage: 'prod' } }))).toThrow(
-    'Solo se admite el ambiente test.',
+    'Solo se admite el ambiente production.',
   );
-  expect(() => new PortfolioApiStack(new App())).toThrow('Solo se admite el ambiente test.');
+  expect(() => new PortfolioApiStack(new App())).toThrow('Solo se admite el ambiente production.');
   expect(stack.stackName).toBe('portfolio-api-cloud-test');
   expect(stack.account).toBe('650387442642');
   expect(stack.region).toBe('us-east-1');
@@ -192,9 +192,11 @@ test('Dado almacenamiento de control, cuando se sintetiza, entonces usa una tabl
   });
 });
 test('Dadas alarmas locales, cuando se definen, entonces cubren error, throttling y duración sin enviar notificaciones', () => {
-  template.resourceCountIs('AWS::CloudWatch::Alarm', 3);
+  template.resourceCountIs('AWS::CloudWatch::Alarm', 4);
   for (const resource of Object.values(template.findResources('AWS::CloudWatch::Alarm'))) {
-    expect(resource.Properties.AlarmActions).toBeUndefined();
+    expect(resource.Properties.AlarmActions).toEqual({
+      'Fn::If': ['HasAlarmTopic', [{ Ref: 'AlarmTopicArn' }], { Ref: 'AWS::NoValue' }],
+    });
     expect(resource.Properties.TreatMissingData).toBe('notBreaching');
   }
   template.resourceCountIs('AWS::SNS::Topic', 0);
@@ -269,12 +271,12 @@ test('Dados recursos de control y alarmas, cuando se nombran, entonces el diseñ
   ).toEqual([
     'portfolio-api-cloud-test-duration',
     'portfolio-api-cloud-test-errors',
+    'portfolio-api-cloud-test-http-errors',
     'portfolio-api-cloud-test-throttles',
   ]);
   for (const type of [
     'AWS::EC2::VPC',
     'AWS::SQS::Queue',
-    'AWS::ApiGatewayV2::DomainName',
     'AWS::IAM::ManagedPolicy',
     'AWS::S3::Bucket',
   ]) {
@@ -289,7 +291,30 @@ test('Dados parámetros externos, cuando se sintetizan, entonces no incluyen val
   );
   expect(parameters.RuntimeSecretArn.AllowedPattern).toContain('secret:portfolio-api-cloud/test/');
   expect(parameters.CorsOrigin.Default).toBe('');
-  expect(Object.keys(template.toJSON().Outputs)).toEqual(['ApiEndpoint']);
+  expect(Object.keys(template.toJSON().Outputs)).toEqual(['RegionalDomainTarget', 'ApiEndpoint']);
   const manifest = app.synth().manifest;
   expect(JSON.stringify(manifest)).not.toMatch(/AdministratorAccess/);
+});
+
+test('Dado el dominio definitivo, cuando se sintetiza, entonces mantiene TLS 1.2, mapping raíz y cierre controlado de execute-api', () => {
+  template.hasResourceProperties('AWS::ApiGatewayV2::DomainName', {
+    DomainName: 'api.matiasgaleano.dev',
+    DomainNameConfigurations: [
+      {
+        CertificateArn: { Ref: 'CertificateArn' },
+        EndpointType: 'REGIONAL',
+        SecurityPolicy: 'TLS_1_2',
+      },
+    ],
+  });
+  template.hasResourceProperties('AWS::ApiGatewayV2::ApiMapping', {
+    Stage: '$default',
+    ApiMappingKey: Match.absent(),
+  });
+  template.hasResourceProperties('AWS::ApiGatewayV2::Api', {
+    DisableExecuteApiEndpoint: { 'Fn::If': ['CloseDefaultEndpoint', true, false] },
+  });
+  template.hasResourceProperties('AWS::Logs::MetricFilter', {
+    FilterPattern: '{ $.event = "http_request" && $.statusCode >= 500 }',
+  });
 });

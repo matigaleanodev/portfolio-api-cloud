@@ -7,7 +7,7 @@ import { PortfolioApiStack } from '../../infra/stack.js';
 let template: Template;
 beforeAll(() => {
   const stack = new PortfolioApiStack(
-    new App({ context: { stage: 'test', validationScenario: 'success' } }),
+    new App({ context: { stage: 'production', validationScenario: 'success' } }),
   );
   template = Template.fromStack(stack);
 }, 30_000);
@@ -24,7 +24,7 @@ test('Dado el asset separado de validación, cuando se sintetiza, entonces conse
   expect(
     () =>
       new PortfolioApiStack(
-        new App({ context: { stage: 'test', validationScenario: 'public-flag' } }),
+        new App({ context: { stage: 'production', validationScenario: 'public-flag' } }),
       ),
   ).toThrow();
 });

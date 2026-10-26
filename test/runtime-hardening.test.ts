@@ -15,7 +15,11 @@ import {
 } from '../src/shared-control.js';
 import { abortable, operationSignal, runRequest } from '../src/request-scope.js';
 import { createManagedHandler } from '../src/handler.js';
-import { createRuntimeConfiguration, validateRuntimeSecret } from '../src/runtime-config.js';
+import {
+  aiConfigurationValid,
+  createRuntimeConfiguration,
+  validateRuntimeSecret,
+} from '../src/runtime-config.js';
 import { OpenAiService } from '../src/chat/openai.service.js';
 import { httpEvent } from './fixtures.js';
 import { SimulatedControlStore, managedEnvironment, runtimeSecret } from './support/control.js';
@@ -321,8 +325,6 @@ for (const field of [
   'QUOTA_KEY_SECRET',
   'CONTACT_FROM_EMAIL',
   'PORTFOLIO_CLOUD_API_URL',
-  'AI_DAILY_BUDGET_MICROUSD',
-  'AI_PRICING_VALID_UNTIL',
 ] as const) {
   test(`Dada configuración sin ${field}, cuando se valida startup, entonces se rechaza antes de efectos`, () => {
     const config: Record<string, string> = runtimeSecret();
@@ -333,11 +335,9 @@ for (const field of [
 test.each(['0', '-1', '1000001', '1.5', 'NaN'])(
   'Dado presupuesto diario inválido %s, cuando se configura, entonces no habilita IA',
   (amount) => {
-    expect(() =>
-      validateRuntimeSecret(
-        JSON.stringify({ ...runtimeSecret(), AI_DAILY_BUDGET_MICROUSD: amount }),
-      ),
-    ).toThrow();
+    expect(aiConfigurationValid({ ...runtimeSecret(), AI_DAILY_BUDGET_MICROUSD: amount })).toBe(
+      false,
+    );
   },
 );
 test('Dado secreto con TTL, cuando falla la renovación, entonces no usa el snapshot vencido', async () => {
@@ -358,7 +358,7 @@ test('Dado conteo previo inválido o reserva denegada, cuando se solicita genera
       .fn<typeof fetch>()
       .mockImplementation(async () => new Response(JSON.stringify(counted)));
     const admission = { available: async () => true, reserve: vi.fn(async () => false) };
-    const provider = new OpenAiService({ OPENAI_API_KEY: 'fake' }, request, admission);
+    const provider = new OpenAiService(runtimeSecret(), request, admission);
     expect(
       await provider.generateChatResponse({
         userMessage: 'a',
@@ -454,18 +454,14 @@ test('Dada IA deshabilitada por configuración, cuando se pregunta por el perfil
   expect((await cold(managedEvent('¿Qué hace Modo Playa?'))).statusCode).toBe(503);
   expect(request).not.toHaveBeenCalled();
 });
-test('Dado modelo sin tarifa o revisión expirada, cuando se valida, entonces rechaza la configuración sin habilitar consumo', () => {
-  expect(() =>
-    validateRuntimeSecret(JSON.stringify({ ...runtimeSecret(), OPENAI_CHAT_MODEL: 'unpriced' })),
-  ).toThrow('Unpriced');
-  expect(() =>
-    validateRuntimeSecret(
-      JSON.stringify({
-        ...runtimeSecret(),
-        AI_PRICING_VALID_UNTIL: new Date(Date.now() - 1).toISOString(),
-      }),
-    ),
-  ).toThrow('review');
+test('Dado modelo sin tarifa o revisión expirada, cuando se valida, entonces deshabilita únicamente la generación paga', () => {
+  for (const config of [
+    { ...runtimeSecret(), OPENAI_CHAT_MODEL: 'unpriced' },
+    { ...runtimeSecret(), AI_PRICING_VALID_UNTIL: new Date(Date.now() - 1).toISOString() },
+  ]) {
+    expect(aiConfigurationValid(config)).toBe(false);
+    expect(() => validateRuntimeSecret(JSON.stringify(config))).not.toThrow();
+  }
 });
 test('Dado ARN de secreto ajeno al ambiente, cuando se configura, entonces no intenta leerlo', async () => {
   const read = vi.fn();
@@ -509,4 +505,75 @@ test('Dado SDK de contacto pendiente, cuando vence su timeout, entonces recibe a
   expect(request).toHaveBeenCalledTimes(1);
   expect(request.mock.calls[0]![1]!.signal!.aborted).toBe(true);
   expect(JSON.stringify(vi.mocked(console.info).mock.calls)).not.toContain('private body');
+});
+
+test.each([
+  { AI_PRICING_VALID_UNTIL: '' },
+  { AI_PRICING_VALID_UNTIL: new Date(0).toISOString() },
+  { AI_DAILY_BUDGET_MICROUSD: 'NaN' },
+  { OPENAI_CHAT_MODEL: 'other' },
+])(
+  'Dada IA inválida %j, cuando llegan los contratos, entonces conserva FAQ, starters, contacto y suscripciones sin gasto',
+  async (invalid) => {
+    const config = { ...runtimeSecret(), ...invalid };
+    const sendEmail = vi.fn(async () => undefined);
+    const request = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () => new Response(JSON.stringify({ message: 'Listo' })));
+    const handler = createManagedHandler(managedEnvironment, {
+      store: new SimulatedControlStore(),
+      sendEmail,
+      request,
+      readSecret: async () => JSON.stringify(config),
+    });
+    const faq = await handler(managedEvent('¿Cómo puedo contactarte?'));
+    expect(JSON.parse(faq.body!).source).toBe('faq');
+    expect(JSON.parse((await handler(managedEvent())).body!).source).toBe('fallback');
+    for (const [method, path, body, status] of [
+      ['GET', '/api/chat/starters', undefined, 200],
+      [
+        'POST',
+        '/api/contact',
+        {
+          name: 'Prueba',
+          email: 'test@example.invalid',
+          message: 'Mensaje controlado suficientemente largo',
+          company: '',
+        },
+        204,
+      ],
+      ['POST', '/api/subscriptions', { email: 'test@example.invalid' }, 200],
+      ['DELETE', '/api/subscriptions', { email: 'test@example.invalid' }, 200],
+    ] as const) {
+      const event = managedEvent();
+      event.requestContext.http.method = method;
+      event.rawPath = path;
+      if (body) event.body = JSON.stringify(body);
+      else delete event.body;
+      expect((await handler(event)).statusCode).toBe(status);
+    }
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    expect(request.mock.calls.every(([url]) => !String(url).includes('openai.com'))).toBe(true);
+  },
+);
+
+test('Dada una instancia caliente, cuando vencen tarifas entre respuestas, entonces no reutiliza caché paga ni genera', async () => {
+  vi.useFakeTimers();
+  const config = {
+    ...runtimeSecret(),
+    AI_PRICING_VALID_UNTIL: new Date(Date.now() + 1000).toISOString(),
+  };
+  const request = modelRequest();
+  const handler = createManagedHandler(managedEnvironment, {
+    store: new SimulatedControlStore(),
+    request,
+    readSecret: async () => JSON.stringify(config),
+  });
+  expect(JSON.parse((await handler(managedEvent())).body!).source).toBe('ai');
+  await vi.advanceTimersByTimeAsync(1001);
+  expect(JSON.parse((await handler(managedEvent())).body!).source).toBe('fallback');
+  expect(JSON.parse((await handler(managedEvent('¿Cómo puedo contactarte?'))).body!).source).toBe(
+    'faq',
+  );
+  expect(request).toHaveBeenCalledTimes(2);
 });

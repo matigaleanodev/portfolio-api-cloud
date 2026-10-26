@@ -1,5 +1,7 @@
 # Operación y validación del entorno test
 
+> Registro de diseño y validación inicial. El circuito productivo vigente, sus nombres y recuperación histórica están en [Integración y entrega](ci-cd.es.md).
+
 [English](test-operations.md) · 25/10/2026.
 
 **Incremento vigente:** [primera instalación con dobles y circuito Actions](managed-validation.es.md), desplegada y comprobada en AWS con proveedores simulados. [Resultado del primer deploy privado](first-private-deploy.es.md). Las secciones de diseño y auditoría conservan su contexto previo.
@@ -20,7 +22,7 @@ Antes de activar el plan deben existir test-plan restringido exclusivamente a ma
 
 ## Fundación externa revisable
 
-[infra/test-foundation.template.json](../infra/test-foundation.template.json) materializa el bucket, parámetro bootstrap, cuatro roles externos y cinco boundaries. El runtime sigue perteneciendo a la stack CDK de aplicación. No crea secretos, proveedor OIDC, ECR, lookup role, CMK ni recursos de aplicación. El proveedor GitHub OIDC debe existir y revisarse por separado.
+[infra/test-foundation.template.json](../infra/production-foundation.template.json) materializa el bucket, parámetro bootstrap, cuatro roles externos y cinco boundaries. El runtime sigue perteneciendo a la stack CDK de aplicación. No crea secretos, proveedor OIDC, ECR, lookup role, CMK ni recursos de aplicación. El proveedor GitHub OIDC debe existir y revisarse por separado.
 
 La plantilla comprueba cuenta 650387442642 y us-east-1. RuntimeSecretArn es obligatorio y exacto; no admite valores de secretos. La boundary runtime autoriza únicamente sus streams de logs, GetItem/PutItem/UpdateItem de la tabla de control y GetSecretValue de esa referencia. Usar una clave administrada propia para Secrets Manager exigiría revisar además kms:Decrypt; la propuesta actual no lo concede.
 

@@ -1,4 +1,5 @@
 import { isIP } from 'node:net';
+import { verifiedVisitorIp, verifyOriginSecret } from './ingress.js';
 import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyStructuredResultV2,
@@ -21,6 +22,7 @@ import {
   type ControlStore,
 } from './shared-control.js';
 import {
+  aiConfigurationValid,
   createRuntimeConfiguration,
   createSecretReader,
   type RuntimeEnvironment,
@@ -79,15 +81,29 @@ export function createManagedHandler(
     const startedAt = performance.now();
     const ip = event.requestContext?.http?.sourceIp;
     if (!ip || !isIP(ip) || event.version !== '2.0') return failure(event, 403);
+    const customDomain = Boolean(
+      env.TRUSTED_CUSTOM_DOMAIN && event.requestContext.domainName === env.TRUSTED_CUSTOM_DOMAIN,
+    );
     if (
       env.TRUSTED_API_ID &&
       (event.requestContext.apiId !== env.TRUSTED_API_ID ||
-        event.requestContext.domainName !==
-          `${env.TRUSTED_API_ID}.execute-api.us-east-1.amazonaws.com` ||
+        (!customDomain &&
+          event.requestContext.domainName !==
+            `${env.TRUSTED_API_ID}.execute-api.us-east-1.amazonaws.com`) ||
         event.requestContext.stage !== '$default')
     )
       return failure(event, 403);
-    const clientIp = isIP(ip) === 6 ? new URL(`http://[${ip}]/`).hostname.slice(1, -1) : ip;
+    const visitorIp = customDomain ? verifiedVisitorIp(event) : ip;
+    if (!visitorIp) return failure(event, 403);
+    const clientIp =
+      isIP(visitorIp) === 6 ? new URL(`http://[${visitorIp}]/`).hostname.slice(1, -1) : visitorIp;
+    const requestEvent = {
+      ...event,
+      requestContext: {
+        ...event.requestContext,
+        http: { ...event.requestContext.http, sourceIp: clientIp },
+      },
+    };
     let requestId: string | undefined;
     const timeout = Math.max(
       1,
@@ -98,11 +114,15 @@ export function createManagedHandler(
         requestId = currentRequest()!.requestId;
         let result: APIGatewayProxyStructuredResultV2;
         try {
+          load ??= createRuntimeConfiguration(env, dependencies.readSecret ?? createSecretReader());
+          const ingressSecrets = customDomain ? await load() : undefined;
+          if (customDomain && !verifyOriginSecret(event, ingressSecrets?.ORIGIN_VERIFY_SECRET))
+            return failure(event, 403);
           const method = event.requestContext.http.method;
           const publicRoute =
             method === 'OPTIONS' ||
             ((method === 'GET' || method === 'HEAD') && /^\/api\/health\/?$/i.test(event.rawPath));
-          if (publicRoute) result = await publicApplication(event);
+          if (publicRoute) result = await publicApplication(requestEvent);
           else {
             if (!env.TRUSTED_API_ID || !env.QUOTA_TABLE_NAME)
               throw new Error('Missing ingress/control configuration');
@@ -110,13 +130,8 @@ export function createManagedHandler(
               env,
               dependencies.readSecret ?? createSecretReader(),
             );
-            const secrets = await load();
+            const secrets = ingressSecrets ?? (await load());
             dependencies.validateSecret?.(secrets);
-            if (
-              secrets.OPENAI_API_KEY &&
-              Date.parse(secrets.AI_PRICING_VALID_UNTIL ?? '') <= Date.now()
-            )
-              throw new Error('AI pricing requires review');
             if (!application || configured !== secrets) {
               const store =
                 dependencies.store ??
@@ -128,9 +143,21 @@ export function createManagedHandler(
               const admission = createAiAdmission(
                 store,
                 secrets.QUOTA_KEY_SECRET!,
-                Number(secrets.AI_DAILY_BUDGET_MICROUSD ?? 0) * 1000,
+                aiConfigurationValid(secrets) ? Number(secrets.AI_DAILY_BUDGET_MICROUSD) * 1000 : 0,
               );
-              const chat = createChat(secrets, request, process.cwd(), admission, true);
+              const chat = createChat(
+                {
+                  ...secrets,
+                  OPENAI_CHAT_MODEL: 'gpt-6-luna',
+                  OPENAI_API_KEY: aiConfigurationValid(secrets)
+                    ? secrets.OPENAI_API_KEY
+                    : undefined,
+                },
+                request,
+                process.cwd(),
+                admission,
+                true,
+              );
               const contact = readContactConfiguration(secrets);
               application = createApplication(
                 config,
@@ -145,7 +172,7 @@ export function createManagedHandler(
               configured = secrets;
               runtimeMetric('runtime_startup', 'ready');
             }
-            result = await application(event);
+            result = await application(requestEvent);
           }
         } catch {
           runtimeMetric('runtime_failure', 'unavailable');

@@ -1,5 +1,7 @@
 # First installation with simulated providers
 
+> Initial design and validation record. Current production delivery, names and historical recovery are documented in [Integration and delivery](ci-cd.md).
+
 [Español](managed-validation.es.md) · 2026-10-25.
 
 ## Verified state

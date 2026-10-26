@@ -1,5 +1,7 @@
 # Test environment operation and validation
 
+> Initial design and validation record. Current production delivery, names and historical recovery are documented in [Integration and delivery](ci-cd.md).
+
 [Español](test-operations.es.md) · 2026-10-25.
 
 **Current increment:** [first installation with doubles and Actions delivery](managed-validation.md), deployed and verified on AWS with simulated providers. [First private deployment result](first-private-deploy.md). Design and audit sections retain their earlier context.
@@ -20,7 +22,7 @@ Before activating the plan, test-plan must exist and allow only main, with the d
 
 ## Reviewable external foundation
 
-[infra/test-foundation.template.json](../infra/test-foundation.template.json) materializes the bucket, bootstrap parameter, four external roles and five boundaries. Runtime remains owned by the application CDK stack. It creates no secrets, OIDC provider, ECR, lookup role, CMK or application resources. The GitHub OIDC provider must exist and be reviewed separately.
+[infra/test-foundation.template.json](../infra/production-foundation.template.json) materializes the bucket, bootstrap parameter, four external roles and five boundaries. Runtime remains owned by the application CDK stack. It creates no secrets, OIDC provider, ECR, lookup role, CMK or application resources. The GitHub OIDC provider must exist and be reviewed separately.
 
 The template checks account 650387442642 and us-east-1. RuntimeSecretArn is mandatory and exact; no secret values are accepted. The runtime boundary permits only its log streams, control-table GetItem/PutItem/UpdateItem and GetSecretValue on that reference. Using a customer-managed Secrets Manager key would require reviewing kms:Decrypt separately; this proposal does not grant it.
 

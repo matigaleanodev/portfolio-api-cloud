@@ -1,5 +1,7 @@
 # Diseño de entrega y recuperación de test
 
+> Registro de diseño y validación inicial. El circuito productivo vigente, sus nombres y recuperación histórica están en [Integración y entrega](ci-cd.es.md).
+
 [English](deployment-design.md) · 25/10/2026.
 
 **Incremento vigente:** [primera instalación con dobles y circuito Actions](managed-validation.es.md), desplegada y comprobada en AWS con proveedores simulados. [Resultado del primer deploy privado](first-private-deploy.es.md). Las secciones de diseño y auditoría conservan su contexto previo.
@@ -120,7 +122,7 @@ La recuperación de tráfico debe mantener un solo destino de escritura por requ
 
 ## Preparación local posterior de etapas 6–10
 
-[Operación test](test-operations.es.md) y [plantilla de fundación](../infra/test-foundation.template.json) materializan las policies/boundaries y el bootstrap mínimo. Incluyen GetEncryptionConfiguration y GetParameters requeridos por las lecturas de la CLI, así como administración API V2 deshabilitada por defecto. El plan recupera el artifact revisado por run/digest y comprueba promoción a main sin recompilar. Auditoría Observer realizada; no hay recursos test provisionados. Dobles administrados, ejecución del changeset, recuperación test y retorno productivo siguen pendientes según ese runbook.
+[Operación test](test-operations.es.md) y [plantilla de fundación](../infra/production-foundation.template.json) materializan las policies/boundaries y el bootstrap mínimo. Incluyen GetEncryptionConfiguration y GetParameters requeridos por las lecturas de la CLI, así como administración API V2 deshabilitada por defecto. El plan recupera el artifact revisado por run/digest y comprueba promoción a main sin recompilar. Auditoría Observer realizada; no hay recursos test provisionados. Dobles administrados, ejecución del changeset, recuperación test y retorno productivo siguen pendientes según ese runbook.
 
 ## Subject OIDC comprobado
 

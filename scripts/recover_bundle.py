@@ -20,8 +20,8 @@ def recover(archive: Path, artifact: dict, run: dict, output: Path, revision: st
         raise ValueError('Se requiere una revisión integrada con CI por push')
     if run.get('path') != '.github/workflows/ci.yml' or run.get('repository', {}).get('full_name') != 'matigaleanodev/portfolio-api-cloud':
         raise ValueError('Workflow o repositorio incorrecto')
-    expected_name = f'test-assembly-{revision}-{run["id"]}-{run["run_attempt"]}'
-    if artifact.get('name') != expected_name or artifact.get('expired') is not False:
+    expected_names = {f'{prefix}-{revision}-{run["id"]}-{run["run_attempt"]}' for prefix in ('api-assembly', 'test-assembly')}
+    if artifact.get('name') not in expected_names or artifact.get('expired') is not False:
         raise ValueError('Artifact inesperado o vencido')
     if artifact.get('workflow_run', {}).get('id') != run['id'] or artifact.get('workflow_run', {}).get('head_sha') != revision:
         raise ValueError('Artifact ajeno al run revisado')
