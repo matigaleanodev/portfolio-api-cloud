@@ -17,7 +17,7 @@ export function createSecretReader(): SecretReader {
   };
 }
 
-/** Se valida el snapshot completo antes de permitir negocio; ningún error incluye valores. */
+/** La configuración común no depende de la vigencia de la generación paga. */
 export function validateRuntimeSecret(raw: string): RuntimeEnvironment {
   let value: unknown;
   try {
@@ -43,23 +43,23 @@ export function validateRuntimeSecret(raw: string): RuntimeEnvironment {
     if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password)
       throw new Error('Invalid R2 endpoint');
   }
-  if (env.OPENAI_API_KEY) {
-    const model = env.OPENAI_CHAT_MODEL ?? 'gpt-6-luna';
-    if (model !== 'gpt-6-luna') throw new Error('Unpriced AI model');
-    const budget = Number(env.AI_DAILY_BUDGET_MICROUSD);
-    if (
-      !/^\d+$/.test(env.AI_DAILY_BUDGET_MICROUSD ?? '') ||
-      !Number.isSafeInteger(budget) ||
-      budget <= 0 ||
-      budget > 1_000_000
-    )
-      throw new Error('Invalid global daily AI budget');
-    const until = Date.parse(env.AI_PRICING_VALID_UNTIL ?? '');
-    if (!Number.isFinite(until) || until <= Date.now() || until > Date.now() + 31 * 86400_000)
-      throw new Error('AI pricing requires review');
-    env.OPENAI_CHAT_MODEL = model;
-  }
   return Object.freeze(env);
+}
+
+export function aiConfigurationValid(env: RuntimeEnvironment, now = Date.now()): boolean {
+  const budget = Number(env.AI_DAILY_BUDGET_MICROUSD);
+  const until = Date.parse(env.AI_PRICING_VALID_UNTIL ?? '');
+  return (
+    Boolean(env.OPENAI_API_KEY) &&
+    (env.OPENAI_CHAT_MODEL ?? 'gpt-6-luna') === 'gpt-6-luna' &&
+    /^\d+$/.test(env.AI_DAILY_BUDGET_MICROUSD ?? '') &&
+    Number.isSafeInteger(budget) &&
+    budget > 0 &&
+    budget <= 1_000_000 &&
+    Number.isFinite(until) &&
+    until > now &&
+    until <= now + 31 * 86400_000
+  );
 }
 
 export function createRuntimeConfiguration(env: RuntimeEnvironment, read: SecretReader) {

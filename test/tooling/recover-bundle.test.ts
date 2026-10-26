@@ -30,7 +30,8 @@ with tempfile.TemporaryDirectory() as directory:
         if scenario == 'runtime alterado': bundle.writestr('runtime.txt', 'changed')
     digest = 'sha256:' + hashlib.sha256(archive.read_bytes()).hexdigest()
     run = {'id': 1, 'run_attempt': 2, 'conclusion': 'success', 'status': 'completed', 'head_sha': revision, 'head_branch': 'dev', 'event': 'push', 'path': '.github/workflows/ci.yml', 'repository': {'full_name': 'matigaleanodev/portfolio-api-cloud'}}
-    artifact = {'name': f'test-assembly-{revision}-1-2', 'expired': False, 'digest': digest, 'workflow_run': {'id': 1, 'head_sha': revision}}
+    artifact = {'name': f'api-assembly-{revision}-1-2', 'expired': False, 'digest': digest, 'workflow_run': {'id': 1, 'head_sha': revision}}
+    if scenario == 'histórico': artifact['name'] = f'test-assembly-{revision}-1-2'
     if scenario == 'digest distinto': artifact['digest'] = 'sha256:' + 'b' * 64
     if scenario == 'CI fallida': run['conclusion'] = 'failure'
     if scenario == 'synthetic merge': run['event'] = 'pull_request'
@@ -44,13 +45,16 @@ with tempfile.TemporaryDirectory() as directory:
     assert (root / 'recovered/runtime.txt').read_text() == 'same runtime'
 `;
 
-test('Dado un artifact retenido de CI integrada, cuando se recupera, entonces verifica procedencia, digest y bytes sin AWS', () => {
-  const result = spawnSync('python3', ['-c', fixture, 'válido'], {
-    encoding: 'utf8',
-    env: { PATH: '/usr/bin:/bin' },
-  });
-  expect(result.status, result.stderr).toBe(0);
-});
+test.each(['válido', 'histórico'])(
+  'Dado un artifact %s de CI integrada, cuando se recupera, entonces verifica procedencia, digest y bytes sin AWS',
+  (scenario) => {
+    const result = spawnSync('python3', ['-c', fixture, scenario], {
+      encoding: 'utf8',
+      env: { PATH: '/usr/bin:/bin' },
+    });
+    expect(result.status, result.stderr).toBe(0);
+  },
+);
 
 test.each([
   'digest distinto',

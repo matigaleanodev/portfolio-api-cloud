@@ -27,7 +27,7 @@ La stack define una tabla DynamoDB de control on-demand con TTL y protección de
 ```bash
 npm ci --ignore-scripts
 npm run test:infra
-npm run cdk -- synth --no-lookups --context stage=test
+npm run cdk -- synth --no-lookups --context stage=production
 ```
 
 `prepare-infra.mjs` compila y prepara `.tmp/lambda` con dist, package.json, LICENSE y dependencias de producción del lock. Es la misma función de empaquetado que verifica `test:package`. Excluye fuentes, tests, `.env`, archivos privados y herramientas CDK/Vitest. Conserva las licencias incluidas en cada dependencia. CDK registra un asset ZIP; `cdk.out` contiene template, manifest y copia local del asset. No se publica S3 ni se crea un change set con synth.

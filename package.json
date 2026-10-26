@@ -1,6 +1,6 @@
 {
   "name": "portfolio-api-cloud",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -12,7 +12,7 @@
     "build": "node scripts/build.mjs",
     "test": "node scripts/prepare-infra.mjs validationScenario=success && node scripts/test.mjs",
     "check:docs": "python3 scripts/check_docs.py",
-    "check": "npm run format:check && npm run typecheck && npm test && npm run test:package && npm run cdk -- synth --no-lookups --context stage=test --quiet && npm run check:docs",
+    "check": "npm run format:check && npm run typecheck && npm test && npm run test:package && npm run cdk -- synth --no-lookups --context stage=production --quiet && npm run check:docs",
     "test:package": "node scripts/test-package.mjs",
     "test:app": "node scripts/test.mjs --project application",
     "test:tooling": "node scripts/test.mjs --project tooling",
