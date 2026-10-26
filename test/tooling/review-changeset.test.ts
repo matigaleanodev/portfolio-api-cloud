@@ -121,17 +121,21 @@ test('Dado un rol distinto o paquete desconocido, cuando se revisa el primer des
   ).not.toBe(0);
 });
 test('Dados workflows administrativos, cuando se inspecciona el circuito, entonces exige main, dispatch, activación, environment e identidad separados', () => {
-  for (const file of ['foundation-test.yml', 'execute-test.yml', 'validation-secret.yml']) {
+  for (const file of [
+    'plan-foundation-production.yml',
+    'build-and-deploy.yml',
+    'validation-secret.yml',
+  ]) {
     const text = readFileSync('.github/workflows/' + file, 'utf8');
     expect(text).toContain('workflow_dispatch:');
     expect(text).toContain("github.ref == 'refs/heads/main'");
     expect(text).toContain("== 'true'");
-    expect(text).toContain('environment: test-');
+    expect(text).toContain('environment: production-');
     expect(text).toContain('get-caller-identity');
-    expect(text).toContain('group: portfolio-api-cloud-test-mutation');
+    expect(text).toContain('group: portfolio-api-cloud-production-mutation');
     expect(text).not.toMatch(/AdministratorAccess|access-key-id:|secret-access-key:|cdk bootstrap/);
   }
-  const workflow = readFileSync('.github/workflows/execute-test.yml', 'utf8');
+  const workflow = readFileSync('.github/workflows/build-and-deploy.yml', 'utf8');
   expect(workflow.indexOf('"$digest" == "$REVIEWED_DIGEST"')).toBeLessThan(
     workflow.indexOf('aws cloudformation execute-change-set'),
   );
@@ -149,7 +153,8 @@ test('Dadas identidades de arranque, cuando se inspeccionan las policies, entonc
       resources[name + 'Boundary'].Properties.PolicyDocument,
     );
     if (name !== 'FoundationCloudFormation') {
-      const environment = name === 'FoundationPlan' ? 'test-foundation-plan' : 'test-execute';
+      const environment =
+        name === 'FoundationPlan' ? 'production-foundation-plan' : 'production-execute';
       expect(role.AssumeRolePolicyDocument.Statement).toEqual([
         {
           Effect: 'Allow',

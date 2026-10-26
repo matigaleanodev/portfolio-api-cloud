@@ -1,4 +1,4 @@
-name: Execute reviewed test change set
+name: build and deploy
 on:
   workflow_dispatch:
     inputs:
@@ -22,12 +22,12 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: portfolio-api-cloud-test-mutation
+  group: portfolio-api-cloud-production-mutation
   cancel-in-progress: false
 jobs:
   execute:
-    if: github.repository == 'matigaleanodev/portfolio-api-cloud' && github.ref == 'refs/heads/main' && vars.TEST_EXECUTE_ENABLED == 'true'
-    environment: test-execute
+    if: github.repository == 'matigaleanodev/portfolio-api-cloud' && github.ref == 'refs/heads/main' && vars.PRODUCTION_EXECUTE_ENABLED == 'true'
+    environment: production-execute
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
