@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 
-const foundation = JSON.parse(readFileSync('infra/test-foundation.template.json', 'utf8'));
+const foundation = JSON.parse(readFileSync('infra/production-foundation.template.json', 'utf8'));
 const resources = foundation.Resources;
 const statements = (name: string) => resources[name].Properties.PolicyDocument.Statement;
 const actions = (name: string): string[] =>
@@ -28,7 +28,7 @@ test('Dados roles externos, cuando se revisa la delegación, entonces cada ident
   expect(oidc.Condition.StringEquals).toEqual({
     'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
     'token.actions.githubusercontent.com:sub':
-      'repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186:environment:test-plan',
+      'repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186:environment:production-plan',
   });
   for (const name of ['CdkDeployRole', 'FilePublishingRole']) {
     expect(resources[name].Properties.AssumeRolePolicyDocument.Statement[0].Principal).toEqual({

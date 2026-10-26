@@ -77,7 +77,7 @@ def create(root: Path, output: Path, revision: str, node_version: str) -> None:
     (output / "review.json").write_text(json.dumps({
         "schemaVersion": 1, "revision": revision, "nodeVersion": node_version,
         "stack": "portfolio-api-cloud-test", "account": "650387442642", "region": "us-east-1",
-        "scope": "local-review-only",
+        "scope": "production-review", "environment": "production",
     }, indent=2) + "\n")
     (output / "checksums.json").write_text(json.dumps(inventory(output), indent=2) + "\n")
 

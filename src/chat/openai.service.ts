@@ -1,3 +1,4 @@
+import { aiConfigurationValid, type RuntimeEnvironment } from '../runtime-config.js';
 import { abortable, operationSignal } from '../request-scope.js';
 import type { AiAdmission } from '../shared-control.js';
 import { createHash } from 'node:crypto';
@@ -12,7 +13,7 @@ export class OpenAiService {
   private readonly model: string;
 
   constructor(
-    env: Readonly<Record<string, string | undefined>>,
+    private readonly env: RuntimeEnvironment,
     private readonly request: typeof fetch,
     private readonly admission?: AiAdmission,
   ) {
@@ -26,7 +27,7 @@ export class OpenAiService {
   >();
 
   isEnabled(): boolean {
-    return Boolean(this.apiKey);
+    return Boolean(this.apiKey) && (!this.admission || aiConfigurationValid(this.env));
   }
 
   async generateChatResponse(payload: ChatCompletionPayload): Promise<ChatCompletionResult | null> {
@@ -57,7 +58,7 @@ export class OpenAiService {
       return finish(null, 'empty_context');
     }
 
-    if (!this.apiKey) {
+    if (!this.isEnabled()) {
       return finish(null, 'disabled');
     }
 
@@ -150,6 +151,7 @@ export class OpenAiService {
           )
             return null;
         }
+        if (this.admission && !aiConfigurationValid(this.env)) return null;
         signal.throwIfAborted();
         return this.request('https://api.openai.com/v1/responses', {
           method: 'POST',

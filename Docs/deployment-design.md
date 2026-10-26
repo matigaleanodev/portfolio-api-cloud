@@ -1,5 +1,7 @@
 # Test delivery and recovery design
 
+> Initial design and validation record. Current production delivery, names and historical recovery are documented in [Integration and delivery](ci-cd.md).
+
 [Español](deployment-design.es.md) · 2026-10-25.
 
 **Current increment:** [first installation with doubles and Actions delivery](managed-validation.md), deployed and verified on AWS with simulated providers. [First private deployment result](first-private-deploy.md). Design and audit sections retain their earlier context.
@@ -120,7 +122,7 @@ Traffic recovery must preserve one write destination per request, without POST/D
 
 ## Subsequent local preparation for phases 6–10
 
-[Test operations](test-operations.md) and the [foundation template](../infra/test-foundation.template.json) materialize policies/boundaries and minimal bootstrap. They include GetEncryptionConfiguration/GetParameters for CLI reads and disable V2 API administration by default. The plan recovers the reviewed artifact by run/digest and checks promotion to main without rebuilding. Observer audit completed; no test resources provisioned. Managed doubles, changeset execution, test recovery and production return remain pending under that runbook.
+[Test operations](test-operations.md) and the [foundation template](../infra/production-foundation.template.json) materialize policies/boundaries and minimal bootstrap. They include GetEncryptionConfiguration/GetParameters for CLI reads and disable V2 API administration by default. The plan recovers the reviewed artifact by run/digest and checks promotion to main without rebuilding. Observer audit completed; no test resources provisioned. Managed doubles, changeset execution, test recovery and production return remain pending under that runbook.
 
 ## Verified OIDC subject
 
