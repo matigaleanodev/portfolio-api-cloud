@@ -21,7 +21,7 @@ No application DB, NAT, VPC, domain or frontend is added. One DynamoDB on-demand
 ```bash
 npm ci --ignore-scripts
 npm run test:infra
-npm run cdk -- synth --no-lookups --context stage=test
+npm run cdk -- synth --no-lookups --context stage=production
 ```
 
 Preparation compiles and stages `.tmp/lambda` with dist, package.json, LICENSE and locked production dependencies, sharing the exact packaging function used by `test:package`. Sources/tests/.env/private files/CDK/Vitest are excluded; dependency licenses are preserved. CDK stages a ZIP asset and writes the local template/manifest/asset to cdk.out. Synth neither uploads S3 assets nor creates a change set.

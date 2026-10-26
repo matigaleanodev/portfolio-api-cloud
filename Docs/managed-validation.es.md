@@ -1,5 +1,7 @@
 # Primera instalación con proveedores simulados
 
+> Registro de diseño y validación inicial. El circuito productivo vigente, sus nombres y recuperación histórica están en [Integración y entrega](ci-cd.es.md).
+
 [English](managed-validation.md) · 25/10/2026.
 
 ## Estado comprobado
