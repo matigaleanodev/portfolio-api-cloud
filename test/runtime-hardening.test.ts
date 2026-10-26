@@ -577,3 +577,18 @@ test('Dada una instancia caliente, cuando vencen tarifas entre respuestas, enton
   );
   expect(request).toHaveBeenCalledTimes(2);
 });
+
+test.each([
+  'OPENAI_API_KEY',
+  'OPENAI_CHAT_MODEL',
+  'AI_DAILY_BUDGET_MICROUSD',
+  'AI_PRICING_VALID_UNTIL',
+])(
+  'Dado tipo JSON inválido en %s, cuando el resto del secreto es válido, entonces deshabilita IA sin rechazar la configuración común',
+  (field) => {
+    const value = validateRuntimeSecret(JSON.stringify({ ...runtimeSecret(), [field]: 42 }));
+    expect(aiConfigurationValid(value)).toBe(false);
+    expect(value.CONTACT_FROM_EMAIL).toBe('from@example.invalid');
+    expect(value.PORTFOLIO_CLOUD_API_URL).toBe('https://cloud.example.invalid');
+  },
+);

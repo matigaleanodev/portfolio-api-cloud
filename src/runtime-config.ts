@@ -28,9 +28,17 @@ export function validateRuntimeSecret(raw: string): RuntimeEnvironment {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new Error('Invalid runtime configuration');
   const entries = Object.entries(value);
-  if (entries.some(([, item]) => typeof item !== 'string'))
+  const aiFields = new Set([
+    'OPENAI_API_KEY',
+    'OPENAI_CHAT_MODEL',
+    'AI_DAILY_BUDGET_MICROUSD',
+    'AI_PRICING_VALID_UNTIL',
+  ]);
+  if (entries.some(([key, item]) => typeof item !== 'string' && !aiFields.has(key)))
     throw new Error('Invalid runtime configuration');
-  const env = Object.fromEntries(entries) as Record<string, string>;
+  const env = Object.fromEntries(
+    entries.map(([key, item]) => [key, typeof item === 'string' ? item : '']),
+  ) as Record<string, string>;
   readContactConfiguration(env);
   const cloud = new URL(readSubscriptionConfiguration(env).baseUrl);
   if (cloud.protocol !== 'https:' || cloud.username || cloud.password)
