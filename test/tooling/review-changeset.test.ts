@@ -275,3 +275,11 @@ test('Dadas jerarquías reales en template, cambios o relaciones, cuando se revi
     expect(validate(input).status, `Jerarquía no admitida ${index}`).not.toBe(0);
   }
 });
+
+test('Dada una actualización revertida y estable, cuando se prepara otro changeset, entonces conserva la revisión sin exigir una recreación', () => {
+  const result = validate({
+    ...base,
+    stackData: { ...base.stackData, StackStatus: 'UPDATE_ROLLBACK_COMPLETE' },
+  });
+  expect(result.status, result.stderr).toBe(0);
+});

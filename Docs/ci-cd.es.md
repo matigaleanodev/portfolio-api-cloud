@@ -23,3 +23,5 @@ Los trusts OIDC usan propietario/repositorio inmutables y environments exactos; 
 `recover_bundle.py` admite tanto `api-assembly-...` como los artifacts históricos `test-assembly-...`, con los mismos controles de run, revisión, digest, extracción e inventario. No se renombran artifacts publicados ni se relajan sus verificaciones. Las versiones 1 y los campos originales de metadata histórica siguen siendo recuperables.
 
 [Dominio, continuidad y rollback](production.es.md). Los documentos de la primera instalación conservan los nombres y resultados de ese momento.
+
+La creación regional del dominio exige el tag Project y `ForAllValues:StringEquals` para `apigateway:Request/EndpointType`, con presencia obligatoria mediante Null=false. Ese campo es multivalor; el operador escalar rechaza una solicitud regional válida. La revisión admite UPDATE_ROLLBACK_COMPLETE como estado estable para preparar una corrección, conservando los controles de identidad, template, assets y digest.
