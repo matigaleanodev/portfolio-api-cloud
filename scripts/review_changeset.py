@@ -51,7 +51,7 @@ def validate(change, stack_data, template, stack, changeset, kind):
     role='PortfolioApiCloudTest' + ('FoundationCloudFormationRole' if kind=='foundation' else 'CloudFormationExecutionRole')
     if stack_data.get('StackId') != stack or stack_data.get('RoleARN') != 'arn:aws:iam::650387442642:role/' + role:
         raise ValueError('Ejecutor CloudFormation inesperado')
-    if stack_data.get('StackStatus') not in ('REVIEW_IN_PROGRESS','CREATE_COMPLETE','UPDATE_COMPLETE'):
+    if stack_data.get('StackStatus') not in ('REVIEW_IN_PROGRESS','CREATE_COMPLETE','UPDATE_COMPLETE','UPDATE_ROLLBACK_COMPLETE'):
         raise ValueError('Estado previo de stack no admitido')
     changes=change.get('Changes',[])
     if not changes: raise ValueError('Changeset vacío')

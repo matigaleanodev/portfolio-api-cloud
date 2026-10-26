@@ -516,8 +516,13 @@
               "Resource": ["arn:aws:apigateway:us-east-1::/domainnames"],
               "Condition": {
                 "StringEquals": {
-                  "aws:RequestTag/Project": "portfolio-api-cloud",
+                  "aws:RequestTag/Project": "portfolio-api-cloud"
+                },
+                "ForAllValues:StringEquals": {
                   "apigateway:Request/EndpointType": "REGIONAL"
+                },
+                "Null": {
+                  "apigateway:Request/EndpointType": "false"
                 }
               }
             }
@@ -1024,8 +1029,13 @@
                   "Resource": ["arn:aws:apigateway:us-east-1::/domainnames"],
                   "Condition": {
                     "StringEquals": {
-                      "aws:RequestTag/Project": "portfolio-api-cloud",
+                      "aws:RequestTag/Project": "portfolio-api-cloud"
+                    },
+                    "ForAllValues:StringEquals": {
                       "apigateway:Request/EndpointType": "REGIONAL"
+                    },
+                    "Null": {
+                      "apigateway:Request/EndpointType": "false"
                     }
                   }
                 }
