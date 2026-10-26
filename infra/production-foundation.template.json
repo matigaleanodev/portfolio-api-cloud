@@ -525,6 +525,14 @@
                   "apigateway:Request/EndpointType": "false"
                 }
               }
+            },
+            {
+              "Sid": "ManageExactCustomDomainTags",
+              "Effect": "Allow",
+              "Action": ["apigateway:GET", "apigateway:PUT", "apigateway:DELETE"],
+              "Resource": [
+                "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fdomainnames%2Fapi.matiasgaleano.dev"
+              ]
             }
           ]
         }
@@ -1038,6 +1046,14 @@
                       "apigateway:Request/EndpointType": "false"
                     }
                   }
+                },
+                {
+                  "Sid": "ManageExactCustomDomainTags",
+                  "Effect": "Allow",
+                  "Action": ["apigateway:GET", "apigateway:PUT", "apigateway:DELETE"],
+                  "Resource": [
+                    "arn:aws:apigateway:us-east-1::/tags/arn%3Aaws%3Aapigateway%3Aus-east-1%3A%3A%2Fdomainnames%2Fapi.matiasgaleano.dev"
+                  ]
                 }
               ]
             }
