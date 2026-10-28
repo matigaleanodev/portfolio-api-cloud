@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def check(root: Path) -> list[str]:
     errors: list[str] = []
     required = ["README.md", "README.es.md"]
-    for name in ["audit", "architecture", "costs", "migration", "decisions", "ci-cd", "sources", "branch-protection", "runtime-evaluation"]:
+    for name in ["architecture", "api", "development", "operations", "decisions"]:
         required.extend([f"Docs/{name}.md", f"Docs/{name}.es.md"])
     for name in required:
         if not (root / name).is_file():
