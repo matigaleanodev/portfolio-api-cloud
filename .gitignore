@@ -15,7 +15,6 @@ cdk.out/
 *.pfx
 *.log
 /agents.md
-/AGENTS.md
 /agents.es.md
 /roadmap.md
 /roadmap.es.md
@@ -31,3 +30,17 @@ __pycache__/
 [aA][gG][eE][nN][dD][sS]*.md
 [rR][oO][aA][dD][mM][aA][pP]*
 [mM][eE][nN][tT][oO][rR]*
+
+# Seguimiento privado fuera del repositorio
+/agents.md
+/agents.es.md
+/roadmap*.md
+/Roadmap*.md
+/context.md
+/status/
+/mentor/
+/mentor-notes.md
+/.tmp/
+
+# Instrucciones técnicas públicas de Codex
+!/AGENTS.md
