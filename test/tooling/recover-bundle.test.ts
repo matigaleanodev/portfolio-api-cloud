@@ -16,10 +16,14 @@ with tempfile.TemporaryDirectory() as directory:
         'cdk.out/manifest.json': json.dumps({'artifacts': {'PortfolioApiCloudTest': {'type': 'aws:cloudformation:stack', 'additionalMetadataFile': 'stack.metadata.json'}}}),
         'cdk.out/stack.metadata.json': '{}',
     }
+    if scenario == 'varios assets':
+        for index in range(12000): files[f'cdk.out/asset.runtime/entry-{index}.txt'] = 'runtime'
     files['checksums.json'] = json.dumps({key: hashlib.sha256(value.encode()).hexdigest() for key, value in files.items()})
     archive = root / 'artifact.zip'
     with zipfile.ZipFile(archive, 'w') as bundle:
         for key, value in files.items(): bundle.writestr(key, value)
+        if scenario == 'demasiadas entradas':
+            for index in range(30001): bundle.writestr(f'entries/{index}/', '')
         if scenario == 'ruta externa': bundle.writestr('../escape.txt', 'no')
         if scenario == 'ruta absoluta': bundle.writestr('/escape.txt', 'no')
         if scenario == 'enlace':
@@ -45,7 +49,7 @@ with tempfile.TemporaryDirectory() as directory:
     assert (root / 'recovered/runtime.txt').read_text() == 'same runtime'
 `;
 
-test.each(['válido', 'histórico'])(
+test.each(['válido', 'histórico', 'varios assets'])(
   'Dado un artifact %s de CI integrada, cuando se recupera, entonces verifica procedencia, digest y bytes sin AWS',
   (scenario) => {
     const result = spawnSync('python3', ['-c', fixture, scenario], {
@@ -57,6 +61,7 @@ test.each(['válido', 'histórico'])(
 );
 
 test.each([
+  'demasiadas entradas',
   'digest distinto',
   'CI fallida',
   'synthetic merge',
