@@ -3,15 +3,15 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { createApplication } from '../src/application.js';
-import { readConfiguration } from '../src/config.js';
+import { createApplication } from '../packages/runtime/src/application.js';
+import { readConfiguration } from '../packages/runtime/src/config.js';
 import { httpEvent } from './fixtures.js';
-import { ChatService } from '../src/chat/chat.service.js';
-import { FaqService } from '../src/chat/faq.service.js';
-import { KnowledgeService } from '../src/chat/knowledge.service.js';
-import { OpenAiService } from '../src/chat/openai.service.js';
-import { handler } from '../src/handler.js';
-import { createQuota } from '../src/quota.js';
+import { ChatService } from '../packages/runtime/src/chat/chat.service.js';
+import { FaqService } from '../packages/runtime/src/chat/faq.service.js';
+import { KnowledgeService } from '../packages/runtime/src/chat/knowledge.service.js';
+import { OpenAiService } from '../packages/runtime/src/chat/openai.service.js';
+import { handler } from '../packages/runtime/src/handlers/api.js';
+import { createQuota } from '../packages/runtime/src/quota.js';
 
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => undefined));
 const providerAnswer = {

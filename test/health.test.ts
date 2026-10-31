@@ -1,8 +1,8 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { createApplication } from '../src/application.js';
-import { readConfiguration } from '../src/config.js';
-import { handler } from '../src/handler.js';
+import { createApplication } from '../packages/runtime/src/application.js';
+import { readConfiguration } from '../packages/runtime/src/config.js';
+import { handler } from '../packages/runtime/src/handlers/api.js';
 import { httpEvent } from './fixtures.js';
 
 const application = createApplication(readConfiguration({}));
