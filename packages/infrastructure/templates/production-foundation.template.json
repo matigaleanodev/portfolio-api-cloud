@@ -2,9 +2,10 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Review-only personal test foundation. API administration is disabled by default.",
   "Parameters": {
-    "RuntimeSecretArn": {
+    "PreviousRuntimeSecretArn": {
       "Type": "String",
-      "AllowedPattern": "arn:aws:secretsmanager:us-east-1:650387442642:secret:portfolio-api-cloud/test/[A-Za-z0-9/_+=.@-]+"
+      "AllowedPattern": "none|arn:aws:secretsmanager:us-east-1:650387442642:secret:portfolio-api-cloud/test/[A-Za-z0-9/_+=.@-]+",
+      "Description": "Secret still read by the deployed 1.0 runtime until the SSM-based application change set runs; \"none\" explicitly grants nothing."
     },
     "AllowRegionalApiBootstrap": {
       "Type": "String",
@@ -74,6 +75,18 @@
         },
         {
           "Condition": "RegionalApiBootstrap"
+        }
+      ]
+    },
+    "HasPreviousRuntimeSecret": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "PreviousRuntimeSecretArn"
+            },
+            "none"
+          ]
         }
       ]
     }
@@ -162,6 +175,17 @@
               "Resource": [
                 "arn:aws:iam::650387442642:role/PortfolioApiCloudTestCdkDeployRole",
                 "arn:aws:iam::650387442642:role/PortfolioApiCloudTestFilePublishingRole"
+              ]
+            },
+            {
+              "Sid": "VerifyRuntimeParameters",
+              "Effect": "Allow",
+              "Action": ["ssm:GetParameters"],
+              "Resource": [
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/api",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/chat",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/editorial",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/notifications"
               ]
             }
           ]
@@ -287,8 +311,6 @@
                 "lambda:UpdateFunctionCode",
                 "lambda:UpdateFunctionConfiguration",
                 "lambda:DeleteFunction",
-                "lambda:AddPermission",
-                "lambda:RemovePermission",
                 "lambda:GetPolicy",
                 "lambda:PutFunctionConcurrency",
                 "lambda:DeleteFunctionConcurrency",
@@ -297,8 +319,37 @@
                 "lambda:ListTags"
               ],
               "Resource": [
-                "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test"
+                "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test",
+                "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test-*"
               ]
+            },
+            {
+              "Sid": "PermitApiGatewayInvoke",
+              "Effect": "Allow",
+              "Action": ["lambda:AddPermission", "lambda:RemovePermission"],
+              "Resource": [
+                "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test",
+                "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test-chat"
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "lambda:Principal": "apigateway.amazonaws.com"
+                }
+              }
+            },
+            {
+              "Sid": "PermitReleaseInvoke",
+              "Effect": "Allow",
+              "Action": ["lambda:AddPermission", "lambda:RemovePermission"],
+              "Resource": [
+                "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test-process-release",
+                "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test-publish-chat-knowledge"
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "lambda:Principal": "arn:aws:iam::650387442642:role/PortfolioGitHubReleaseRole"
+                }
+              }
             },
             {
               "Sid": "ManageControlTable",
@@ -332,11 +383,13 @@
                 "logs:TagResource",
                 "logs:UntagResource",
                 "logs:ListTagsForResource",
-                "logs:GetDataProtectionPolicy"
+                "logs:GetDataProtectionPolicy",
+                "logs:PutMetricFilter",
+                "logs:DeleteMetricFilter",
+                "logs:DescribeMetricFilters"
               ],
               "Resource": [
-                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test",
-                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test:*"
+                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test*"
               ]
             },
             {
@@ -372,8 +425,13 @@
             {
               "Sid": "CreateBoundedRuntime",
               "Effect": "Allow",
-              "Action": ["iam:CreateRole", "iam:PutRolePermissionsBoundary"],
-              "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntimeRole"],
+              "Action": [
+                "iam:CreateRole",
+                "iam:PutRolePermissionsBoundary",
+                "iam:PutRolePolicy",
+                "iam:DeleteRolePolicy"
+              ],
+              "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntime*"],
               "Condition": {
                 "StringEquals": {
                   "iam:PermissionsBoundary": "arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary"
@@ -386,21 +444,19 @@
               "Action": [
                 "iam:GetRole",
                 "iam:DeleteRole",
-                "iam:PutRolePolicy",
                 "iam:GetRolePolicy",
-                "iam:DeleteRolePolicy",
                 "iam:ListRolePolicies",
                 "iam:TagRole",
                 "iam:UntagRole",
                 "iam:ListAttachedRolePolicies"
               ],
-              "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntimeRole"]
+              "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntime*"]
             },
             {
-              "Sid": "PassExactRuntime",
+              "Sid": "PassBoundedRuntime",
               "Effect": "Allow",
               "Action": ["iam:PassRole"],
-              "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntimeRole"],
+              "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntime*"],
               "Condition": {
                 "StringEquals": {
                   "iam:PassedToService": "lambda.amazonaws.com"
@@ -497,19 +553,6 @@
               ]
             },
             {
-              "Sid": "ManageHttpFailureMetric",
-              "Effect": "Allow",
-              "Action": [
-                "logs:PutMetricFilter",
-                "logs:DeleteMetricFilter",
-                "logs:DescribeMetricFilters"
-              ],
-              "Resource": [
-                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test",
-                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test:*"
-              ]
-            },
-            {
               "Sid": "CreateRegionalProjectDomain",
               "Effect": "Allow",
               "Action": ["apigateway:POST"],
@@ -550,7 +593,12 @@
               "Effect": "Allow",
               "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
               "Resource": [
-                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test:log-stream:*"
+                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test:log-stream:*",
+                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test-chat:log-stream:*",
+                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test-process-release:log-stream:*",
+                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test-generate-og:log-stream:*",
+                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test-notify-post:log-stream:*",
+                "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test-publish-chat-knowledge:log-stream:*"
               ]
             },
             {
@@ -562,12 +610,61 @@
               ]
             },
             {
-              "Sid": "ReadExactSecret",
+              "Sid": "ReadRuntimeParameters",
               "Effect": "Allow",
-              "Action": ["secretsmanager:GetSecretValue"],
+              "Action": ["ssm:GetParameter"],
               "Resource": [
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/api",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/chat",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/editorial",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/notifications",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/api",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/chat"
+              ]
+            },
+            {
+              "Sid": "DecryptRuntimeParameters",
+              "Effect": "Allow",
+              "Action": ["kms:Decrypt"],
+              "Resource": ["arn:aws:kms:us-east-1:650387442642:key/*"],
+              "Condition": {
+                "StringEquals": {
+                  "kms:ViaService": "ssm.us-east-1.amazonaws.com",
+                  "kms:EncryptionContext:PARAMETER_ARN": [
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/api",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/chat",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/editorial",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/notifications",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/api",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/chat"
+                  ]
+                }
+              }
+            },
+            {
+              "Sid": "InvokeEditorialStages",
+              "Effect": "Allow",
+              "Action": ["lambda:InvokeFunction"],
+              "Resource": [
+                "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test-generate-og",
+                "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test-notify-post"
+              ]
+            },
+            {
+              "Fn::If": [
+                "HasPreviousRuntimeSecret",
                 {
-                  "Ref": "RuntimeSecretArn"
+                  "Sid": "ReadPreviousSecretDuringCutover",
+                  "Effect": "Allow",
+                  "Action": ["secretsmanager:GetSecretValue"],
+                  "Resource": [
+                    {
+                      "Ref": "PreviousRuntimeSecretArn"
+                    }
+                  ]
+                },
+                {
+                  "Ref": "AWS::NoValue"
                 }
               ]
             }
@@ -613,6 +710,17 @@
                   "Resource": [
                     "arn:aws:iam::650387442642:role/PortfolioApiCloudTestCdkDeployRole",
                     "arn:aws:iam::650387442642:role/PortfolioApiCloudTestFilePublishingRole"
+                  ]
+                },
+                {
+                  "Sid": "VerifyRuntimeParameters",
+                  "Effect": "Allow",
+                  "Action": ["ssm:GetParameters"],
+                  "Resource": [
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/api",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/chat",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/editorial",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/notifications"
                   ]
                 }
               ]
@@ -808,8 +916,6 @@
                     "lambda:UpdateFunctionCode",
                     "lambda:UpdateFunctionConfiguration",
                     "lambda:DeleteFunction",
-                    "lambda:AddPermission",
-                    "lambda:RemovePermission",
                     "lambda:GetPolicy",
                     "lambda:PutFunctionConcurrency",
                     "lambda:DeleteFunctionConcurrency",
@@ -818,8 +924,37 @@
                     "lambda:ListTags"
                   ],
                   "Resource": [
-                    "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test"
+                    "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test",
+                    "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test-*"
                   ]
+                },
+                {
+                  "Sid": "PermitApiGatewayInvoke",
+                  "Effect": "Allow",
+                  "Action": ["lambda:AddPermission", "lambda:RemovePermission"],
+                  "Resource": [
+                    "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test",
+                    "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test-chat"
+                  ],
+                  "Condition": {
+                    "StringEquals": {
+                      "lambda:Principal": "apigateway.amazonaws.com"
+                    }
+                  }
+                },
+                {
+                  "Sid": "PermitReleaseInvoke",
+                  "Effect": "Allow",
+                  "Action": ["lambda:AddPermission", "lambda:RemovePermission"],
+                  "Resource": [
+                    "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test-process-release",
+                    "arn:aws:lambda:us-east-1:650387442642:function:portfolio-api-cloud-test-publish-chat-knowledge"
+                  ],
+                  "Condition": {
+                    "StringEquals": {
+                      "lambda:Principal": "arn:aws:iam::650387442642:role/PortfolioGitHubReleaseRole"
+                    }
+                  }
                 },
                 {
                   "Sid": "ManageControlTable",
@@ -853,11 +988,13 @@
                     "logs:TagResource",
                     "logs:UntagResource",
                     "logs:ListTagsForResource",
-                    "logs:GetDataProtectionPolicy"
+                    "logs:GetDataProtectionPolicy",
+                    "logs:PutMetricFilter",
+                    "logs:DeleteMetricFilter",
+                    "logs:DescribeMetricFilters"
                   ],
                   "Resource": [
-                    "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test",
-                    "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test:*"
+                    "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test*"
                   ]
                 },
                 {
@@ -893,8 +1030,13 @@
                 {
                   "Sid": "CreateBoundedRuntime",
                   "Effect": "Allow",
-                  "Action": ["iam:CreateRole", "iam:PutRolePermissionsBoundary"],
-                  "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntimeRole"],
+                  "Action": [
+                    "iam:CreateRole",
+                    "iam:PutRolePermissionsBoundary",
+                    "iam:PutRolePolicy",
+                    "iam:DeleteRolePolicy"
+                  ],
+                  "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntime*"],
                   "Condition": {
                     "StringEquals": {
                       "iam:PermissionsBoundary": "arn:aws:iam::650387442642:policy/PortfolioApiCloudTestRuntimeBoundary"
@@ -907,21 +1049,19 @@
                   "Action": [
                     "iam:GetRole",
                     "iam:DeleteRole",
-                    "iam:PutRolePolicy",
                     "iam:GetRolePolicy",
-                    "iam:DeleteRolePolicy",
                     "iam:ListRolePolicies",
                     "iam:TagRole",
                     "iam:UntagRole",
                     "iam:ListAttachedRolePolicies"
                   ],
-                  "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntimeRole"]
+                  "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntime*"]
                 },
                 {
-                  "Sid": "PassExactRuntime",
+                  "Sid": "PassBoundedRuntime",
                   "Effect": "Allow",
                   "Action": ["iam:PassRole"],
-                  "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntimeRole"],
+                  "Resource": ["arn:aws:iam::650387442642:role/PortfolioApiCloudTestRuntime*"],
                   "Condition": {
                     "StringEquals": {
                       "iam:PassedToService": "lambda.amazonaws.com"
@@ -1015,19 +1155,6 @@
                   "Action": ["acm:DescribeCertificate"],
                   "Resource": [
                     "arn:aws:acm:us-east-1:650387442642:certificate/a5cb7eb1-ad11-404f-981b-e3d05c8c5de7"
-                  ]
-                },
-                {
-                  "Sid": "ManageHttpFailureMetric",
-                  "Effect": "Allow",
-                  "Action": [
-                    "logs:PutMetricFilter",
-                    "logs:DeleteMetricFilter",
-                    "logs:DescribeMetricFilters"
-                  ],
-                  "Resource": [
-                    "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test",
-                    "arn:aws:logs:us-east-1:650387442642:log-group:/aws/lambda/portfolio-api-cloud-test:*"
                   ]
                 },
                 {

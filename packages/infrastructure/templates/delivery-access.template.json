@@ -69,11 +69,6 @@
                   "iam:PassedToService": "cloudformation.amazonaws.com"
                 }
               }
-            },
-            {
-              "Effect": "Allow",
-              "Action": ["secretsmanager:CreateSecret"],
-              "Resource": "arn:aws:secretsmanager:us-east-1:650387442642:secret:portfolio-api-cloud/test/validation-*"
             }
           ]
         }
@@ -143,11 +138,6 @@
                       "iam:PassedToService": "cloudformation.amazonaws.com"
                     }
                   }
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": ["secretsmanager:CreateSecret"],
-                  "Resource": "arn:aws:secretsmanager:us-east-1:650387442642:secret:portfolio-api-cloud/test/validation-*"
                 }
               ]
             }
@@ -544,6 +534,115 @@
                   "Effect": "Allow",
                   "Action": ["s3:GetObject"],
                   "Resource": "arn:aws:s3:::cdk-papiatest-assets-650387442642-us-east-1/*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "ParametersSyncBoundary": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "ManagedPolicyName": "PortfolioApiCloudParametersSyncBoundary",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": ["ssm:PutParameter"],
+              "Resource": [
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/api",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/chat",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/editorial",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/notifications",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/api",
+                "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/chat"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": ["kms:Encrypt", "kms:GenerateDataKey"],
+              "Resource": "arn:aws:kms:us-east-1:650387442642:key/*",
+              "Condition": {
+                "StringEquals": {
+                  "kms:ViaService": "ssm.us-east-1.amazonaws.com",
+                  "kms:EncryptionContext:PARAMETER_ARN": [
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/api",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/chat",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/editorial",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/notifications",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/api",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/chat"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ParametersSyncRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "PortfolioApiCloudParametersSyncRole",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Principal": {
+                "Federated": "arn:aws:iam::650387442642:oidc-provider/token.actions.githubusercontent.com"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+                  "token.actions.githubusercontent.com:sub": "repo:matigaleanodev@99203645/portfolio-api-cloud@1432631186:environment:production-parameters"
+                }
+              }
+            }
+          ]
+        },
+        "MaxSessionDuration": 3600,
+        "PermissionsBoundary": {
+          "Ref": "ParametersSyncBoundary"
+        },
+        "Policies": [
+          {
+            "PolicyName": "WriteRuntimeParametersOnly",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": ["ssm:PutParameter"],
+                  "Resource": [
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/api",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/chat",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/editorial",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/notifications",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/api",
+                    "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/chat"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": ["kms:Encrypt", "kms:GenerateDataKey"],
+                  "Resource": "arn:aws:kms:us-east-1:650387442642:key/*",
+                  "Condition": {
+                    "StringEquals": {
+                      "kms:ViaService": "ssm.us-east-1.amazonaws.com",
+                      "kms:EncryptionContext:PARAMETER_ARN": [
+                        "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/api",
+                        "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/chat",
+                        "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/editorial",
+                        "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/notifications",
+                        "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/api",
+                        "arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/validation/chat"
+                      ]
+                    }
+                  }
                 }
               ]
             }

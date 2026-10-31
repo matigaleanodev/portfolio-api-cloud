@@ -13,6 +13,34 @@ from review_bundle import inventory
 
 PREFIX = 'arn:aws:cloudformation:us-east-1:650387442642:'
 BUCKET = 'cdk-papiatest-assets-650387442642-us-east-1'
+# Catálogo esperado (contracts/functions.ts): nombre físico -> handler productivo. La variante de
+# validación cambia solo el código de las funciones HTTP; un test de tooling verifica la paridad.
+CATALOG = {
+    'portfolio-api-cloud-test': 'dist/handlers/api.handler',
+    'portfolio-api-cloud-test-chat': 'dist/handlers/chat.handler',
+    'portfolio-api-cloud-test-process-release': 'dist/handlers/process-release.handler',
+    'portfolio-api-cloud-test-generate-og': 'dist/handlers/generate-og.handler',
+    'portfolio-api-cloud-test-notify-post': 'dist/handlers/notify-post.handler',
+    'portfolio-api-cloud-test-publish-chat-knowledge': 'dist/handlers/publish-chat-knowledge.handler',
+}
+VALIDATION_HANDLERS = {
+    'portfolio-api-cloud-test': 'dist/validation/api.handler',
+    'portfolio-api-cloud-test-chat': 'dist/validation/chat.handler',
+}
+# Identidades retenidas: la función, sus logs, la tabla de control y el rol no se eliminan ni reemplazan.
+RETAINED = re.compile(r'(?:Handler|RuntimeLogs|RuntimeControl|RuntimeRole)[0-9A-F]{8}')
+
+def check_catalog(template, validation=None):
+    functions = {v['Properties'].get('FunctionName'): v['Properties'].get('Handler') for v in template['Resources'].values() if v['Type'] == 'AWS::Lambda::Function'}
+    if len(functions) != len(CATALOG) or set(functions) != set(CATALOG):
+        raise ValueError('Paquete de aplicación inesperado')
+    for name, handler in functions.items():
+        allowed = {CATALOG[name]} if validation is False else {CATALOG[name], VALIDATION_HANDLERS.get(name)}
+        if handler not in allowed:
+            raise ValueError('Handler inesperado: ' + name)
+    retained = [key for key in template['Resources'] if RETAINED.fullmatch(key)]
+    if sorted(re.sub(r'[0-9A-F]{8}$', '', key) for key in retained) != ['Handler', 'RuntimeControl', 'RuntimeLogs', 'RuntimeRole']:
+        raise ValueError('Identidades retenidas ausentes o duplicadas')
 
 def targets(stack, changeset, kind):
     name = 'portfolio-api-cloud-test' + ('-foundation' if kind == 'foundation' else '')
@@ -35,6 +63,19 @@ def session_policy(stack, changeset, kind):
 
 def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',',':')).encode()).hexdigest()
+
+def redact_parameters(parameters):
+    """El recibo se publica como artifact: los valores no booleanos (correos, buckets, ARN de cuenta)
+    quedan como sha256 y el digest del recibo sigue atando la ejecución a esos mismos valores."""
+    result=[]
+    for parameter in parameters:
+        item=dict(parameter)
+        for field in ('ParameterValue','ResolvedValue'):
+            value=item.get(field)
+            if isinstance(value,str) and value not in ('true','false'):
+                item[field]='sha256:'+hashlib.sha256(value.encode()).hexdigest()
+        result.append(item)
+    return result
 
 def validate(change, stack_data, template, stack, changeset, kind):
     name=targets(stack,changeset,kind)
@@ -59,13 +100,16 @@ def validate(change, stack_data, template, stack, changeset, kind):
         resource=item.get('ResourceChange',{})
         if resource.get('ResourceType')=='AWS::CloudFormation::Stack' or resource.get('ChangeSetId'):
             raise ValueError('Cambios anidados no permitidos')
-        if resource.get('ResourceType')=='AWS::DynamoDB::Table' and (resource.get('Action')=='Remove' or resource.get('Replacement') in ('True','Conditional')):
+        destructive=resource.get('Action')=='Remove' or resource.get('Replacement') in ('True','Conditional')
+        if resource.get('ResourceType')=='AWS::DynamoDB::Table' and destructive:
             raise ValueError('El control compartido no se elimina ni reemplaza')
+        if kind=='application' and destructive and RETAINED.fullmatch(resource.get('LogicalResourceId') or ''):
+            raise ValueError('Identidad retenida eliminada o reemplazada: ' + resource['LogicalResourceId'])
     if kind=='application':
-        functions=[v['Properties'] for v in template['Resources'].values() if v['Type']=='AWS::Lambda::Function']
-        if len(functions)!=1 or functions[0]['FunctionName']!='portfolio-api-cloud-test' or functions[0]['Handler'] not in ('dist/validation/handler.handler', 'dist/handler.handler'):
-            raise ValueError('Paquete de aplicación inesperado')
-    return {key:change[key] for key in ('StackId','StackName','ChangeSetId','ChangeSetName','Changes','Parameters','Capabilities') if key in change}
+        check_catalog(template)
+    reviewed={key:change[key] for key in ('StackId','StackName','ChangeSetId','ChangeSetName','Changes','Capabilities') if key in change}
+    if 'Parameters' in change: reviewed['Parameters']=redact_parameters(change['Parameters'])
+    return reviewed
 
 def aws(*args):
     result=subprocess.run(['aws',*args,'--region','us-east-1','--output','json','--no-cli-pager'],check=True,capture_output=True,text=True)
@@ -87,9 +131,14 @@ def snapshot(stack,changeset,kind):
         raise ValueError('Template de fundación distinto del revisado')
     reviewed=validate(change,stacks[0],template,stack,changeset,kind)
     objects=[]
+    seen=set()
     for resource in template['Resources'].values():
         if resource['Type']!='AWS::Lambda::Function': continue
         code=resource['Properties']['Code']
+        # editorial.zip lo comparten tres funciones: cada objeto se verifica una sola vez.
+        identity=(code.get('S3Bucket'), code.get('S3Key'), code.get('S3ObjectVersion'))
+        if identity in seen: continue
+        seen.add(identity)
         if code['S3Bucket']!=BUCKET or not re.fullmatch(r'[a-f0-9]+\.zip',code['S3Key']):
             raise ValueError('Asset fuera del bucket previsto')
         with tempfile.TemporaryDirectory() as directory:

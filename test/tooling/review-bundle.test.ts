@@ -170,3 +170,20 @@ test('Dado un inventario consistente sin metadata referenciada, cuando se recupe
   writeFileSync(checksumPath, JSON.stringify(checksums));
   expect(run('verify', output, revision).status).toBe(1);
 });
+
+test('Dados varios assets Lambda, cuando se conserva el bundle, entonces incluye y verifica cada directorio referenciado', () => {
+  const { root, output } = fixture();
+  const files: Record<string, { source: { path: string } }> = {};
+  for (const name of ['api', 'chat', 'editorial', 'og']) {
+    mkdirSync(join(root, `cdk.out/asset.${name}`));
+    writeFileSync(join(root, `cdk.out/asset.${name}/handler.js`), name);
+    files[name] = { source: { path: `asset.${name}` } };
+  }
+  writeFileSync(join(root, 'cdk.out/assets.json'), JSON.stringify({ files }));
+  expect(run('create', root, output, revision, 'v24.22.1').status).toBe(0);
+  expect(run('verify', output, revision).status).toBe(0);
+  for (const name of ['api', 'chat', 'editorial', 'og'])
+    expect(readFileSync(join(output, `cdk.out/asset.${name}/handler.js`), 'utf8')).toBe(name);
+  writeFileSync(join(output, 'cdk.out/asset.og/handler.js'), 'altered');
+  expect(run('verify', output, revision).status).toBe(1);
+});
