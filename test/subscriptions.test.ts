@@ -1,14 +1,30 @@
-import { createManagedHandler } from '../src/handler.js';
-import { managedEnvironment, runtimeSecret, SimulatedControlStore } from './support/control.js';
+import { repositoryPath } from './support/paths.js';
+import { createApiHandler as createManagedHandler } from '../packages/runtime/src/handlers/api.js';
+import {
+  managedEnvironment,
+  runtimeSecret,
+  SimulatedControlStore,
+  SimulatedObjectStorage,
+  simulatedSubscribers,
+} from './support/control.js';
 import { test, vi } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
-import { createApplication } from '../src/application.js';
-import { readConfiguration, readSubscriptionConfiguration } from '../src/config.js';
-import { validateSubscription } from '../src/subscriptions.dto.js';
-import { createSubscriptionSender, type SubscriptionMethod } from '../src/subscriptions.js';
-import { handler } from '../src/handler.js';
+import { createApplication } from '../packages/runtime/src/application.js';
+import {
+  readConfiguration,
+  readSubscriptionConfiguration,
+} from '../packages/runtime/src/config.js';
+import { validateSubscription } from '../packages/runtime/src/subscriptions/dto.js';
+import {
+  createSubscriptionSender,
+  SubscriptionError,
+  type SubscriberOperations,
+  type SubscriptionMethod,
+} from '../packages/runtime/src/subscriptions/facade.js';
+import { createSubscriberStore } from '../packages/runtime/src/subscriptions/store.js';
+import { handler } from '../packages/runtime/src/handlers/api.js';
 import { httpEvent } from './fixtures.js';
 
 interface Reference {
@@ -17,23 +33,32 @@ interface Reference {
     input: unknown;
     expected: { statusCode: number; dto?: unknown; body?: unknown };
   }[];
-  upstream: {
-    label: string;
-    status: number;
-    payload?: unknown;
-    jsonFails?: boolean;
-    expected: { statusCode: number; body: unknown };
-  }[];
 }
 
 const reference = JSON.parse(
-  readFileSync('test/subscriptions-reference.json', 'utf8'),
+  readFileSync(repositoryPath('test/subscriptions-reference.json'), 'utf8'),
 ) as Reference;
 const methods: SubscriptionMethod[] = ['POST', 'DELETE'];
 const config = readSubscriptionConfiguration({
-  PORTFOLIO_CLOUD_API_URL: '  https://cloud.example.invalid/base///  ',
+  SUBSCRIBERS_R2_ENDPOINT: ' https://r2.example.invalid/ ',
+  SUBSCRIBERS_R2_BUCKET: ' subscribers ',
+  R2_SUBSCRIBERS_ACCESS_KEY_ID: 'fake',
+  R2_SUBSCRIBERS_SECRET_ACCESS_KEY: 'fake',
 });
 const valid = { email: 'test@example.com' };
+const storeSender = (storage = new SimulatedObjectStorage()) =>
+  createSubscriptionSender(createSubscriberStore(config, storage));
+const unavailable = {
+  message: 'No se pudo conectar con el servicio de suscripciones.',
+  error: 'Service Unavailable',
+  statusCode: 503,
+};
+const failed = {
+  message: 'No se pudo procesar la suscripcion en este momento.',
+  error: 'Bad Gateway',
+  statusCode: 502,
+};
+
 const cors = readConfiguration({ CORS_ORIGIN: 'https://frontend.example.invalid' });
 
 function subscriptionEvent(method: SubscriptionMethod = 'POST', input: unknown = valid) {
@@ -124,163 +149,187 @@ for (const scenario of reference.validation) {
   });
 }
 
-for (const scenario of reference.upstream) {
-  const given = scenario.label.startsWith('una ') ? 'Dada' : 'Dado';
-  test(`${given} ${scenario.label}, cuando responde el upstream de alta o baja, entonces se conserva el código y cuerpo exactos`, async () => {
-    for (const method of methods) {
-      let calls = 0;
-      const request: typeof fetch = async (url, options) => {
-        calls++;
-        assert.equal(url, 'https://cloud.example.invalid/base/subscriptions');
-        assert.equal(options?.method, method);
-        assert.deepEqual(options.headers, { 'Content-Type': 'application/json' });
-        assert.equal(options.body, JSON.stringify(valid));
-        assert.ok(options.signal instanceof AbortSignal);
-        return new Response(
-          scenario.jsonFails
-            ? scenario.status === 204
-              ? null
-              : '{'
-            : JSON.stringify(scenario.payload),
-          { status: scenario.status },
-        );
-      };
-      const app = createApplication(cors, undefined, createSubscriptionSender(config, request));
-      const result = await app(subscriptionEvent(method));
-      assert.equal(result.statusCode, scenario.expected.statusCode);
-      assert.deepEqual(JSON.parse(result.body ?? ''), scenario.expected.body);
-      assert.equal(calls, 1);
-      assert.equal(result.headers?.['content-type'], 'application/json; charset=utf-8');
-      assert.equal(
-        result.headers?.['access-control-allow-origin'],
-        'https://frontend.example.invalid',
-      );
-      assert.equal(result.headers?.['x-content-type-options'], 'nosniff');
-      assert.equal(result.headers?.['x-ratelimit-remaining'], '9');
-    }
-  });
-}
-
-test('Dada configuración vacía o una URL con barras, cuando se lee la base cloud, entonces exige presencia y solo aplica trim y quita barras finales', () => {
-  for (const value of [undefined, '', '  ']) {
-    assert.throws(
-      () => readSubscriptionConfiguration({ PORTFOLIO_CLOUD_API_URL: value }),
-      /Missing required environment variable: PORTFOLIO_CLOUD_API_URL/,
+test('Dado el almacenamiento R2 de suscriptores, cuando se alta y baja dos veces, entonces conserva mensajes, claves y efecto persistente de portfolio-cloud', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-10-31T12:00:00Z'));
+  const storage = new SimulatedObjectStorage();
+  const app = createApplication(cors, undefined, storeSender(storage));
+  // El doble indexa por `<bucket>/<clave>`.
+  const key = 'subscribers/subscribers/test@example.com.json';
+  const expected = [
+    ['POST', '{"message":"Subscribed successfully","email":"test@example.com"}'],
+    ['POST', '{"message":"Already subscribed"}'],
+    ['DELETE', '{"message":"Unsubscribed successfully","email":"test@example.com"}'],
+    ['DELETE', '{"message":"Already unsubscribed"}'],
+  ] as const;
+  for (const [index, [method, body]] of expected.entries()) {
+    const result = await app(subscriptionEvent(method, { email: ' TEST@Example.com ' }));
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body, body);
+    assert.equal(result.headers?.['content-type'], 'application/json; charset=utf-8');
+    assert.equal(
+      result.headers?.['access-control-allow-origin'],
+      'https://frontend.example.invalid',
     );
+    assert.equal(result.headers?.['x-content-type-options'], 'nosniff');
+    assert.equal(result.headers?.['x-ratelimit-remaining'], String(9 - (index % 2)));
+    if (index === 0)
+      assert.deepEqual(JSON.parse(storage.objects.get(key) ?? 'null'), {
+        email: 'test@example.com',
+        createdAt: '2026-10-31T12:00:00.000Z',
+      });
   }
-  assert.deepEqual(config, { baseUrl: 'https://cloud.example.invalid/base' });
-  assert.equal(Object.isFrozen(config), true);
-  assert.deepEqual(readSubscriptionConfiguration({ PORTFOLIO_CLOUD_API_URL: ' / ' }), {
-    baseUrl: '',
-  });
-  assert.deepEqual(readSubscriptionConfiguration({ PORTFOLIO_CLOUD_API_URL: ' not-a-url ' }), {
-    baseUrl: 'not-a-url',
-  });
+  assert.equal(storage.objects.size, 0);
+  assert.deepEqual(
+    storage.commands.map(({ name, input }) => [name, input.Bucket, input.Key]),
+    [
+      ['HeadObjectCommand', 'subscribers', 'subscribers/test@example.com.json'],
+      ['PutObjectCommand', 'subscribers', 'subscribers/test@example.com.json'],
+      ['HeadObjectCommand', 'subscribers', 'subscribers/test@example.com.json'],
+      ['HeadObjectCommand', 'subscribers', 'subscribers/test@example.com.json'],
+      ['DeleteObjectCommand', 'subscribers', 'subscribers/test@example.com.json'],
+      ['HeadObjectCommand', 'subscribers', 'subscribers/test@example.com.json'],
+    ],
+  );
+  assert.equal(storage.commands[1]!.input.ContentType, 'application/json');
 });
 
-test('Dado un proveedor pendiente, cuando se envía una baja, entonces se espera su resultado antes de responder 200', async () => {
-  let resolve!: (value: Response) => void;
-  const request = vi.fn<typeof fetch>(
+test('Dada configuración de suscriptores, cuando se lee, entonces exige endpoint HTTPS, bucket privado y credenciales propias', () => {
+  assert.deepEqual(config, {
+    endpoint: 'https://r2.example.invalid',
+    region: 'auto',
+    bucket: 'subscribers',
+    accessKeyId: 'fake',
+    secretAccessKey: 'fake',
+  });
+  assert.equal(Object.isFrozen(config), true);
+  const complete = {
+    SUBSCRIBERS_R2_ENDPOINT: 'https://r2.example.invalid',
+    SUBSCRIBERS_R2_BUCKET: 'subscribers',
+    R2_SUBSCRIBERS_ACCESS_KEY_ID: 'fake',
+    R2_SUBSCRIBERS_SECRET_ACCESS_KEY: 'fake',
+  };
+  for (const key of Object.keys(complete))
+    for (const value of [undefined, '', '  '])
+      assert.throws(
+        () => readSubscriptionConfiguration({ ...complete, [key]: value }),
+        new RegExp(`Missing subscription configuration: ${key}`),
+      );
+  assert.throws(() =>
+    readSubscriptionConfiguration({ ...complete, SUBSCRIBERS_R2_ENDPOINT: 'not-a-url' }),
+  );
+  assert.throws(
+    () => readSubscriptionConfiguration({ ...complete, R2_BUCKET: 'subscribers' }),
+    /Subscribers bucket must be private/,
+  );
+  assert.equal(readSubscriptionConfiguration({ ...complete, R2_REGION: 'wnam' }).region, 'wnam');
+});
+
+test('Dado un correo que el DTO admite pero portfolio-cloud rechaza, cuando se delega, entonces responde 400 Invalid email sin tocar el almacenamiento', async () => {
+  const storage = new SimulatedObjectStorage();
+  for (const method of methods)
+    await assert.rejects(
+      storeSender(storage)(method, { email: 'user@localhost' }),
+      (error: unknown) =>
+        error instanceof SubscriptionError &&
+        error.statusCode === 400 &&
+        error.message === 'Invalid email',
+    );
+  assert.equal(storage.commands.length, 0);
+});
+
+test('Dado un almacenamiento pendiente, cuando se envía una baja, entonces se espera su resultado antes de responder 200', async () => {
+  let resolve!: (value: 'deleted') => void;
+  const deleteSubscriber = vi.fn(
     () =>
-      new Promise<Response>((done) => {
+      new Promise<'deleted'>((done) => {
         resolve = done;
       }),
   );
-  const app = createApplication(cors, undefined, createSubscriptionSender(config, request));
+  const store: SubscriberOperations = { createSubscriber: vi.fn(), deleteSubscriber };
+  const app = createApplication(cors, undefined, createSubscriptionSender(store));
   let finished = false;
   const result = app(subscriptionEvent('DELETE')).then((response) => {
     finished = true;
     return response;
   });
-  await vi.waitFor(() => assert.equal(request.mock.calls.length, 1));
+  await vi.waitFor(() => assert.equal(deleteSubscriber.mock.calls.length, 1));
   assert.equal(finished, false);
-  resolve(new Response('{"message":"Unsubscribed successfully"}'));
-  assert.equal((await result).body, '{"message":"Unsubscribed successfully"}');
+  resolve('deleted');
+  assert.equal(
+    (await result).body,
+    '{"message":"Unsubscribed successfully","email":"test@example.com"}',
+  );
 });
 
 for (const failure of [
-  new Error('private network detail'),
-  new DOMException('aborted', 'AbortError'),
+  Object.assign(new Error('private storage detail'), { name: 'InternalError' }),
+  Object.assign(new Error('private network detail'), { name: 'TimeoutError' }),
   'failure',
 ]) {
-  test(`Dado un rechazo de red ${failure instanceof Error ? failure.name : 'sin Error'}, cuando se solicita alta o baja, entonces responde 503 sin detalles ni reintentos`, async () => {
+  test(`Dado un fallo de almacenamiento ${failure instanceof Error ? failure.name : 'sin Error'}, cuando se solicita alta o baja, entonces responde 502 sin detalles, reintentos ni correos en logs`, async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     for (const method of methods) {
-      const request = vi.fn<typeof fetch>(async () => {
-        throw failure;
-      });
+      const storage = new SimulatedObjectStorage();
+      storage.failure = failure as Error;
       const result = await createApplication(
         cors,
         undefined,
-        createSubscriptionSender(config, request),
+        storeSender(storage),
       )(subscriptionEvent(method));
-      assert.equal(result.statusCode, 503);
-      assert.deepEqual(JSON.parse(result.body ?? ''), {
-        message: 'No se pudo conectar con el servicio de suscripciones.',
-        error: 'Service Unavailable',
-        statusCode: 503,
-      });
-      assert.equal(request.mock.calls.length, 1);
+      assert.equal(result.statusCode, 502);
+      assert.deepEqual(JSON.parse(result.body ?? ''), failed);
+      assert.equal(storage.commands.length, 1);
     }
+    assert.doesNotMatch(JSON.stringify(info.mock.calls), /test@example|private/);
+    assert.deepEqual(
+      info.mock.calls.map(([line]) => JSON.parse(String(line)).outcome),
+      ['error', 'error'],
+    );
   });
 }
 
-test('Dado el timeout real de ocho segundos, cuando se abortan fetch o la lectura JSON, entonces devuelve 503 incluso si el body queda pendiente', async () => {
+test('Dado el límite propio de ocho segundos, cuando el almacenamiento no responde, entonces aborta la operación y devuelve 503', async () => {
   vi.useFakeTimers();
-  const signals: AbortSignal[] = [];
-  const networkRequest: typeof fetch = async (_url, options) =>
-    new Promise((_resolve, reject) => {
-      signals.push(options!.signal!);
-      options!.signal!.addEventListener('abort', () => reject(options!.signal!.reason), {
-        once: true,
-      });
-    });
-  const bodyRequest: typeof fetch = async (_url, options) => {
-    signals.push(options!.signal!);
-    return {
-      ok: true,
-      status: 200,
-      json: () =>
-        new Promise((_resolve, reject) => {
-          options!.signal!.addEventListener('abort', () => reject(options!.signal!.reason), {
-            once: true,
-          });
-        }),
-    } as Response;
-  };
-  const pendingResponses = Promise.all([
-    createApplication(
-      cors,
-      undefined,
-      createSubscriptionSender(config, networkRequest),
-    )(subscriptionEvent()),
-    createApplication(
-      cors,
-      undefined,
-      createSubscriptionSender(config, networkRequest),
-    )(subscriptionEvent('DELETE')),
-    createApplication(
-      cors,
-      undefined,
-      createSubscriptionSender(config, bodyRequest),
-    )(subscriptionEvent()),
-  ]);
-  await vi.advanceTimersByTimeAsync(8000);
+  vi.spyOn(console, 'info').mockImplementation(() => undefined);
+  const storages = [new SimulatedObjectStorage(), new SimulatedObjectStorage()];
+  for (const storage of storages) storage.pending = true;
+  const pendingResponses = Promise.all(
+    methods.map((method, index) =>
+      createApplication(cors, undefined, storeSender(storages[index]))(subscriptionEvent(method)),
+    ),
+  );
+  await vi.advanceTimersByTimeAsync(7999);
+  assert.equal(
+    storages.every((storage) => storage.commands.length === 1),
+    true,
+  );
+  await vi.advanceTimersByTimeAsync(1);
   const responses = await pendingResponses;
   assert.deepEqual(
-    responses.map((response) => response.statusCode),
-    [503, 503, 503],
-  );
-  assert.deepEqual(
-    responses.map((response) => JSON.parse(response.body ?? '').message),
+    responses.map((response) => [response.statusCode, JSON.parse(response.body ?? '')]),
     [
-      'No se pudo conectar con el servicio de suscripciones.',
-      'No se pudo conectar con el servicio de suscripciones.',
-      'No se pudo conectar con el servicio de suscripciones.',
+      [503, unavailable],
+      [503, unavailable],
     ],
   );
-  assert.equal(signals.length, 3);
-  assert.ok(signals.every((signal) => signal.aborted));
 }, 11000);
+
+test('Dado un almacenamiento que ignora el abort, cuando vence el límite, entonces responde 503 sin esperar el efecto', async () => {
+  vi.useFakeTimers();
+  vi.spyOn(console, 'info').mockImplementation(() => undefined);
+  const store: SubscriberOperations = {
+    createSubscriber: () => new Promise(() => undefined),
+    deleteSubscriber: () => new Promise(() => undefined),
+  };
+  const response = createApplication(
+    cors,
+    undefined,
+    createSubscriptionSender(store),
+  )(subscriptionEvent());
+  await vi.advanceTimersByTimeAsync(8000);
+  assert.equal((await response).statusCode, 503);
+});
 
 test('Dadas altas concurrentes, cuando once solicitudes compiten por una IP, entonces solo diez llegan al proveedor', async () => {
   let calls = 0;
@@ -380,23 +429,18 @@ test('Dada una ventana fija y composiciones distintas, cuando vence una hora, en
     assert.equal((await app(subscriptionEvent(method))).headers?.['x-ratelimit-remaining'], '9');
 });
 
-test('Dadas validaciones y fallos upstream, cuando consumen diez intentos, entonces bloquean el siguiente sin llamar al proveedor', async () => {
+test('Dadas validaciones y fallos de almacenamiento, cuando consumen diez intentos, entonces bloquean el siguiente sin llamar al almacenamiento', async () => {
+  vi.spyOn(console, 'info').mockImplementation(() => undefined);
   for (const method of methods) {
-    let calls = 0;
-    const app = createApplication(
-      cors,
-      undefined,
-      createSubscriptionSender(config, async () => {
-        calls++;
-        return new Response('{"error":"Invalid email"}', { status: 400 });
-      }),
-    );
+    const storage = new SimulatedObjectStorage();
+    storage.failure = new Error('unavailable');
+    const app = createApplication(cors, undefined, storeSender(storage));
     for (let index = 0; index < 5; index++)
       assert.equal((await app(subscriptionEvent(method, { email: 'invalid' }))).statusCode, 400);
     for (let index = 0; index < 5; index++)
-      assert.equal((await app(subscriptionEvent(method))).statusCode, 400);
+      assert.equal((await app(subscriptionEvent(method))).statusCode, 502);
     assert.equal((await app(subscriptionEvent(method))).statusCode, 429);
-    assert.equal(calls, 5);
+    assert.equal(storage.commands.length, 5);
   }
 });
 
@@ -533,40 +577,63 @@ test('Dada ausencia o falla inesperada del proveedor, cuando llega una suscripci
     }
     assert.equal((await app(httpEvent())).statusCode, 200);
   }
-  assert.equal(process.env.PORTFOLIO_CLOUD_API_URL, undefined);
+  assert.equal(process.env.SUBSCRIBERS_R2_ENDPOINT, undefined);
   for (const method of methods)
     assert.equal((await handler(subscriptionEvent(method))).statusCode, 503);
 });
 
-test('Dado el handler Lambda con configuración ficticia, cuando solicita alta y baja, entonces compone HTTP nativo con body y sin leer dotenv', async () => {
-  const request = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
-    assert.equal(url, 'https://cloud.example.invalid/base/subscriptions');
-    assert.equal(options?.body, '{"email":"test@example.com"}');
-    return new Response('{"message":"ok","email":"test@example.com"}');
-  });
-  try {
-    process.env.PORTFOLIO_CLOUD_API_URL = 'https://ignored.example.invalid';
-    const managed = createManagedHandler(managedEnvironment, {
+test('Dado el handler Lambda con configuración ficticia, cuando solicita alta y baja, entonces usa el store R2 en proceso con las credenciales del parámetro api', async () => {
+  vi.spyOn(console, 'info').mockImplementation(() => undefined);
+  const fetch = vi.spyOn(globalThis, 'fetch');
+  const { storage, subscribers } = simulatedSubscribers();
+  const configurations: unknown[] = [];
+  const readParameter = vi.fn(async (_name: string) => JSON.stringify(runtimeSecret()));
+  const managed = createManagedHandler(
+    { ...managedEnvironment, SUBSCRIBERS_R2_ENDPOINT: ' https://r2.example.invalid/ ' },
+    {
       store: new SimulatedControlStore(),
-      readSecret: async () =>
-        JSON.stringify({
-          ...runtimeSecret(),
-          PORTFOLIO_CLOUD_API_URL: ' https://cloud.example.invalid/base/// ',
-        }),
-    });
-    for (const method of methods) {
-      const event = subscriptionEvent(method, { email: ' TEST@Example.com ' });
-      event.requestContext.stage = '$default';
-      event.requestContext.domainName = 'local.execute-api.us-east-1.amazonaws.com';
-      const result = await managed(event);
-      assert.equal(result.statusCode, 200);
-      assert.equal(result.body, '{"message":"ok","email":"test@example.com"}');
-    }
-    assert.deepEqual(
-      request.mock.calls.map(([, options]) => options?.method),
-      ['POST', 'DELETE'],
-    );
-  } finally {
-    delete process.env.PORTFOLIO_CLOUD_API_URL;
+      readParameter,
+      subscribers: (value) => {
+        configurations.push(value);
+        return subscribers(value);
+      },
+    },
+  );
+  for (const [method, body] of [
+    ['POST', '{"message":"Subscribed successfully","email":"test@example.com"}'],
+    ['POST', '{"message":"Already subscribed"}'],
+    ['DELETE', '{"message":"Unsubscribed successfully","email":"test@example.com"}'],
+  ] as const) {
+    const event = subscriptionEvent(method, { email: ' TEST@Example.com ' });
+    event.requestContext.stage = '$default';
+    event.requestContext.domainName = 'local.execute-api.us-east-1.amazonaws.com';
+    const result = await managed(event);
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body, body);
+    assert.match(String(result.headers?.['x-request-id']), /^[0-9a-f-]{36}$/);
   }
+  assert.deepEqual(configurations, [
+    {
+      endpoint: 'https://r2.example.invalid',
+      region: 'auto',
+      bucket: 'subscribers',
+      accessKeyId: 'fake',
+      secretAccessKey: 'fake',
+    },
+  ]);
+  assert.deepEqual(
+    readParameter.mock.calls.map(([name]) => name),
+    ['/portfolio/prod/api'],
+  );
+  assert.equal(storage.objects.size, 0);
+  assert.equal(fetch.mock.calls.length, 0);
+  // Sin configuración de suscriptores la función api falla cerrada como faltaba la URL cloud.
+  const missing = createManagedHandler(
+    { ...managedEnvironment, SUBSCRIBERS_R2_BUCKET: '' },
+    { store: new SimulatedControlStore(), readParameter, subscribers },
+  );
+  const event = subscriptionEvent();
+  event.requestContext.stage = '$default';
+  event.requestContext.domainName = 'local.execute-api.us-east-1.amazonaws.com';
+  assert.equal((await missing(event)).statusCode, 503);
 });

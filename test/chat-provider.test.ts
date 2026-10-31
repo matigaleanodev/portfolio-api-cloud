@@ -1,7 +1,7 @@
 import { beforeEach, test, vi, expect } from 'vitest';
-import { OpenAiService } from '../src/chat/openai.service.js';
-import { recordChatMetric } from '../src/chat/chat-metrics.js';
-import type { ChatCompletionPayload } from '../src/chat/chat.types.js';
+import { OpenAiService } from '../packages/runtime/src/chat/openai.service.js';
+import { recordChatMetric } from '../packages/runtime/src/chat/chat-metrics.js';
+import type { ChatCompletionPayload } from '../packages/runtime/src/chat/chat.types.js';
 
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => undefined));
 const payload: ChatCompletionPayload = {

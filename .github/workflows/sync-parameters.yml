@@ -1,0 +1,140 @@
+# Publica la configuración sensible de runtime en SSM Parameter Store (SecureString estándar, aws/ssm).
+# Fuente única de verdad: GitHub Actions Secrets del environment production-parameters. Los parámetros no se
+# editan en la consola: se actualiza el secret y se ejecuta este workflow, que siempre publica los
+# payloads completos con --overwrite (crea si no existen) sin leer el valor anterior.
+# Las Lambdas toman el valor nuevo en 5 minutos como máximo por su cache; no se fuerzan
+# actualizaciones de funciones ni despliegues. El target validation publica valores sintéticos.
+name: Sync runtime parameters
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Parámetros a publicar
+        type: choice
+        options: [production, validation]
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portfolio-api-cloud-parameters
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'matigaleanodev/portfolio-api-cloud' && github.ref == 'refs/heads/main' && vars.PARAMETERS_SYNC_ENABLED == 'true'
+    # Environment dedicado: solo este job ve los 11 secrets; las variables siguen en production.
+    environment: production-parameters
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: us-east-1
+      TARGET: ${{ inputs.target }}
+    steps:
+      - name: Validate every required secret before authentication
+        # Con target validation los secrets no se cargan en el entorno.
+        env:
+          RESEND_CONTACT_API_KEY: ${{ inputs.target == 'production' && secrets.RESEND_CONTACT_API_KEY || '' }}
+          RESEND_BLOG_API_KEY: ${{ inputs.target == 'production' && secrets.RESEND_BLOG_API_KEY || '' }}
+          OPENAI_API_KEY: ${{ inputs.target == 'production' && secrets.OPENAI_API_KEY || '' }}
+          QUOTA_KEY_SECRET: ${{ inputs.target == 'production' && secrets.QUOTA_KEY_SECRET || '' }}
+          ORIGIN_VERIFY_SECRET: ${{ inputs.target == 'production' && secrets.ORIGIN_VERIFY_SECRET || '' }}
+          R2_KNOWLEDGE_ACCESS_KEY_ID: ${{ inputs.target == 'production' && secrets.R2_KNOWLEDGE_ACCESS_KEY_ID || '' }}
+          R2_KNOWLEDGE_SECRET_ACCESS_KEY: ${{ inputs.target == 'production' && secrets.R2_KNOWLEDGE_SECRET_ACCESS_KEY || '' }}
+          R2_MEDIA_ACCESS_KEY_ID: ${{ inputs.target == 'production' && secrets.R2_MEDIA_ACCESS_KEY_ID || '' }}
+          R2_MEDIA_SECRET_ACCESS_KEY: ${{ inputs.target == 'production' && secrets.R2_MEDIA_SECRET_ACCESS_KEY || '' }}
+          R2_SUBSCRIBERS_ACCESS_KEY_ID: ${{ inputs.target == 'production' && secrets.R2_SUBSCRIBERS_ACCESS_KEY_ID || '' }}
+          R2_SUBSCRIBERS_SECRET_ACCESS_KEY: ${{ inputs.target == 'production' && secrets.R2_SUBSCRIBERS_SECRET_ACCESS_KEY || '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$TARGET" == production || "$TARGET" == validation ]]
+          if [[ "$TARGET" == production ]]; then
+            missing=()
+            for key in RESEND_CONTACT_API_KEY RESEND_BLOG_API_KEY OPENAI_API_KEY QUOTA_KEY_SECRET ORIGIN_VERIFY_SECRET R2_KNOWLEDGE_ACCESS_KEY_ID R2_KNOWLEDGE_SECRET_ACCESS_KEY R2_MEDIA_ACCESS_KEY_ID R2_MEDIA_SECRET_ACCESS_KEY R2_SUBSCRIBERS_ACCESS_KEY_ID R2_SUBSCRIBERS_SECRET_ACCESS_KEY; do
+              [[ -n "${!key:-}" ]] || missing+=("$key")
+            done
+            if (( ${#missing[@]} )); then
+              echo "Faltan secrets del environment: ${missing[*]}. No se escribió ningún parámetro." >&2
+              exit 1
+            fi
+          fi
+      - uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::650387442642:role/PortfolioApiCloudParametersSyncRole
+          allowed-account-ids: '650387442642'
+          role-session-name: PortfolioApiCloudParameters-${{ github.run_id }}
+      - name: Publish every payload after validating all of them
+        # Con target validation los secrets no se cargan en el entorno.
+        env:
+          RESEND_CONTACT_API_KEY: ${{ inputs.target == 'production' && secrets.RESEND_CONTACT_API_KEY || '' }}
+          RESEND_BLOG_API_KEY: ${{ inputs.target == 'production' && secrets.RESEND_BLOG_API_KEY || '' }}
+          OPENAI_API_KEY: ${{ inputs.target == 'production' && secrets.OPENAI_API_KEY || '' }}
+          QUOTA_KEY_SECRET: ${{ inputs.target == 'production' && secrets.QUOTA_KEY_SECRET || '' }}
+          ORIGIN_VERIFY_SECRET: ${{ inputs.target == 'production' && secrets.ORIGIN_VERIFY_SECRET || '' }}
+          R2_KNOWLEDGE_ACCESS_KEY_ID: ${{ inputs.target == 'production' && secrets.R2_KNOWLEDGE_ACCESS_KEY_ID || '' }}
+          R2_KNOWLEDGE_SECRET_ACCESS_KEY: ${{ inputs.target == 'production' && secrets.R2_KNOWLEDGE_SECRET_ACCESS_KEY || '' }}
+          R2_MEDIA_ACCESS_KEY_ID: ${{ inputs.target == 'production' && secrets.R2_MEDIA_ACCESS_KEY_ID || '' }}
+          R2_MEDIA_SECRET_ACCESS_KEY: ${{ inputs.target == 'production' && secrets.R2_MEDIA_SECRET_ACCESS_KEY || '' }}
+          R2_SUBSCRIBERS_ACCESS_KEY_ID: ${{ inputs.target == 'production' && secrets.R2_SUBSCRIBERS_ACCESS_KEY_ID || '' }}
+          R2_SUBSCRIBERS_SECRET_ACCESS_KEY: ${{ inputs.target == 'production' && secrets.R2_SUBSCRIBERS_SECRET_ACCESS_KEY || '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ "$TARGET" == production || "$TARGET" == validation ]]
+          [[ "$(aws sts get-caller-identity --query Account --output text)" == 650387442642 ]]
+          caller_arn=$(aws sts get-caller-identity --query Arn --output text)
+          [[ "$caller_arn" == arn:aws:sts::650387442642:assumed-role/PortfolioApiCloudParametersSyncRole/* ]]
+          [[ "$AWS_REGION" == us-east-1 ]]
+          workdir=$(mktemp -d "$RUNNER_TEMP/parameters.XXXXXX")
+          trap 'rm -rf "$workdir"' EXIT
+          declare -A fields=(
+            [api]="QUOTA_KEY_SECRET ORIGIN_VERIFY_SECRET RESEND_CONTACT_API_KEY R2_SUBSCRIBERS_ACCESS_KEY_ID R2_SUBSCRIBERS_SECRET_ACCESS_KEY"
+            [chat]="QUOTA_KEY_SECRET ORIGIN_VERIFY_SECRET OPENAI_API_KEY R2_KNOWLEDGE_ACCESS_KEY_ID R2_KNOWLEDGE_SECRET_ACCESS_KEY"
+            [editorial]="R2_MEDIA_ACCESS_KEY_ID R2_MEDIA_SECRET_ACCESS_KEY"
+            [notifications]="R2_SUBSCRIBERS_ACCESS_KEY_ID R2_SUBSCRIBERS_SECRET_ACCESS_KEY RESEND_BLOG_API_KEY"
+          )
+          if [[ "$TARGET" == production ]]; then
+            prefix=/portfolio/prod
+            segments=(api chat editorial notifications)
+          else
+            # Sintéticos para proveedores ficticios: sin origen verificado ni credenciales de
+            # conocimiento (el runtime de validación rechaza R2 real); cuotas compartidas api/chat.
+            prefix=/portfolio/validation
+            segments=(api chat)
+            fields[api]="QUOTA_KEY_SECRET RESEND_CONTACT_API_KEY R2_SUBSCRIBERS_ACCESS_KEY_ID R2_SUBSCRIBERS_SECRET_ACCESS_KEY"
+            fields[chat]="QUOTA_KEY_SECRET OPENAI_API_KEY"
+            QUOTA_KEY_SECRET=$(openssl rand -hex 32)
+            for key in RESEND_CONTACT_API_KEY OPENAI_API_KEY R2_SUBSCRIBERS_ACCESS_KEY_ID R2_SUBSCRIBERS_SECRET_ACCESS_KEY; do
+              printf -v "$key" '%s' validation-only
+            done
+            export QUOTA_KEY_SECRET RESEND_CONTACT_API_KEY OPENAI_API_KEY R2_SUBSCRIBERS_ACCESS_KEY_ID R2_SUBSCRIBERS_SECRET_ACCESS_KEY
+          fi
+          # Todos los payloads se construyen y validan antes de escribir el primero.
+          for segment in "${segments[@]}"; do
+            read -r -a keys <<< "${fields[$segment]}"
+            for key in "${keys[@]}"; do
+              [[ -n "${!key:-}" ]] || { echo "Campo requerido vacío: $key ($segment). Sin escrituras." >&2; exit 1; }
+            done
+            # Valores leídos del entorno; los argumentos solo llevan nombres de claves.
+            python3 -I -c 'import json, os, sys; json.dump({k: os.environ[k] for k in sys.argv[1:]}, sys.stdout, separators=(",", ":"))' "${keys[@]}" > "$workdir/$segment.json"
+            size=$(wc -c < "$workdir/$segment.json")
+            (( size <= 4096 )) || { echo "Payload $segment excede 4096 bytes. Sin escrituras." >&2; exit 1; }
+          done
+          for segment in "${segments[@]}"; do
+            name="$prefix/$segment"
+            if ! version=$(aws ssm put-parameter --region us-east-1 --name "$name" --type SecureString --overwrite --value "file://$workdir/$segment.json" --query Version --output text 2> "$workdir/error"); then
+              echo "Falló la publicación de $name: $(grep -oE 'An error occurred \([A-Za-z]+\)' "$workdir/error" || echo 'error sin detalle')" >&2
+              exit 1
+            fi
+            result=updated
+            [[ "$version" == 1 ]] && result=created
+            echo "$name: versión $version ($result)" | tee -a "$GITHUB_STEP_SUMMARY"
+          done

@@ -10,8 +10,21 @@ export default defineConfig({
         envDir: false,
         test: {
           ...isolated,
+          // El runtime se ejecuta desde la raíz de su paquete, como en Lambda.
+          setupFiles: ['./test/setup.mjs', './test/setup-runtime.mjs'],
+          pool: 'forks',
           name: 'application',
           include: ['.tmp/tests/test/*.test.js'],
+        },
+      },
+      {
+        envDir: false,
+        test: {
+          ...isolated,
+          setupFiles: ['./test/setup.mjs', './test/setup-runtime.mjs'],
+          pool: 'forks',
+          name: 'editorial',
+          include: ['.tmp/tests/test/editorial/*.test.js'],
         },
       },
       {
