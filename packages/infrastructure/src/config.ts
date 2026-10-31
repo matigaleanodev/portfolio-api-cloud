@@ -69,7 +69,7 @@ export function storageParameters(scope: Construct) {
     mediaBucket: parameter(
       'R2Bucket',
       bucket,
-      'Bucket R2 de medios: conocimiento de chat, estado editorial e imágenes OG.',
+      'Media R2 bucket for chat knowledge, editorial state and OG images.',
     ),
     subscribersBucket: parameter(
       'R2SubscribersBucket',
@@ -104,7 +104,7 @@ export function httpEnvironment(
   const pricing = parameter(
     'AiPricingValidUntil',
     '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2}(\\.[0-9]{1,3})?)?(Z|[+-][0-9]{2}:[0-9]{2})',
-    'Fin ISO 8601 de la revisión de tarifas IA; el runtime admite como máximo 31 días.',
+    'ISO 8601 end of reviewed AI pricing; the runtime allows at most 31 days.',
   );
   if (validation) return { ...validationEnvironment, AI_PRICING_VALID_UNTIL: pricing };
 
@@ -114,7 +114,7 @@ export function httpEnvironment(
     AI_DAILY_BUDGET_MICROUSD: parameter(
       'AiDailyBudgetMicrousd',
       '[1-9][0-9]{0,5}|1000000',
-      'Presupuesto diario global de IA en microdólares.',
+      'Global daily AI budget in microdollars.',
     ),
     AI_PRICING_VALID_UNTIL: pricing,
     R2_ENDPOINT: storage.endpoint,
@@ -144,7 +144,7 @@ export function editorialValues(scope: Construct, storage: StorageParameters): F
     MEDIA_BASE_URL: parameter(
       'MediaBaseUrl',
       `${https}(/[A-Za-z0-9._~/-]*)?`,
-      'URL HTTPS pública de los medios.',
+      'Public HTTPS media base URL.',
     ),
     BLOG_FROM_EMAIL: parameter('BlogFromEmail', address, 'Remitente verificado del blog.'),
   };
