@@ -1,47 +1,39 @@
 {
   "name": "portfolio-api-cloud",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "license": "MIT",
   "type": "module",
   "engines": {
     "node": "^24.22.1"
   },
+  "workspaces": [
+    "packages/contracts",
+    "packages/runtime",
+    "packages/infrastructure"
+  ],
   "scripts": {
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.infra.json",
-    "build": "node scripts/build.mjs",
+    "typecheck": "npm run typecheck --workspaces && tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.infra.json",
+    "build": "npm run build --workspace=@portfolio-api-cloud/runtime",
     "test": "node scripts/prepare-infra.mjs validationScenario=success && node scripts/test.mjs",
-    "check:docs": "python3 scripts/check_docs.py",
-    "check": "npm run format:check && npm run typecheck && npm test && npm run test:package && npm run cdk -- synth --no-lookups --context stage=production --quiet && npm run check:docs",
-    "test:package": "node scripts/test-package.mjs",
     "test:app": "node scripts/test.mjs --project application",
+    "test:editorial": "node scripts/test.mjs --project editorial --passWithNoTests",
     "test:tooling": "node scripts/test.mjs --project tooling",
     "test:infra": "node scripts/prepare-infra.mjs validationScenario=success && node scripts/test.mjs --project infrastructure",
+    "test:package": "node scripts/test-package.mjs",
+    "synth": "npm run synth --workspace=@portfolio-api-cloud/infrastructure",
+    "synth:local": "node scripts/synth-local.mjs",
+    "boundaries": "node scripts/check-boundaries.mjs",
+    "check": "npm run boundaries && npm run format:check && npm run typecheck && npm test && npm run test:package && npm run synth:local && npm run check:docs",
+    "check:docs": "python3 scripts/check_docs.py",
     "cdk": "cdk",
     "format": "prettier . --write",
     "format:check": "prettier . --check"
   },
   "devDependencies": {
-    "@types/aws-lambda": "8.10.164",
-    "@types/body-parser": "1.19.6",
     "@types/node": "24.19.2",
-    "@types/react": "19.3.0",
-    "aws-cdk": "2.1146.1",
-    "aws-cdk-lib": "2.274.0",
-    "constructs": "10.8.1",
     "prettier": "3.9.10",
     "typescript": "6.0.3",
     "vitest": "5.0.5"
-  },
-  "dependencies": {
-    "@aws-sdk/client-dynamodb": "3.1156.0",
-    "@aws-sdk/client-s3": "3.1156.0",
-    "@aws-sdk/client-secrets-manager": "3.1156.0",
-    "body-parser": "2.4.0",
-    "class-transformer": "0.5.1",
-    "class-validator": "0.15.1",
-    "rate-limiter-flexible": "11.2.3",
-    "reflect-metadata": "0.2.2",
-    "resend": "6.34.1"
   }
 }

@@ -1,5 +1,5 @@
-import { runtimeMetric } from '../src/request-scope.js';
-import { createResendProvider } from '../src/contact.js';
+import { runtimeMetric } from '../packages/runtime/src/request-scope.js';
+import { createResendProvider } from '../packages/runtime/src/contact.js';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import {
   DynamoDBClient,
@@ -12,17 +12,28 @@ import {
   createSharedQuota,
   DynamoControlStore,
   aiDay,
-} from '../src/shared-control.js';
-import { abortable, operationSignal, runRequest } from '../src/request-scope.js';
-import { createManagedHandler } from '../src/handler.js';
+} from '../packages/runtime/src/shared-control.js';
+import { abortable, operationSignal, runRequest } from '../packages/runtime/src/request-scope.js';
+import { createApiHandler as createManagedHandler } from '../packages/runtime/src/handlers/api.js';
 import {
   aiConfigurationValid,
+  createParameterReader,
   createRuntimeConfiguration,
-  validateRuntimeSecret,
-} from '../src/runtime-config.js';
-import { OpenAiService } from '../src/chat/openai.service.js';
+  resolveRuntimeConfiguration,
+} from '../packages/runtime/src/runtime-config.js';
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { createChatHandler } from '../packages/runtime/src/handlers/chat.js';
+import { functions } from '@portfolio-api-cloud/contracts/functions';
+import { OpenAiService } from '../packages/runtime/src/chat/openai.service.js';
 import { httpEvent } from './fixtures.js';
-import { SimulatedControlStore, managedEnvironment, runtimeSecret } from './support/control.js';
+import {
+  SimulatedControlStore,
+  chatEnvironment,
+  simulatedSubscribers,
+  managedEnvironment,
+  runtimeConfiguration,
+  runtimeSecret,
+} from './support/control.js';
 
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => undefined));
 afterEach(() => {
@@ -250,7 +261,7 @@ test('Dado el handler administrado, cuando llega una FAQ o se agota la sesión, 
   const handler = createManagedHandler(managedEnvironment, {
     store,
     request,
-    readSecret: async () => JSON.stringify(runtimeSecret()),
+    readParameter: async () => JSON.stringify(runtimeSecret()),
   });
   expect(JSON.parse((await handler(managedEvent('¿Qué tecnologías usás?'))).body!).source).toBe(
     'faq',
@@ -281,10 +292,10 @@ test('Dado el handler administrado, cuando llega una FAQ o se agota la sesión, 
 test('Dadas dos composiciones administradas, cuando cambia la IP pero se agota el presupuesto GLOBAL, entonces ambas dejan de generar', async () => {
   const store = new SimulatedControlStore();
   const request = modelRequest();
-  const config = { ...runtimeSecret(), AI_DAILY_BUDGET_MICROUSD: '313' };
-  const deps = { store, request, readSecret: async () => JSON.stringify(config) };
-  const first = createManagedHandler(managedEnvironment, deps);
-  const second = createManagedHandler(managedEnvironment, deps);
+  const environment = { ...managedEnvironment, AI_DAILY_BUDGET_MICROUSD: '313' };
+  const deps = { store, request, readParameter: async () => JSON.stringify(runtimeSecret()) };
+  const first = createManagedHandler(environment, deps);
+  const second = createManagedHandler(environment, deps);
   expect(JSON.parse((await first(managedEvent())).body!).source).toBe('ai');
   expect(
     JSON.parse((await second(managedEvent(undefined, '192.0.2.99', 'new-person'))).body!).source,
@@ -292,11 +303,11 @@ test('Dadas dos composiciones administradas, cuando cambia la IP pero se agota e
   expect(request).toHaveBeenCalledTimes(3);
 });
 test('Dado un ingress desconocido o IP inválida, cuando llega un evento, entonces no carga secretos ni proveedores', async () => {
-  const readSecret = vi.fn();
-  const handler = createManagedHandler(managedEnvironment, { readSecret });
+  const readParameter = vi.fn();
+  const handler = createManagedHandler(managedEnvironment, { readParameter });
   for (const event of [httpEvent('POST', '/api/chat'), managedEvent(undefined, 'not-an-ip')])
     expect((await handler(event)).statusCode).toBe(403);
-  expect(readSecret).not.toHaveBeenCalled();
+  expect(readParameter).not.toHaveBeenCalled();
 });
 test('Dado control compartido caído, cuando llega negocio, entonces falla cerrado con CORS y sin detalles internos', async () => {
   const store = new SimulatedControlStore();
@@ -305,7 +316,7 @@ test('Dado control compartido caído, cuando llega negocio, entonces falla cerra
   const handler = createManagedHandler(managedEnvironment, {
     store,
     request,
-    readSecret: async () => JSON.stringify(runtimeSecret()),
+    readParameter: async () => JSON.stringify(runtimeSecret()),
   });
   const result = await handler(managedEvent());
   expect(result.statusCode).toBe(503);
@@ -315,29 +326,50 @@ test('Dado control compartido caído, cuando llega negocio, entonces falla cerra
 });
 test('Dado un deadline total, cuando el proveedor ignora el abort, entonces devuelve 503 y no continúa al modelo', async () => {
   vi.useFakeTimers();
-  const readSecret = vi.fn(() => new Promise<string>(() => undefined));
-  const handler = createManagedHandler(managedEnvironment, { readSecret });
+  const readParameter = vi.fn(() => new Promise<string>(() => undefined));
+  const handler = createManagedHandler(managedEnvironment, { readParameter });
   const result = handler(managedEvent(), { getRemainingTimeInMillis: () => 1100 });
   await vi.advanceTimersByTimeAsync(100);
   expect((await result).statusCode).toBe(503);
 });
 for (const field of [
   'QUOTA_KEY_SECRET',
-  'CONTACT_FROM_EMAIL',
-  'PORTFOLIO_CLOUD_API_URL',
+  'RESEND_CONTACT_API_KEY',
+  'R2_SUBSCRIBERS_ACCESS_KEY_ID',
+  'R2_SUBSCRIBERS_SECRET_ACCESS_KEY',
 ] as const) {
-  test(`Dada configuración sin ${field}, cuando se valida startup, entonces se rechaza antes de efectos`, () => {
-    const config: Record<string, string> = runtimeSecret();
+  test(`Dado secreto sin ${field}, cuando se valida startup, entonces se rechaza antes de efectos`, () => {
+    const config = runtimeSecret();
     delete config[field];
-    expect(() => validateRuntimeSecret(JSON.stringify(config))).toThrow();
+    expect(() => resolveRuntimeConfiguration(managedEnvironment, JSON.stringify(config))).toThrow(
+      field,
+    );
+  });
+}
+for (const field of [
+  'CONTACT_FROM_EMAIL',
+  'CONTACT_TO_EMAIL',
+  'SUBSCRIBERS_R2_ENDPOINT',
+  'SUBSCRIBERS_R2_BUCKET',
+] as const) {
+  test(`Dado ambiente sin ${field}, cuando se valida startup, entonces se rechaza antes de efectos`, () => {
+    const environment: Record<string, string> = { ...managedEnvironment };
+    delete environment[field];
+    expect(() =>
+      resolveRuntimeConfiguration(environment, JSON.stringify(runtimeSecret())),
+    ).toThrow();
   });
 }
 test.each(['0', '-1', '1000001', '1.5', 'NaN'])(
   'Dado presupuesto diario inválido %s, cuando se configura, entonces no habilita IA',
   (amount) => {
-    expect(aiConfigurationValid({ ...runtimeSecret(), AI_DAILY_BUDGET_MICROUSD: amount })).toBe(
-      false,
-    );
+    expect(
+      aiConfigurationValid({
+        ...runtimeSecret(),
+        ...runtimeConfiguration(),
+        AI_DAILY_BUDGET_MICROUSD: amount,
+      }),
+    ).toBe(false);
   },
 );
 test('Dado secreto con TTL, cuando falla la renovación, entonces no usa el snapshot vencido', async () => {
@@ -358,7 +390,11 @@ test('Dado conteo previo inválido o reserva denegada, cuando se solicita genera
       .fn<typeof fetch>()
       .mockImplementation(async () => new Response(JSON.stringify(counted)));
     const admission = { available: async () => true, reserve: vi.fn(async () => false) };
-    const provider = new OpenAiService(runtimeSecret(), request, admission);
+    const provider = new OpenAiService(
+      { ...runtimeSecret(), ...runtimeConfiguration() },
+      request,
+      admission,
+    );
     expect(
       await provider.generateChatResponse({
         userMessage: 'a',
@@ -395,7 +431,7 @@ test('Dadas direcciones IPv6 equivalentes, cuando cambia su escritura, entonces 
   const handler = createManagedHandler(managedEnvironment, {
     store,
     request,
-    readSecret: async () => JSON.stringify(runtimeSecret()),
+    readParameter: async () => JSON.stringify(runtimeSecret()),
   });
   for (let index = 0; index < 5; index++)
     expect(
@@ -418,7 +454,7 @@ test('Dada caché IA, cuando se reutiliza una respuesta, entonces consume cupo d
   const handler = createManagedHandler(managedEnvironment, {
     store,
     request,
-    readSecret: async () => JSON.stringify(runtimeSecret()),
+    readParameter: async () => JSON.stringify(runtimeSecret()),
   });
   for (let index = 0; index < 5; index++)
     expect(JSON.parse((await handler(managedEvent())).body!).source).toBe('ai');
@@ -429,12 +465,12 @@ test('Dada caché IA, cuando se reutiliza una respuesta, entonces consume cupo d
 test('Dada IA deshabilitada por configuración, cuando se pregunta por el perfil o proyectos, entonces mantiene FAQ y contacto sin usar el proveedor', async () => {
   const store = new SimulatedControlStore();
   const request = modelRequest();
-  const config: Record<string, string> = runtimeSecret();
+  const config = runtimeSecret();
   delete config.OPENAI_API_KEY;
   const handler = createManagedHandler(managedEnvironment, {
     store,
     request,
-    readSecret: async () => JSON.stringify(config),
+    readParameter: async () => JSON.stringify(config),
   });
   expect(
     JSON.parse((await handler(managedEvent('¿Cómo puedo contactarte?'))).body!).answer,
@@ -446,7 +482,7 @@ test('Dada IA deshabilitada por configuración, cuando se pregunta por el perfil
   const cold = createManagedHandler(managedEnvironment, {
     store,
     request,
-    readSecret: async () => JSON.stringify(config),
+    readParameter: async () => JSON.stringify(config),
   });
   expect(JSON.parse((await cold(managedEvent('¿Cómo puedo contactarte?'))).body!).source).toBe(
     'faq',
@@ -455,20 +491,15 @@ test('Dada IA deshabilitada por configuración, cuando se pregunta por el perfil
   expect(request).not.toHaveBeenCalled();
 });
 test('Dado modelo sin tarifa o revisión expirada, cuando se valida, entonces deshabilita únicamente la generación paga', () => {
-  for (const config of [
-    { ...runtimeSecret(), OPENAI_CHAT_MODEL: 'unpriced' },
-    { ...runtimeSecret(), AI_PRICING_VALID_UNTIL: new Date(Date.now() - 1).toISOString() },
-  ]) {
-    expect(aiConfigurationValid(config)).toBe(false);
-    expect(() => validateRuntimeSecret(JSON.stringify(config))).not.toThrow();
-  }
+  const config = { ...runtimeSecret(), ...runtimeConfiguration() };
+  expect(aiConfigurationValid({ ...config, OPENAI_CHAT_MODEL: 'unpriced' })).toBe(false);
+  const expired = { ...managedEnvironment, AI_PRICING_VALID_UNTIL: new Date(0).toISOString() };
+  const resolved = resolveRuntimeConfiguration(expired, JSON.stringify(runtimeSecret()));
+  expect(aiConfigurationValid(resolved)).toBe(false);
 });
-test('Dado ARN de secreto ajeno al ambiente, cuando se configura, entonces no intenta leerlo', async () => {
+test('Dado parámetro ajeno al ambiente, cuando se configura, entonces no intenta leerlo', async () => {
   const read = vi.fn();
-  const load = createRuntimeConfiguration(
-    { RUNTIME_SECRET_ARN: 'arn:aws:secretsmanager:us-east-1:999999999999:secret:other' },
-    read,
-  );
+  const load = createRuntimeConfiguration({ RUNTIME_PARAMETER_NAME: '/other/prod/api' }, read);
   await expect(load()).rejects.toThrow();
   expect(read).not.toHaveBeenCalled();
 });
@@ -511,20 +542,20 @@ test.each([
   { AI_PRICING_VALID_UNTIL: '' },
   { AI_PRICING_VALID_UNTIL: new Date(0).toISOString() },
   { AI_DAILY_BUDGET_MICROUSD: 'NaN' },
-  { OPENAI_CHAT_MODEL: 'other' },
 ])(
   'Dada IA inválida %j, cuando llegan los contratos, entonces conserva FAQ, starters, contacto y suscripciones sin gasto',
   async (invalid) => {
-    const config = { ...runtimeSecret(), ...invalid };
+    const environment = { ...managedEnvironment, ...invalid };
     const sendEmail = vi.fn(async () => undefined);
     const request = vi
       .fn<typeof fetch>()
       .mockImplementation(async () => new Response(JSON.stringify({ message: 'Listo' })));
-    const handler = createManagedHandler(managedEnvironment, {
+    const handler = createManagedHandler(environment, {
       store: new SimulatedControlStore(),
       sendEmail,
       request,
-      readSecret: async () => JSON.stringify(config),
+      ...simulatedSubscribers(),
+      readParameter: async () => JSON.stringify(runtimeSecret()),
     });
     const faq = await handler(managedEvent('¿Cómo puedo contactarte?'));
     expect(JSON.parse(faq.body!).source).toBe('faq');
@@ -559,15 +590,15 @@ test.each([
 
 test('Dada una instancia caliente, cuando vencen tarifas entre respuestas, entonces no reutiliza caché paga ni genera', async () => {
   vi.useFakeTimers();
-  const config = {
-    ...runtimeSecret(),
+  const environment = {
+    ...managedEnvironment,
     AI_PRICING_VALID_UNTIL: new Date(Date.now() + 1000).toISOString(),
   };
   const request = modelRequest();
-  const handler = createManagedHandler(managedEnvironment, {
+  const handler = createManagedHandler(environment, {
     store: new SimulatedControlStore(),
     request,
-    readSecret: async () => JSON.stringify(config),
+    readParameter: async () => JSON.stringify(runtimeSecret()),
   });
   expect(JSON.parse((await handler(managedEvent())).body!).source).toBe('ai');
   await vi.advanceTimersByTimeAsync(1001);
@@ -578,17 +609,262 @@ test('Dada una instancia caliente, cuando vencen tarifas entre respuestas, enton
   expect(request).toHaveBeenCalledTimes(2);
 });
 
+test('Dado tipo JSON inválido en OPENAI_API_KEY, cuando el resto del secreto es válido, entonces deshabilita IA sin rechazar la configuración común', () => {
+  const value = resolveRuntimeConfiguration(
+    managedEnvironment,
+    JSON.stringify({ ...runtimeSecret(), OPENAI_API_KEY: 42 }),
+  );
+  expect(aiConfigurationValid(value)).toBe(false);
+  expect(value.CONTACT_FROM_EMAIL).toBe('from@example.invalid');
+  expect(value.SUBSCRIBERS_R2_ENDPOINT).toBe('https://r2.example.invalid');
+});
+
+test('Dadas claves no sensibles dentro del secreto, cuando se resuelve la configuración, entonces prevalece el ambiente declarado', () => {
+  const value = resolveRuntimeConfiguration(
+    managedEnvironment,
+    JSON.stringify({
+      ...runtimeSecret(),
+      CONTACT_TO_EMAIL: 'other@example.invalid',
+      SUBSCRIBERS_R2_ENDPOINT: 42,
+      AI_DAILY_BUDGET_MICROUSD: '1',
+      RESEND_API_KEY: 'legacy',
+    }),
+  );
+  expect(value.CONTACT_TO_EMAIL).toBe('to@example.invalid');
+  expect(value.SUBSCRIBERS_R2_ENDPOINT).toBe('https://r2.example.invalid');
+  expect(value.AI_DAILY_BUDGET_MICROUSD).toBe('1000000');
+  expect(value.RESEND_API_KEY).toBeUndefined();
+  expect(Object.isFrozen(value)).toBe(true);
+});
+
+test('Dada una clave requerida con tipo inválido, cuando se valida, entonces se rechaza sin componer proveedores', () => {
+  expect(() =>
+    resolveRuntimeConfiguration(
+      managedEnvironment,
+      JSON.stringify({ ...runtimeSecret(), QUOTA_KEY_SECRET: 42 }),
+    ),
+  ).toThrow('Invalid runtime configuration');
+  for (const raw of ['[]', 'null', '{', '"text"'])
+    expect(() => resolveRuntimeConfiguration(managedEnvironment, raw)).toThrow();
+});
+
+test('Dada la validación por función, cuando faltan claves de chat, entonces api conserva contacto y chat no exige contacto', () => {
+  const secret = runtimeSecret();
+  delete secret.OPENAI_API_KEY;
+  expect(() =>
+    resolveRuntimeConfiguration(managedEnvironment, JSON.stringify(secret)),
+  ).not.toThrow();
+  const chatOnly = { QUOTA_KEY_SECRET: 's'.repeat(32) };
+  expect(() =>
+    resolveRuntimeConfiguration(managedEnvironment, JSON.stringify(chatOnly), functions.chat),
+  ).not.toThrow();
+  expect(() => resolveRuntimeConfiguration(managedEnvironment, JSON.stringify(chatOnly))).toThrow(
+    'RESEND_CONTACT_API_KEY',
+  );
+  expect(() =>
+    resolveRuntimeConfiguration(
+      managedEnvironment,
+      JSON.stringify({ QUOTA_KEY_SECRET: 'short' }),
+      functions.chat,
+    ),
+  ).toThrow('Missing quota key secret');
+});
+
+test('Dado conocimiento R2 incompleto o inválido, cuando se resuelve chat, entonces falla cerrado como en dev sin afectar api', () => {
+  const environment = {
+    ...managedEnvironment,
+    R2_ENDPOINT: 'https://r2.example.invalid',
+    R2_BUCKET: 'media',
+  };
+  const knowledge = {
+    ...runtimeSecret(),
+    R2_KNOWLEDGE_ACCESS_KEY_ID: 'fake',
+    R2_KNOWLEDGE_SECRET_ACCESS_KEY: 'fake',
+  };
+  expect(() =>
+    resolveRuntimeConfiguration(environment, JSON.stringify(runtimeSecret()), functions.chat),
+  ).toThrow('Incomplete R2 chat knowledge configuration');
+  expect(() =>
+    resolveRuntimeConfiguration(
+      managedEnvironment,
+      JSON.stringify({ ...runtimeSecret(), R2_KNOWLEDGE_ACCESS_KEY_ID: 'fake' }),
+      functions.chat,
+    ),
+  ).toThrow('Incomplete R2 chat knowledge configuration');
+  // api no valida conocimiento: su parámetro no lo contiene y health/contacto/suscripciones siguen.
+  expect(() =>
+    resolveRuntimeConfiguration(environment, JSON.stringify(runtimeSecret())),
+  ).not.toThrow();
+  const complete = resolveRuntimeConfiguration(
+    environment,
+    JSON.stringify(knowledge),
+    functions.chat,
+  );
+  expect(complete.R2_ENDPOINT).toBe('https://r2.example.invalid');
+  expect(() =>
+    resolveRuntimeConfiguration(
+      { ...environment, R2_ENDPOINT: 'http://r2.example.invalid' },
+      JSON.stringify(knowledge),
+      functions.chat,
+    ),
+  ).toThrow('Invalid R2 endpoint');
+  for (const [key, value, message] of [
+    ['SUBSCRIBERS_R2_ENDPOINT', 'http://r2.example.invalid', 'Invalid subscribers endpoint'],
+    [
+      'SUBSCRIBERS_R2_ENDPOINT',
+      'https://user:pass@r2.example.invalid',
+      'Invalid subscribers endpoint',
+    ],
+    ['SUBSCRIBERS_R2_BUCKET', 'media', 'Subscribers bucket must be private'],
+  ] as const)
+    expect(() =>
+      resolveRuntimeConfiguration(
+        { ...environment, [key]: value },
+        JSON.stringify(runtimeSecret()),
+      ),
+    ).toThrow(message);
+});
+
+test('Dado conocimiento R2 incompleto, cuando api y chat atienden, entonces solo las operaciones de chat responden 503 antes de la cuota', async () => {
+  const environment = {
+    ...managedEnvironment,
+    R2_ENDPOINT: 'https://r2.example.invalid',
+    R2_BUCKET: 'media',
+  };
+  const store = new SimulatedControlStore();
+  const request = modelRequest();
+  const sendEmail = vi.fn(async () => undefined);
+  const deps = {
+    store,
+    request,
+    sendEmail,
+    ...simulatedSubscribers(),
+    readParameter: async () => JSON.stringify(runtimeSecret()),
+  };
+  const api = createManagedHandler(environment, deps);
+  const chat = createChatHandler(
+    { ...chatEnvironment, R2_ENDPOINT: 'https://r2.example.invalid', R2_BUCKET: 'media' },
+    deps,
+  );
+  for (const handler of [api, chat]) {
+    const reply = await handler(managedEvent());
+    expect(reply.statusCode).toBe(503);
+    expect(JSON.parse(reply.body!)).toEqual({ statusCode: 503, message: 'Service unavailable' });
+    expect(reply.headers?.['access-control-allow-origin']).toBe('https://frontend.example.invalid');
+    const starters = managedEvent();
+    starters.requestContext.http.method = 'GET';
+    starters.rawPath = '/api/chat/starters';
+    delete starters.body;
+    expect((await handler(starters)).statusCode).toBe(503);
+  }
+  expect(store.records.size).toBe(0);
+  expect(request).not.toHaveBeenCalled();
+  const health = managedEvent();
+  health.requestContext.http.method = 'GET';
+  health.rawPath = '/api/health';
+  delete health.body;
+  expect((await api(health)).statusCode).toBe(200);
+  for (const [method, path, body, status] of [
+    [
+      'POST',
+      '/api/contact',
+      {
+        name: 'Prueba',
+        email: 'test@example.invalid',
+        message: 'Mensaje controlado suficientemente largo',
+      },
+      204,
+    ],
+    ['POST', '/api/subscriptions', { email: 'test@example.invalid' }, 200],
+  ] as const) {
+    const event = managedEvent();
+    event.requestContext.http.method = method;
+    event.rawPath = path;
+    event.body = JSON.stringify(body);
+    expect((await api(event)).statusCode).toBe(status);
+  }
+});
+
 test.each([
-  'OPENAI_API_KEY',
-  'OPENAI_CHAT_MODEL',
-  'AI_DAILY_BUDGET_MICROUSD',
-  'AI_PRICING_VALID_UNTIL',
-])(
-  'Dado tipo JSON inválido en %s, cuando el resto del secreto es válido, entonces deshabilita IA sin rechazar la configuración común',
-  (field) => {
-    const value = validateRuntimeSecret(JSON.stringify({ ...runtimeSecret(), [field]: 42 }));
-    expect(aiConfigurationValid(value)).toBe(false);
-    expect(value.CONTACT_FROM_EMAIL).toBe('from@example.invalid');
-    expect(value.PORTFOLIO_CLOUD_API_URL).toBe('https://cloud.example.invalid');
+  ['api productivo', '/portfolio/prod/api', true],
+  ['chat productivo', '/portfolio/prod/chat', true],
+  ['editorial', '/portfolio/prod/editorial', true],
+  ['notificaciones', '/portfolio/prod/notifications', true],
+  ['validación api', '/portfolio/validation/api', true],
+  ['validación chat', '/portfolio/validation/chat', true],
+  ['único anterior', '/portfolio/prod/app-properties', false],
+  ['sin barra inicial', 'portfolio/prod/api', false],
+  ['con barra final', '/portfolio/prod/api/', false],
+  ['ARN de SSM', 'arn:aws:ssm:us-east-1:650387442642:parameter/portfolio/prod/api', false],
+  [
+    'ARN de Secrets Manager',
+    'arn:aws:secretsmanager:us-east-1:650387442642:secret:portfolio/prod/app-properties-AbC123',
+    false,
+  ],
+  ['vacío', '', false],
+] as const)(
+  'Dado parámetro %s, cuando se configura, entonces solo lee los nombres exactos admitidos',
+  async (_name, parameter, accepted) => {
+    const read = vi.fn(async (_name: string) => JSON.stringify(runtimeSecret()));
+    const load = createRuntimeConfiguration(
+      { ...managedEnvironment, RUNTIME_PARAMETER_NAME: parameter },
+      read,
+    );
+    if (accepted) await expect(load()).resolves.toMatchObject({ QUOTA_KEY_SECRET: 's'.repeat(32) });
+    else await expect(load()).rejects.toThrow('Runtime parameter is not configured');
+    expect(read.mock.calls.map(([name]) => name)).toEqual(accepted ? [parameter] : []);
   },
 );
+
+test('Dado el lector SSM, cuando responde, entonces descifra con un intento y exige SecureString sin exponer valores', async () => {
+  const send = vi.spyOn(SSMClient.prototype, 'send');
+  const read = createParameterReader();
+  const signal = new AbortController().signal;
+  send.mockResolvedValueOnce({ Parameter: { Type: 'SecureString', Value: '{"a":"b"}' } } as never);
+  expect(await read('/portfolio/prod/api', signal)).toBe('{"a":"b"}');
+  const [command, options] = send.mock.calls[0]! as unknown as [
+    GetParameterCommand,
+    { abortSignal: AbortSignal },
+  ];
+  expect(command).toBeInstanceOf(GetParameterCommand);
+  expect(command.input).toEqual({ Name: '/portfolio/prod/api', WithDecryption: true });
+  expect(options.abortSignal).toBe(signal);
+  expect(await (send.mock.contexts[0] as SSMClient).config.maxAttempts()).toBe(1);
+  send.mockResolvedValueOnce({ Parameter: { Value: '{}' } } as never);
+  expect(await read('/portfolio/prod/api', signal)).toBe('{}');
+  for (const response of [
+    { Parameter: { Type: 'String', Value: 'plain-sensitive' } },
+    { Parameter: { Type: 'SecureString' } },
+    {},
+  ]) {
+    send.mockResolvedValueOnce(response as never);
+    const error = await read('/portfolio/prod/api', signal).catch((value: unknown) => value);
+    expect(error).toBeInstanceOf(Error);
+    expect(String(error)).not.toContain('plain-sensitive');
+  }
+});
+
+test('Dado SSM pendiente o fallido, cuando se carga la configuración, entonces corta a los 3 s y la API responde 503 sin detalles', async () => {
+  vi.useFakeTimers();
+  const read = vi.fn(
+    (_name: string, signal: AbortSignal) =>
+      new Promise<string>((_resolve, reject) =>
+        signal.addEventListener('abort', () => reject(signal.reason), { once: true }),
+      ),
+  );
+  const load = createRuntimeConfiguration(managedEnvironment, read);
+  const pending = load().catch(() => 'aborted');
+  await vi.advanceTimersByTimeAsync(3000);
+  expect(await pending).toBe('aborted');
+  vi.useRealTimers();
+  const handler = createManagedHandler(managedEnvironment, {
+    store: new SimulatedControlStore(),
+    readParameter: async () => {
+      throw new Error('AccessDenied arn:aws:ssm:private-detail');
+    },
+  });
+  const result = await handler(managedEvent());
+  expect(result.statusCode).toBe(503);
+  expect(result.body).toBe('{"statusCode":503,"message":"Service unavailable"}');
+  expect(JSON.stringify(vi.mocked(console.info).mock.calls)).not.toContain('private-detail');
+});

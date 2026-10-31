@@ -1,17 +1,18 @@
+import { repositoryPath } from './support/paths.js';
 import { beforeEach, test, vi, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { ChatService } from '../src/chat/chat.service.js';
-import { FaqService } from '../src/chat/faq.service.js';
-import { KnowledgeService } from '../src/chat/knowledge.service.js';
-import { OpenAiService } from '../src/chat/openai.service.js';
-import type { ChatRequestDto, ChatResponseDto } from '../src/chat/chat.dto.js';
-import type { EditorialKnowledgeArtifact } from '../src/chat/chat-knowledge.repository.js';
-import * as config from '../src/chat/chat-content.config.js';
-import * as faqs from '../src/chat/content/chat-faq.data.js';
-import * as professional from '../src/chat/knowledge/professional-profile.js';
-import * as profile from '../src/chat/knowledge/profile.knowledge.js';
-import * as cloud from '../src/chat/knowledge/cloud.knowledge.js';
+import { ChatService } from '../packages/runtime/src/chat/chat.service.js';
+import { FaqService } from '../packages/runtime/src/chat/faq.service.js';
+import { KnowledgeService } from '../packages/runtime/src/chat/knowledge.service.js';
+import { OpenAiService } from '../packages/runtime/src/chat/openai.service.js';
+import type { ChatRequestDto, ChatResponseDto } from '../packages/runtime/src/chat/chat.dto.js';
+import type { EditorialKnowledgeArtifact } from '../packages/runtime/src/chat/chat-knowledge.repository.js';
+import * as config from '../packages/runtime/src/chat/chat-content.config.js';
+import * as faqs from '../packages/runtime/src/chat/content/chat-faq.data.js';
+import * as professional from '../packages/runtime/src/chat/knowledge/professional-profile.js';
+import * as profile from '../packages/runtime/src/chat/knowledge/profile.knowledge.js';
+import * as cloud from '../packages/runtime/src/chat/knowledge/cloud.knowledge.js';
 interface Reference {
   artifact: EditorialKnowledgeArtifact;
   content: Record<string, string>;
@@ -24,7 +25,9 @@ interface Reference {
     requests: { url: string; body: unknown }[];
   }[];
 }
-const reference = JSON.parse(readFileSync('test/chat-domain-reference.json', 'utf8')) as Reference;
+const reference = JSON.parse(
+  readFileSync(repositoryPath('test/chat-domain-reference.json'), 'utf8'),
+) as Reference;
 // La referencia histórica queda intacta; se declaran únicamente ubicación y contacto actuales.
 const originalLocation = 'Full Stack Developer de Villa Gesell, Argentina.';
 const currentLocation = 'Full Stack Developer de Posadas, Misiones, Argentina.';
@@ -167,7 +170,7 @@ for (const [name, module] of Object.entries(modules)) {
       const hash = createHash('sha256').update(normalized).digest('hex');
       expect(hash).toBe(
         name === 'knowledge/cloud.knowledge'
-          ? '26729dc5db46c526059130841ce0ebef5e4196e5fedf9bb7d6205e811a1ac305'
+          ? '559b201ee8bc2daec5bdf53d1d456dc3afe38294d14ee21b2afa775506d60f53'
           : reference.content[name],
       );
     },

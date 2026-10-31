@@ -1,5 +1,5 @@
 import { describe, it, beforeEach, expect, vi } from 'vitest';
-import { ChatService } from '../src/chat/chat.service.js';
+import { ChatService } from '../packages/runtime/src/chat/chat.service.js';
 
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => undefined));
 

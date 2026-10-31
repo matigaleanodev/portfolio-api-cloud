@@ -1,6 +1,8 @@
 import { expect, test } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { functions } from '@portfolio-api-cloud/contracts/functions';
 const prefix = 'arn:aws:cloudformation:us-east-1:650387442642:';
 const stack = prefix + 'stack/portfolio-api-cloud-test/observed-id';
 const changeset =
@@ -22,16 +24,34 @@ const base = {
   },
   template: {
     Resources: {
-      Handler: {
-        Type: 'AWS::Lambda::Function',
-        Properties: {
-          FunctionName: 'portfolio-api-cloud-test',
-          Handler: 'dist/validation/handler.handler',
-        },
-      },
-    },
+      ...Object.fromEntries(
+        Object.values(functions).map((contract) => [
+          contract.logicalId === 'Handler' ? 'Handler886CB40B' : `${contract.logicalId}0000AAAA`,
+          {
+            Type: 'AWS::Lambda::Function',
+            Properties: { FunctionName: contract.functionName, Handler: contract.handler },
+          },
+        ]),
+      ),
+      RuntimeLogs92941AA6: { Type: 'AWS::Logs::LogGroup', Properties: {} },
+      RuntimeRoleFD8790A4: { Type: 'AWS::IAM::Role', Properties: {} },
+      RuntimeControlE474B2D1: { Type: 'AWS::DynamoDB::Table', Properties: {} },
+    } as Record<string, { Type: string; Properties: Record<string, unknown> }>,
   },
 };
+const withHandler = (name: string, handler: string) => ({
+  ...base,
+  template: {
+    Resources: Object.fromEntries(
+      Object.entries(base.template.Resources).map(([id, resource]) => [
+        id,
+        resource.Properties.FunctionName === name
+          ? { ...resource, Properties: { ...resource.Properties, Handler: handler } }
+          : resource,
+      ]),
+    ),
+  },
+});
 function validate(input: unknown, command = 'validate') {
   return spawnSync(
     'python3',
@@ -103,36 +123,141 @@ test('Dado un rol distinto o paquete desconocido, cuando se revisa el primer des
       stackData: { ...base.stackData, RoleARN: 'arn:aws:iam::650387442642:role/other' },
     }).status,
   ).not.toBe(0);
+  expect(validate(withHandler('portfolio-api-cloud-test', 'dist/unknown.handler')).status).not.toBe(
+    0,
+  );
+  expect(
+    validate(withHandler('portfolio-api-cloud-test-process-release', 'dist/validation/api.handler'))
+      .status,
+  ).not.toBe(0);
+  // Validación: solo cambia el código de las funciones HTTP.
+  expect(
+    validate(withHandler('portfolio-api-cloud-test', 'dist/validation/api.handler')).status,
+  ).toBe(0);
+});
+
+test('Dado el catálogo, cuando falta, sobra o se renombra una función, entonces rechaza el paquete', () => {
+  const resources = { ...base.template.Resources };
+  delete resources['NotifyPost0000AAAA'];
+  expect(validate({ ...base, template: { Resources: resources } }).status).not.toBe(0);
   expect(
     validate({
       ...base,
       template: {
         Resources: {
-          Handler: {
+          ...base.template.Resources,
+          Extra: {
             Type: 'AWS::Lambda::Function',
-            Properties: {
-              FunctionName: 'portfolio-api-cloud-test',
-              Handler: 'dist/unknown.handler',
-            },
+            Properties: { FunctionName: 'portfolio-api-cloud-test-extra', Handler: 'x.handler' },
           },
         },
       },
     }).status,
   ).not.toBe(0);
+  const renamed = { ...base.template.Resources };
+  renamed['Handler11111111'] = renamed['Handler886CB40B']!;
+  delete renamed['Handler886CB40B'];
+  renamed['Other'] = { Type: 'AWS::Logs::LogGroup', Properties: {} };
+  delete renamed['RuntimeLogs92941AA6'];
+  expect(validate({ ...base, template: { Resources: renamed } }).status).not.toBe(0);
 });
+
+for (const id of [
+  'Handler886CB40B',
+  'RuntimeLogs92941AA6',
+  'RuntimeRoleFD8790A4',
+  'RuntimeControlE474B2D1',
+])
+  for (const action of [{ Action: 'Remove' }, { Action: 'Modify', Replacement: 'True' }])
+    test(`Dada la identidad retenida ${id} con ${JSON.stringify(action)}, cuando se revisa, entonces se bloquea`, () => {
+      expect(
+        validate({
+          ...base,
+          change: {
+            ...base.change,
+            Changes: [
+              {
+                ResourceChange: {
+                  ResourceType: 'AWS::Lambda::Function',
+                  LogicalResourceId: id,
+                  ...action,
+                },
+              },
+            ],
+          },
+        }).status,
+      ).not.toBe(0);
+    });
+
+test('Dadas funciones nuevas o modificaciones sin reemplazo, cuando se revisa, entonces se admiten', () => {
+  expect(
+    validate({
+      ...base,
+      change: {
+        ...base.change,
+        Changes: [
+          {
+            ResourceChange: {
+              ResourceType: 'AWS::Lambda::Function',
+              LogicalResourceId: 'Handler886CB40B',
+              Action: 'Modify',
+              Replacement: 'False',
+            },
+          },
+          {
+            ResourceChange: {
+              ResourceType: 'AWS::IAM::Policy',
+              LogicalResourceId: 'RuntimeRoleDefaultPolicy31263C89',
+              Action: 'Modify',
+              Replacement: 'True',
+            },
+          },
+          {
+            ResourceChange: {
+              ResourceType: 'AWS::Lambda::Function',
+              LogicalResourceId: 'EditorialNotifyPost0000AAAA',
+              Action: 'Add',
+            },
+          },
+        ],
+      },
+    }).status,
+  ).toBe(0);
+});
+
+test('Dado el catálogo del script, cuando se compara con los contratos, entonces nombres y handlers coinciden', () => {
+  const result = spawnSync(
+    'python3',
+    [
+      '-c',
+      "import sys,json;sys.path.insert(0,'scripts');import review_changeset as r;print(json.dumps([r.CATALOG,r.VALIDATION_HANDLERS]))",
+    ],
+    { encoding: 'utf8' },
+  );
+  const [catalog, validation] = JSON.parse(result.stdout);
+  expect(catalog).toEqual(
+    Object.fromEntries(Object.values(functions).map((c) => [c.functionName, c.handler])),
+  );
+  expect(validation).toEqual({
+    [functions.api.functionName]: 'dist/validation/api.handler',
+    [functions.chat.functionName]: 'dist/validation/chat.handler',
+  });
+});
+
 test('Dados workflows administrativos, cuando se inspecciona el circuito, entonces exige main, dispatch, activación, environment e identidad separados', () => {
   for (const file of [
     'plan-foundation-production.yml',
     'build-and-deploy.yml',
-    'validation-secret.yml',
+    'sync-parameters.yml',
   ]) {
     const text = readFileSync('.github/workflows/' + file, 'utf8');
     expect(text).toContain('workflow_dispatch:');
     expect(text).toContain("github.ref == 'refs/heads/main'");
     expect(text).toContain("== 'true'");
-    expect(text).toContain('environment: production-');
+    expect(text).toMatch(/environment: production(?:-|\n)/);
     expect(text).toContain('get-caller-identity');
-    expect(text).toContain('group: portfolio-api-cloud-production-mutation');
+    if (file !== 'sync-parameters.yml')
+      expect(text).toContain('group: portfolio-api-cloud-production-mutation');
     expect(text).not.toMatch(/AdministratorAccess|access-key-id:|secret-access-key:|cdk bootstrap/);
   }
   const workflow = readFileSync('.github/workflows/build-and-deploy.yml', 'utf8');
@@ -144,7 +269,7 @@ test('Dados workflows administrativos, cuando se inspecciona el circuito, entonc
 });
 test('Dadas identidades de arranque, cuando se inspeccionan las policies, entonces cada rol tiene boundary equivalente y la fundación no puede modificar su propia identidad', () => {
   const resources = JSON.parse(
-    readFileSync('infra/delivery-access.template.json', 'utf8'),
+    readFileSync('packages/infrastructure/templates/delivery-access.template.json', 'utf8'),
   ).Resources;
   for (const name of ['FoundationPlan', 'FoundationCloudFormation', 'GitHubExecute']) {
     const role = resources[name + 'Role'].Properties;
@@ -191,7 +316,7 @@ import review_changeset as review
 d=json.load(sys.stdin)
 bucket=review.BUCKET
 key='a'*64+'.zip'
-d['template']['Resources']['Handler']['Properties']['Code']={'S3Bucket':bucket,'S3Key':key}
+for r in d['template']['Resources'].values():\n  if r['Type']=='AWS::Lambda::Function': r['Properties']['Code']={'S3Bucket':bucket,'S3Key':key}
 with tempfile.TemporaryDirectory() as directory:
  root=Path(directory);(root/'asset').mkdir();(root/'asset'/'payload.txt').write_text('reviewed bytes')
  (root/'template.json').write_text(json.dumps(d['template']))
@@ -282,4 +407,49 @@ test('Dada una actualización revertida y estable, cuando se prepara otro change
     stackData: { ...base.stackData, StackStatus: 'UPDATE_ROLLBACK_COMPLETE' },
   });
   expect(result.status, result.stderr).toBe(0);
+});
+
+test('Dados parámetros con datos personales o de cuenta, cuando se arma el recibo, entonces solo conserva sus sha256 y los booleanos', () => {
+  const values: Record<string, string> = {
+    ContactFromEmail: 'Portfolio <from@example.com>',
+    BlogFromEmail: 'blog@example.com',
+    R2Bucket: 'media-bucket',
+    CertificateArn: 'arn:aws:acm:us-east-1:650387442642:certificate/abc',
+    PublicAccess: 'false',
+    DisableDefaultEndpoint: 'true',
+  };
+  const parameters = Object.entries(values).map(([ParameterKey, ParameterValue]) => ({
+    ParameterKey,
+    ParameterValue,
+  }));
+  const run = (input: Record<string, string>) =>
+    validate({
+      ...base,
+      change: {
+        ...base.change,
+        Parameters: Object.entries(input).map(([ParameterKey, ParameterValue]) => ({
+          ParameterKey,
+          ParameterValue,
+        })),
+      },
+    });
+  const result = run(values);
+  expect(result.status, result.stderr).toBe(0);
+  for (const value of Object.values(values).filter((v) => !['true', 'false'].includes(v)))
+    expect(result.stdout).not.toContain(value);
+  const reviewed = JSON.parse(result.stdout).Parameters as {
+    ParameterKey: string;
+    ParameterValue: string;
+  }[];
+  const byKey = Object.fromEntries(reviewed.map((p) => [p.ParameterKey, p.ParameterValue]));
+  expect(byKey.PublicAccess).toBe('false');
+  expect(byKey.DisableDefaultEndpoint).toBe('true');
+  expect(byKey.R2Bucket).toBe(
+    'sha256:' + createHash('sha256').update('media-bucket').digest('hex'),
+  );
+  expect(parameters).toHaveLength(6);
+  // Un valor distinto cambia el hash: el digest del recibo sigue atando la ejecución.
+  expect(JSON.parse(run({ ...values, R2Bucket: 'other-bucket' }).stdout).Parameters).not.toEqual(
+    reviewed,
+  );
 });

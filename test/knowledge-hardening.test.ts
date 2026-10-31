@@ -3,14 +3,14 @@ import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { ChatKnowledgeRepository } from '../src/chat/chat-knowledge.repository.js';
-import { getChatKnowledgeR2Config } from '../src/chat/chat.config.js';
+import { ChatKnowledgeRepository } from '../packages/runtime/src/chat/chat-knowledge.repository.js';
+import { getChatKnowledgeR2Config } from '../packages/runtime/src/chat/chat.config.js';
 let directory: string;
 const config = getChatKnowledgeR2Config({
   R2_ENDPOINT: 'https://r2.example.invalid',
   R2_BUCKET: 'fake',
-  R2_ACCESS_KEY_ID: 'fake',
-  R2_SECRET_ACCESS_KEY: 'fake',
+  R2_KNOWLEDGE_ACCESS_KEY_ID: 'fake',
+  R2_KNOWLEDGE_SECRET_ACCESS_KEY: 'fake',
   CHAT_KNOWLEDGE_CACHE_TTL_MS: '1000',
 })!;
 beforeEach(async () => {

@@ -1,5 +1,5 @@
 import { describe, it, beforeEach, expect, vi } from 'vitest';
-import { FaqService } from '../src/chat/faq.service.js';
+import { FaqService } from '../packages/runtime/src/chat/faq.service.js';
 
 describe('FaqService', () => {
   let service: FaqService;
