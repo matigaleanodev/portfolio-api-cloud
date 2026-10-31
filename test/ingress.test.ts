@@ -1,6 +1,6 @@
 import { test, expect, vi, afterEach } from 'vitest';
-import { verifiedVisitorIp, verifyOriginSecret } from '../src/ingress.js';
-import { createManagedHandler } from '../src/handler.js';
+import { verifiedVisitorIp, verifyOriginSecret } from '../packages/runtime/src/ingress.js';
+import { createApiHandler as createManagedHandler } from '../packages/runtime/src/handlers/api.js';
 import { httpEvent } from './fixtures.js';
 import { managedEnvironment, runtimeSecret, SimulatedControlStore } from './support/control.js';
 afterEach(() => vi.restoreAllMocks());
@@ -28,12 +28,12 @@ test('Dada entrada Cloudflare, cuando se verifica el origen y la IP, entonces so
 });
 test('Dado dominio definitivo, cuando se falsifica dominio, IP o secreto, entonces rechaza antes de los proveedores', async () => {
   vi.spyOn(console, 'info').mockImplementation(() => undefined);
-  const readSecret = vi.fn(async () =>
+  const readParameter = vi.fn(async () =>
     JSON.stringify({ ...runtimeSecret(), ORIGIN_VERIFY_SECRET: secret }),
   );
   const handler = createManagedHandler(
     { ...managedEnvironment, TRUSTED_CUSTOM_DOMAIN: 'api.matiasgaleano.dev' },
-    { readSecret, store: new SimulatedControlStore() },
+    { readParameter, store: new SimulatedControlStore() },
   );
   expect((await handler(event())).statusCode).toBe(200);
   const direct = event('192.0.2.1');
@@ -53,7 +53,8 @@ test('Dados visitantes diferentes tras un mismo proxy, cuando consumen contacto,
     {
       store: new SimulatedControlStore(),
       sendEmail,
-      readSecret: async () => JSON.stringify({ ...runtimeSecret(), ORIGIN_VERIFY_SECRET: secret }),
+      readParameter: async () =>
+        JSON.stringify({ ...runtimeSecret(), ORIGIN_VERIFY_SECRET: secret }),
     },
   );
   function contact(visitor: string) {

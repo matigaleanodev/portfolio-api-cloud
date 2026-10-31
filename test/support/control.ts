@@ -1,4 +1,10 @@
-import type { AiReservation, ControlStore, Counter } from '../../src/shared-control.js';
+import type {
+  AiReservation,
+  ControlStore,
+  Counter,
+} from '../../packages/runtime/src/shared-control.js';
+import { createSubscriberStore } from '../../packages/runtime/src/subscriptions/store.js';
+import type { SubscriptionConfiguration } from '../../packages/runtime/src/config.js';
 export class SimulatedControlStore implements ControlStore {
   readonly records = new Map<string, Counter>();
   readonly reservations: AiReservation[] = [];
@@ -34,20 +40,79 @@ export class SimulatedControlStore implements ControlStore {
     return true;
   }
 }
-export const runtimeSecret = () => ({
-  RESEND_API_KEY: 'fake',
-  CONTACT_FROM_EMAIL: 'from@example.invalid',
-  CONTACT_TO_EMAIL: 'to@example.invalid',
-  PORTFOLIO_CLOUD_API_URL: 'https://cloud.example.invalid',
+/**
+ * Claves sensibles simuladas. Los tests usan el mismo JSON para los parámetros api y chat:
+ * las claves compartidas (cuota, origen) coinciden como en producción.
+ */
+export const runtimeSecret = (): Record<string, string> => ({
+  RESEND_CONTACT_API_KEY: 'fake',
   QUOTA_KEY_SECRET: 's'.repeat(32),
   OPENAI_API_KEY: 'fake',
+  R2_SUBSCRIBERS_ACCESS_KEY_ID: 'fake',
+  R2_SUBSCRIBERS_SECRET_ACCESS_KEY: 'fake',
+});
+/** Configuración no sensible declarada por CDK como variables de entorno. */
+export const runtimeConfiguration = () => ({
+  CONTACT_FROM_EMAIL: 'from@example.invalid',
+  CONTACT_TO_EMAIL: 'to@example.invalid',
+  SUBSCRIBERS_R2_ENDPOINT: 'https://r2.example.invalid',
+  SUBSCRIBERS_R2_BUCKET: 'subscribers',
   AI_DAILY_BUDGET_MICROUSD: '1000000',
   AI_PRICING_VALID_UNTIL: new Date(Date.now() + 86400_000).toISOString(),
 });
+export const productionParameter = '/portfolio/prod/api';
 export const managedEnvironment = {
   TRUSTED_API_ID: 'local',
   QUOTA_TABLE_NAME: 'test-control',
-  RUNTIME_SECRET_ARN:
-    'arn:aws:secretsmanager:us-east-1:650387442642:secret:portfolio-api-cloud/test/runtime-abcdef',
+  RUNTIME_PARAMETER_NAME: productionParameter,
+  CHAT_PARAMETER_NAME: '/portfolio/prod/chat',
   CORS_ORIGIN: 'https://frontend.example.invalid',
+  ...runtimeConfiguration(),
 };
+/** Entorno de la función chat: lee solo su parámetro. */
+export const chatEnvironment = {
+  TRUSTED_API_ID: 'local',
+  QUOTA_TABLE_NAME: 'test-control',
+  RUNTIME_PARAMETER_NAME: '/portfolio/prod/chat',
+  CORS_ORIGIN: 'https://frontend.example.invalid',
+  AI_DAILY_BUDGET_MICROUSD: '1000000',
+  AI_PRICING_VALID_UNTIL: new Date(Date.now() + 86400_000).toISOString(),
+};
+
+/**
+ * Doble del cliente S3 en el límite del store de suscriptores: objetos en memoria por bucket/clave,
+ * sin red. `failure` simula un error del servicio y `pending` deja la operación sin respuesta
+ * hasta el abort.
+ */
+export class SimulatedObjectStorage {
+  readonly objects = new Map<string, string>();
+  readonly commands: { name: string; input: Record<string, unknown> }[] = [];
+  failure: Error | undefined;
+  pending = false;
+  async send(command: object, options?: { abortSignal?: AbortSignal }): Promise<unknown> {
+    const { name } = command.constructor;
+    const input = (command as { input: Record<string, unknown> }).input;
+    this.commands.push({ name, input });
+    if (this.pending)
+      return new Promise((_resolve, reject) => {
+        const signal = options?.abortSignal;
+        signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+      });
+    if (this.failure) throw this.failure;
+    const key = `${String(input.Bucket)}/${String(input.Key)}`;
+    if (name === 'HeadObjectCommand') {
+      if (!this.objects.has(key)) throw Object.assign(new Error('missing'), { name: 'NotFound' });
+      return {};
+    }
+    if (name === 'PutObjectCommand') this.objects.set(key, String(input.Body));
+    else if (name === 'DeleteObjectCommand') this.objects.delete(key);
+    else throw new Error(`Unexpected command ${name}`);
+    return {};
+  }
+}
+
+/** Dependencia `subscribers` del handler administrado con el store real sobre el doble S3. */
+export const simulatedSubscribers = (storage = new SimulatedObjectStorage()) => ({
+  storage,
+  subscribers: (config: SubscriptionConfiguration) => createSubscriberStore(config, storage),
+});

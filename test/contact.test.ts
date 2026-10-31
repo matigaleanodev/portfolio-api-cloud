@@ -1,12 +1,13 @@
+import { repositoryPath } from './support/paths.js';
 import { test, vi } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createApplication } from '../src/application.js';
-import { readConfiguration, readContactConfiguration } from '../src/config.js';
-import { createContactSender, createResendProvider } from '../src/contact.js';
-import { validateContact, type ContactDto } from '../src/contact.dto.js';
-import type { ContactEmail } from '../src/contact.js';
-import { parseBody, bodyError } from '../src/body.js';
+import { createApplication } from '../packages/runtime/src/application.js';
+import { readConfiguration, readContactConfiguration } from '../packages/runtime/src/config.js';
+import { createContactSender, createResendProvider } from '../packages/runtime/src/contact.js';
+import { validateContact, type ContactDto } from '../packages/runtime/src/contact.dto.js';
+import type { ContactEmail } from '../packages/runtime/src/contact.js';
+import { parseBody, bodyError } from '../packages/runtime/src/body.js';
 import { httpEvent } from './fixtures.js';
 
 interface Reference {
@@ -23,7 +24,9 @@ interface Reference {
     expected: { statusCode: number; body: unknown };
   }[];
 }
-const reference = JSON.parse(readFileSync('test/contact-reference.json', 'utf8')) as Reference;
+const reference = JSON.parse(
+  readFileSync(repositoryPath('test/contact-reference.json'), 'utf8'),
+) as Reference;
 
 function validationDescription(scenario: Reference['validation'][number]): string {
   const fields: Record<string, string> = {
@@ -135,7 +138,7 @@ const valid = {
   message: 'Hola, mensaje de contacto.',
 };
 const config = readContactConfiguration({
-  RESEND_API_KEY: 're_test_fake',
+  RESEND_CONTACT_API_KEY: 're_test_fake',
   CONTACT_FROM_EMAIL: 'from@example.invalid',
   CONTACT_TO_EMAIL: 'to@example.invalid',
 });
@@ -393,19 +396,19 @@ test('Dadas solicitudes simultáneas, cuando esperan al proveedor, entonces rese
 test('Dada la configuración de contacto, cuando faltan sus claves o contienen espacios, entonces valida su presencia sin transformar valores', () => {
   assert.throws(
     () => readContactConfiguration({}),
-    /RESEND_API_KEY, CONTACT_FROM_EMAIL, CONTACT_TO_EMAIL/,
+    /RESEND_CONTACT_API_KEY, CONTACT_FROM_EMAIL, CONTACT_TO_EMAIL/,
   );
   assert.throws(
     () =>
       readContactConfiguration({
-        RESEND_API_KEY: ' ',
+        RESEND_CONTACT_API_KEY: ' ',
         CONTACT_FROM_EMAIL: 'from',
         CONTACT_TO_EMAIL: 'to',
       }),
-    /RESEND_API_KEY/,
+    /RESEND_CONTACT_API_KEY/,
   );
   const actual = readContactConfiguration({
-    RESEND_API_KEY: ' key ',
+    RESEND_CONTACT_API_KEY: ' key ',
     CONTACT_FROM_EMAIL: ' from ',
     CONTACT_TO_EMAIL: ' to ',
   });
