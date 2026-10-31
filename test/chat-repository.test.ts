@@ -3,14 +3,14 @@ import { mkdtemp, mkdir, writeFile, rm, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
-import { ChatKnowledgeRepository } from '../src/chat/chat-knowledge.repository.js';
+import { ChatKnowledgeRepository } from '../packages/runtime/src/chat/chat-knowledge.repository.js';
 import {
   getChatKnowledgeR2Config,
   getChatKnowledgeCacheTtlMs,
   getChatKnowledgeObjectKey,
   getEditorialKnowledgeCandidatePaths,
-} from '../src/chat/chat.config.js';
-import { createChat } from '../src/chat/chat.providers.js';
+} from '../packages/runtime/src/chat/chat.config.js';
+import { createChat } from '../packages/runtime/src/chat/chat.providers.js';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
 let directory: string;
@@ -25,8 +25,8 @@ afterEach(async () => {
 const config = getChatKnowledgeR2Config({
   R2_ENDPOINT: 'https://r2.example.invalid',
   R2_BUCKET: 'fake',
-  R2_ACCESS_KEY_ID: 'fake',
-  R2_SECRET_ACCESS_KEY: 'fake',
+  R2_KNOWLEDGE_ACCESS_KEY_ID: 'fake',
+  R2_KNOWLEDGE_SECRET_ACCESS_KEY: 'fake',
   CHAT_KNOWLEDGE_CACHE_TTL_MS: '1000',
 })!;
 const artifact = {
@@ -294,8 +294,8 @@ test('Dado el SDK real con send simulado, cuando la composición lee conocimient
     {
       R2_ENDPOINT: config.endpoint,
       R2_BUCKET: 'fake',
-      R2_ACCESS_KEY_ID: 'fake',
-      R2_SECRET_ACCESS_KEY: 'fake',
+      R2_KNOWLEDGE_ACCESS_KEY_ID: 'fake',
+      R2_KNOWLEDGE_SECRET_ACCESS_KEY: 'fake',
       CHAT_KNOWLEDGE_OBJECT_KEY: 'custom',
     },
     async () => {

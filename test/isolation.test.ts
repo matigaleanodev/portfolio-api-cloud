@@ -6,9 +6,9 @@ import { connect as tlsConnect } from 'node:tls';
 import { createSocket } from 'node:dgram';
 import { lookup } from 'node:dns/promises';
 import { execSync } from 'node:child_process';
-import { createApplication } from '../src/application.js';
-import { readConfiguration } from '../src/config.js';
-import { handler } from '../src/handler.js';
+import { createApplication } from '../packages/runtime/src/application.js';
+import { readConfiguration } from '../packages/runtime/src/config.js';
+import { handler } from '../packages/runtime/src/handlers/api.js';
 import { httpEvent } from './fixtures.js';
 
 test('Dada configuración explícita de CORS, cuando se leen valores vacíos, listas o comodín, entonces se normalizan sin exigir credenciales', () => {
@@ -44,9 +44,9 @@ test('Dadas composiciones independientes, cuando cambia el objeto de configuraci
 });
 
 test('Dado un proceso sin credenciales, cuando se importa e invoca el handler de health, entonces responde 200 sin proveedores', async () => {
-  assert.equal(process.env.RESEND_API_KEY, undefined);
+  assert.equal(process.env.RESEND_CONTACT_API_KEY, undefined);
   assert.equal(process.env.OPENAI_API_KEY, undefined);
-  assert.equal(process.env.PORTFOLIO_CLOUD_API_URL, undefined);
+  assert.equal(process.env.SUBSCRIBERS_R2_ENDPOINT, undefined);
   assert.equal(process.env.CORS_ORIGIN, undefined);
   assert.equal((await handler(httpEvent())).statusCode, 200);
 });

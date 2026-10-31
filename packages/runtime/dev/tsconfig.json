@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "outDir": "../../../.tmp/dev",
+    "experimentalDecorators": true
+  },
+  "include": ["./*.ts", "../src/resend-types.d.ts"]
+}

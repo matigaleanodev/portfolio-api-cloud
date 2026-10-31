@@ -1,7 +1,7 @@
 import { beforeEach, describe, it, afterEach, expect, vi } from 'vitest';
-import { KnowledgeService } from '../src/chat/knowledge.service.js';
-import { FaqService } from '../src/chat/faq.service.js';
-import type { ChatKnowledgeRepository } from '../src/chat/chat-knowledge.repository.js';
+import { KnowledgeService } from '../packages/runtime/src/chat/knowledge.service.js';
+import { FaqService } from '../packages/runtime/src/chat/faq.service.js';
+import type { ChatKnowledgeRepository } from '../packages/runtime/src/chat/chat-knowledge.repository.js';
 
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => undefined));
 
