@@ -33,7 +33,7 @@ def recover(archive: Path, artifact: dict, run: dict, output: Path, revision: st
         raise ValueError('El destino debe ser nuevo')
     with zipfile.ZipFile(archive) as bundle:
         entries = bundle.infolist()
-        if len(entries) > 10000 or sum(item.file_size for item in entries) > 256 * 1024 * 1024:
+        if len(entries) > 30000 or sum(item.file_size for item in entries) > 256 * 1024 * 1024:
             raise ValueError('Artifact fuera del tamaño previsto')
         names = set()
         for item in entries:
