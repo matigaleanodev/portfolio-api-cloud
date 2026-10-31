@@ -1,9 +1,10 @@
+import { repositoryPath } from './support/paths.js';
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateChat } from '../src/chat/chat.dto.js';
-import { createApplication } from '../src/application.js';
-import { readConfiguration } from '../src/config.js';
+import { validateChat } from '../packages/runtime/src/chat/chat.dto.js';
+import { createApplication } from '../packages/runtime/src/application.js';
+import { readConfiguration } from '../packages/runtime/src/config.js';
 import { httpEvent } from './fixtures.js';
 
 interface Reference {
@@ -16,7 +17,9 @@ interface Reference {
     body?: { message: string[]; error: string; statusCode: number };
   }[];
 }
-const reference = JSON.parse(readFileSync('test/chat-reference.json', 'utf8')) as Reference;
+const reference = JSON.parse(
+  readFileSync(repositoryPath('test/chat-reference.json'), 'utf8'),
+) as Reference;
 for (const scenario of reference.cases) {
   test(
     'Dado ' +

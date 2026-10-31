@@ -11,19 +11,36 @@ function fixture(application = false) {
   const root = mkdtempSync(join(tmpdir(), 'api-scope-'));
   directories.push(root);
   if (application) {
-    for (const name of [
-      'package-lock.json',
-      'tsconfig.json',
-      'tsconfig.build.json',
-      'src/handler.ts',
-    ]) {
+    for (const name of applicationFiles) {
       mkdirSync(dirname(join(root, name)), { recursive: true });
       writeFileSync(join(root, name), '{}');
     }
-    manifest(root, { typecheck: 'tsc', build: 'tsc', test: 'vitest run' });
+    manifest(root, applicationScripts);
   }
   return root;
 }
+const applicationFiles = [
+  'package-lock.json',
+  'tsconfig.json',
+  'packages/contracts/package.json',
+  'packages/runtime/package.json',
+  'packages/runtime/tsconfig.build.json',
+  ...['api', 'chat', 'process-release', 'generate-og', 'notify-post', 'publish-chat-knowledge'].map(
+    (name) => `packages/runtime/src/handlers/${name}.ts`,
+  ),
+];
+const applicationScripts = Object.fromEntries(
+  [
+    'typecheck',
+    'build',
+    'test',
+    'test:app',
+    'test:editorial',
+    'test:tooling',
+    'test:package',
+    'boundaries',
+  ].map((name) => [name, 'node']),
+);
 function manifest(root: string, scripts: Record<string, string>) {
   writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts }));
 }
@@ -59,35 +76,49 @@ test('Dada una aplicación completa sin CDK, cuando CI detecta su alcance, enton
   });
 });
 test('Dados archivos de aplicación sin manifiesto, cuando CI detecta el alcance, entonces rechaza cada base huérfana', () => {
-  for (const name of ['package-lock.json', 'tsconfig.json', 'src', 'test', 'cdk.json']) {
+  for (const name of ['package-lock.json', 'tsconfig.json', 'packages', 'test', 'cdk.json']) {
     const root = fixture();
     writeFileSync(join(root, name), '{}');
     expect(detect(root).status).not.toBe(0);
   }
 });
-test('Dada una aplicación incompleta, cuando faltan el lock o un script obligatorio, entonces CI falla sin omitir controles', () => {
+test('Dada una aplicación incompleta, cuando faltan el lock, un handler del catálogo o un script, entonces CI falla sin omitir controles', () => {
+  for (const name of ['package-lock.json', 'packages/runtime/src/handlers/notify-post.ts']) {
+    const root = fixture(true);
+    unlinkSync(join(root, name));
+    expect(detect(root).status, name).not.toBe(0);
+  }
+  for (const script of Object.keys(applicationScripts)) {
+    const root = fixture(true);
+    const { [script]: _removed, ...rest } = applicationScripts;
+    manifest(root, rest);
+    expect(detect(root).status, script).not.toBe(0);
+  }
   const root = fixture(true);
-  unlinkSync(join(root, 'package-lock.json'));
-  expect(detect(root).status).not.toBe(0);
-  writeFileSync(join(root, 'package-lock.json'), '{}');
-  manifest(root, { build: 'tsc', test: 'vitest run' });
+  mkdirSync(join(root, 'packages/runtime/nested'), { recursive: true });
+  writeFileSync(join(root, 'packages/runtime/nested/package-lock.json'), '{}');
   expect(detect(root).status).not.toBe(0);
 });
-test('Dada infraestructura CDK, cuando faltan sus verificaciones, entonces CI la rechaza hasta declarar test:infra y cdk', () => {
+test('Dada infraestructura CDK, cuando faltan sus verificaciones o su paquete, entonces CI la rechaza', () => {
   const root = fixture(true);
   writeFileSync(join(root, 'cdk.json'), '{}');
-  expect(detect(root).status).not.toBe(0);
   manifest(root, {
-    typecheck: 'tsc',
-    build: 'tsc',
-    test: 'vitest run',
-    'test:infra': 'vitest run',
+    ...applicationScripts,
+    'test:infra': 'node',
+    'synth:local': 'node',
     cdk: 'cdk',
   });
+  expect(detect(root).status).not.toBe(0);
+  for (const name of [
+    'packages/infrastructure/package.json',
+    'packages/infrastructure/src/app.ts',
+  ]) {
+    mkdirSync(dirname(join(root, name)), { recursive: true });
+    writeFileSync(join(root, name), '{}');
+  }
   const result = detect(root);
   expect(result.status).toBe(0);
-  expect(JSON.parse(result.stdout)).toEqual({
-    application: 'true',
-    infrastructure: 'true',
-  });
+  expect(JSON.parse(result.stdout)).toEqual({ application: 'true', infrastructure: 'true' });
+  manifest(root, { ...applicationScripts, 'test:infra': 'node', cdk: 'cdk' });
+  expect(detect(root).status).not.toBe(0);
 });

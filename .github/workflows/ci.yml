@@ -35,7 +35,7 @@ jobs:
     needs: documentation
     if: needs.documentation.outputs.application == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       NODE_ENV: test
       AWS_EC2_METADATA_DISABLED: 'true'
@@ -47,11 +47,14 @@ jobs:
         with:
           node-version: '24.22.1'
           cache: npm
+          cache-dependency-path: package-lock.json
       - run: npm ci --ignore-scripts
       - run: npm run format:check
+      - run: npm run boundaries
       - run: npm run typecheck
       - run: npm run build
       - run: npm run test:app
+      - run: npm run test:editorial
       - run: npm run test:tooling
       - run: npm run test:package
 
@@ -62,11 +65,7 @@ jobs:
     timeout-minutes: 15
     env:
       NODE_ENV: test
-      AWS_REGION: us-east-1
-      AWS_DEFAULT_REGION: us-east-1
       AWS_EC2_METADATA_DISABLED: 'true'
-      CDK_DEFAULT_ACCOUNT: '650387442642'
-      CDK_DEFAULT_REGION: us-east-1
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -75,10 +74,12 @@ jobs:
         with:
           node-version: '24.22.1'
           cache: npm
+          cache-dependency-path: package-lock.json
       - run: npm ci --ignore-scripts
       - run: npm run test:infra
+      # Construye los assets por artifact una vez y sintetiza sin lookups ni credenciales.
       - name: Synthesize test stack without AWS lookups
-        run: npm run cdk -- synth --no-lookups --context stage=production
+        run: npm run synth:local
       - name: Assemble review bundle without credentials
         run: |
           python3 scripts/review_bundle.py create . .tmp/review-bundle "$GITHUB_SHA" "$(node --version)"
@@ -111,7 +112,7 @@ jobs:
           [[ "$DOC_RESULT" == success ]]
           if [[ "$APP_PRESENT" == true ]]; then
             [[ "$APP_RESULT" == success ]]
-            echo "Aplicación: tipos, build, contratos y paquete verificados en Node 24.22.1 LTS." >> "$GITHUB_STEP_SUMMARY"
+            echo "Aplicación: límites, tipos, build, tests por proyecto y paquetes verificados en Node 24.22.1 LTS." >> "$GITHUB_STEP_SUMMARY"
           else
             [[ "$APP_PRESENT" == false && "$APP_RESULT" == skipped ]]
             echo "Aplicación inexistente: no se ejecutaron sus checks." >> "$GITHUB_STEP_SUMMARY"

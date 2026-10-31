@@ -1,6 +1,6 @@
 import { test, vi } from 'vitest';
 import assert from 'node:assert/strict';
-import { createQuota } from '../src/quota.js';
+import { createQuota } from '../packages/runtime/src/quota.js';
 const HOUR = 3_600_000;
 
 test('Dados cinco intentos por IP, cuando llega el sexto y se reintenta, entonces bloquea una hora sin extender el vencimiento', async () => {

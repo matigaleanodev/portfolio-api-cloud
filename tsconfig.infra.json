@@ -1,9 +1,9 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "rootDir": ".",
     "outDir": ".tmp/infra",
     "exactOptionalPropertyTypes": false
   },
-  "include": ["infra/**/*.ts", "test/infra/**/*.ts"],
-  "exclude": []
+  "include": ["packages/infrastructure/src/**/*.ts", "test/infra/**/*.ts"]
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isPublicationDue } from '../src/chat/publication.js';
+import { isPublicationDue } from '../packages/runtime/src/chat/publication.js';
 
 describe('fecha de publicación', () => {
   it('Dada una fecha de publicación, cuando cambia el día en Argentina, entonces se habilita a las 03:00 UTC', () => {
