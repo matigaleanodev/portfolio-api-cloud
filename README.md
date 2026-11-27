@@ -2,7 +2,7 @@
 
 [Español](README.es.md)
 
-![Node.js 24](https://img.shields.io/badge/Node.js-24-5FA04E?logo=nodedotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white) ![AWS Lambda](https://img.shields.io/badge/AWS-Lambda-FF9900) ![AWS CDK](https://img.shields.io/badge/IaC-AWS_CDK-FF9900) ![Vitest](https://img.shields.io/badge/tests-Vitest-6E9F18?logo=vitest&logoColor=white) ![MIT](https://img.shields.io/badge/license-MIT-blue)
+[![CI](https://img.shields.io/github/actions/workflow/status/matigaleanodev/portfolio-api-cloud/ci.yml?branch=main&label=CI)](https://github.com/matigaleanodev/portfolio-api-cloud/actions/workflows/ci.yml) ![Node.js 24](https://img.shields.io/badge/Node.js-24-5FA04E?logo=nodedotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white) ![AWS Lambda](https://img.shields.io/badge/AWS-Lambda-FF9900) ![AWS CDK](https://img.shields.io/badge/IaC-AWS_CDK-FF9900) ![Vitest](https://img.shields.io/badge/tests-Vitest-6E9F18?logo=vitest&logoColor=white) ![MIT](https://img.shields.io/badge/license-MIT-blue)
 
 The serverless API for my portfolio, written in TypeScript for AWS Lambda. It handles contact, chat and subscriptions over HTTP, and blog editorial publication (OG images, subscriber notifications and chat knowledge) through direct invocation, while preserving the NestJS implementation's contracts.
 

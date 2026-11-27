@@ -4,7 +4,11 @@ import type { LambdaResponse, NotifyPostEvent } from '@portfolio-api-cloud/contr
 import { functions } from '@portfolio-api-cloud/contracts/functions';
 import { assertPrivateSubscribersBucket, createSubscriberStore } from '../subscriptions/store.js';
 import { readNotifyPostConfig } from '../editorial/config.js';
-import { createDeliveryLedger, createDynamoDeliveryStore } from '../editorial/delivery-ledger.js';
+import {
+  createDeliveryLedger,
+  createDynamoDeliveryStore,
+  ledgerRequestTimeoutMs,
+} from '../editorial/delivery-ledger.js';
 import { createBlogNotifier } from '../editorial/email.js';
 import { notifyPost } from '../editorial/notify-post.js';
 import { createSensitiveConfiguration, memoizeBySnapshot } from '../editorial/runtime.js';
@@ -28,8 +32,8 @@ const dependencies = memoizeBySnapshot(
             maxAttempts: 1,
             requestHandler: {
               connectionTimeout: 2_000,
-              requestTimeout: 5_000,
-              socketTimeout: 5_000,
+              requestTimeout: ledgerRequestTimeoutMs,
+              socketTimeout: ledgerRequestTimeoutMs,
               throwOnRequestTimeout: true,
             },
           }),

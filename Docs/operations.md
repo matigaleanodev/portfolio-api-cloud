@@ -56,7 +56,7 @@ Do not store values in checkout files or in non-secret environment variables.
 
 ## Protected delivery
 
-1. Integrate through a PR into `dev` and promote to `main` with successful CI. `verify` is required; [merge.yml](../.github/workflows/merge.yml) requires the full reviewed SHA and real `matigaleanodev` identity, using `MERGE_USER_TOKEN` from the `merge` environment, without App fallback or PR/CI bypass.
+1. Integrate through a PR into `dev` and promote to `main` as described in [pull request integration](#pull-request-integration).
 2. Select `api-assembly-<sha>-<run>-<attempt>` from successful push CI and a revision promoted to `main`. Compare run, ID, digest and inventory. Retention is 30 days; retain a verified copy for later recovery.
 3. [plan-foundation-production.yml](../.github/workflows/plan-foundation-production.yml) prepares foundation, roles and boundaries separately. It requires `previous_runtime_secret_arn`: the ARN of the secret a previous runtime still reads, or `none` to grant nothing.
 4. [plan-production.yml](../.github/workflows/plan-production.yml) takes the `production` environment variables, verifies without decrypting that the four production parameters exist as `SecureString` and prepares the changeset from the assembly without recompiling the runtime. The receipt publishes CloudFormation parameters as `sha256`, and its digest binds execution to those values.
@@ -65,6 +65,25 @@ Do not store values in checkout files or in non-secret environment variables.
 Production environments admit `main`; `*_ENABLED` flags stay disabled outside their operation. OIDC restricts owner, repository and environment. Planning, publishing, CloudFormation execution, parameter sync and runtime use separate roles. Pushes and tags do not deploy automatically.
 
 `recover_bundle.py` validates current artifacts and historical `test-assembly-*` without relaxing hashes or safe extraction.
+
+## Pull request integration
+
+`dev` and `main` require, without exceptions: a pull request, the GitHub Actions `verify` check passing on an up-to-date branch, resolved conversations and a merge commit; they reject direct pushes, force pushes and deletion. No approval from another person is required.
+
+A second rule restricts who updates those branches to the owner account:
+
+- With the `exempt` exemption for that account, merge with the GitHub merge button; auto-merge can be enabled by hand on each pull request.
+- While the exemption stays in `pull_request` mode, merge with [merge.yml](../.github/workflows/merge.yml), which requires the full reviewed SHA and uses `MERGE_USER_TOKEN` from the `merge` environment.
+
+To merge exactly the reviewed revision:
+
+```bash
+gh pr merge <number> --merge --match-head-commit <reviewed-sha>
+```
+
+Auto-merge integrates whatever head exists once the conditions are met, including commits added after enabling it.
+
+Each promotion leaves on `main` a merge commit that `dev` lacks. Before the next one, create `fix/sync-main-<sha>` from `main`, open a pull request into `dev` and merge it with a merge commit. If it is behind, **Update branch** updates the sync branch.
 
 ## Ingress, observability and capacity
 

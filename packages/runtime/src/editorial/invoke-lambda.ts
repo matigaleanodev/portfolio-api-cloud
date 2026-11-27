@@ -2,10 +2,18 @@ import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import type { LambdaResponse } from '@portfolio-api-cloud/contracts/editorial';
 
 export interface FunctionInvocationClient {
-  send(command: InvokeCommand): Promise<{ Payload?: Uint8Array; FunctionError?: string }>;
+  send(
+    command: InvokeCommand,
+    options?: { abortSignal: AbortSignal },
+  ): Promise<{ Payload?: Uint8Array; FunctionError?: string }>;
 }
 
-export type InvokeLambda = (functionName: string, payload: unknown) => Promise<LambdaResponse>;
+/** `signal` corta la espera de la respuesta; no cancela la ejecución de la función invocada. */
+export type InvokeLambda = (
+  functionName: string,
+  payload: unknown,
+  signal?: AbortSignal,
+) => Promise<LambdaResponse>;
 
 const safeCode = /^[A-Za-z][A-Za-z0-9_.]{0,63}$/;
 
@@ -52,7 +60,7 @@ function isLambdaResponse(value: unknown): value is LambdaResponse {
 /** Invocación síncrona con el contrato `{statusCode, body}`; el cliente se crea al primer uso. */
 export function createLambdaInvoker(client?: FunctionInvocationClient): InvokeLambda {
   let instance = client;
-  return async (functionName, payload) => {
+  return async (functionName, payload, signal) => {
     // Sin reintentos del SDK: repetir la invocación tras un timeout solaparía dos envíos.
     instance ??= new LambdaClient({ maxAttempts: 1 });
     const response = await instance.send(
@@ -60,6 +68,7 @@ export function createLambdaInvoker(client?: FunctionInvocationClient): InvokeLa
         FunctionName: functionName,
         Payload: Buffer.from(JSON.stringify(payload)),
       }),
+      signal ? { abortSignal: signal } : undefined,
     );
     const rawPayload =
       response.Payload && response.Payload.length > 0

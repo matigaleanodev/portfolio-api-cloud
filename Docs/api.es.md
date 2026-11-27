@@ -67,19 +67,19 @@ Cada función responde `{ statusCode, body }` con body JSON. Las validaciones de
 
 ### Idempotencia y limitaciones
 
-`process-release` guarda por post `ogGeneratedAt`, `notifiedAt` y `lastFailure` en `state/posts.json`. Un post con `notifiedAt` no se reprocesa; una etapa con marca se omite, así que reinvocar retoma la etapa pendiente. Cada etapa se reintenta hasta `RELEASE_STAGE_MAX_ATTEMPTS` (2 por defecto), salvo un aviso incompleto: no se repite en la misma invocación; hay que reinvocar para continuar. Un reintento solo ocurre si el tiempo restante de `process-release` cubre el timeout de la etapa más 5 s para guardar el estado; el primer intento no tiene ese control. `lastFailure` guarda etapa, fecha, intentos y un código saneado, nunca texto libre del proveedor. El formato legado (lista de slugs) se lee como procesado.
+`process-release` guarda por post `ogGeneratedAt`, `notifiedAt` y `lastFailure` en `state/posts.json`. Un post con `notifiedAt` no se reprocesa; una etapa con marca se omite, así que reinvocar retoma la etapa pendiente. Cada etapa se reintenta hasta `RELEASE_STAGE_MAX_ATTEMPTS` (2 por defecto), salvo un aviso incompleto: no se repite en la misma invocación; hay que reinvocar para continuar. Cada invocación, incluida la primera, solo ocurre si el tiempo restante de `process-release` cubre el timeout de la etapa, 2 s de arranque y transporte y 11 s para guardar el estado; la espera de la respuesta se corta al llegar a esa reserva (`AbortError`), sin cancelar la función invocada ni marcar la etapa. Una etapa que no entra se informa con `attempts: 0` e `insufficient_time`, igual que los posts siguientes (en el estado solo se anota la primera), y se retoma reinvocando. `ogGeneratedAt` se guarda apenas termina `generate-og`, antes del aviso; si el aviso ya no entra, se guarda junto con el fallo en una sola escritura. `lastFailure` guarda etapa, fecha, intentos y un código saneado, nunca texto libre del proveedor. El formato legado (lista de slugs) se lee como procesado.
 
 #### Envío por destinatario
 
 `notify-post` registra cada par post y destinatario en la tabla de control (sin direcciones: HMAC del email; sin vencimiento) y envía de a uno con `Idempotency-Key` de Resend. El post se identifica por host y ruta de su URL.
 
-| Estado      | Significado                                       | Siguiente invocación                                  |
-| ----------- | ------------------------------------------------- | ----------------------------------------------------- |
-| `sent`      | El proveedor aceptó el envío                      | No se reenvía                                         |
-| `rejected`  | Rechazo definitivo (4xx) sin dudas previas        | Reintenta con una clave nueva                         |
-| `sending`   | Reserva de una ejecución (60 s)                   | Espera; vencida, se trata como `uncertain`            |
-| `uncertain` | Timeout, error de red, 5xx, 408, 409 o sin `id`   | Dentro de 23 h repite la misma clave y el mismo envío |
-| `review`    | Duda sin resolver tras 23 h, o clave en conflicto | No se reenvía; requiere revisión manual               |
+| Estado      | Significado                                                                                    | Siguiente invocación                                  |
+| ----------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `sent`      | El proveedor aceptó el envío                                                                   | No se reenvía                                         |
+| `rejected`  | Rechazo definitivo (4xx) sin dudas previas, o reserva liberada sin envío (`insufficient_time`) | Reintenta con una clave nueva                         |
+| `sending`   | Reserva de una ejecución (60 s)                                                                | Espera; vencida, se trata como `uncertain`            |
+| `uncertain` | Timeout, error de red, 5xx, 408, 409 o sin `id`                                                | Dentro de 23 h repite la misma clave y el mismo envío |
+| `review`    | Duda sin resolver tras 23 h, o clave en conflicto                                              | No se reenvía; requiere revisión manual               |
 
 Límites de la garantía:
 
@@ -89,7 +89,7 @@ Límites de la garantía:
 - Restaurar la tabla a un punto anterior puede perder marcas y permitir reenvíos.
 - Una dirección rechazada de forma permanente o en `review` impide completar el post hasta resolverla. Mientras tanto cada release responde 500, el post se sigue enviando a quienes se suscriban después y los pasos posteriores del workflow invocador dependen de cómo trate ese fallo.
 - La baja elimina el registro; el índice del identificador se limpia sin garantía y puede quedar un objeto huérfano con la dirección en el bucket privado. El borrado del almacenamiento no es condicional: una baja en un clic simultánea con una baja y alta de la misma dirección podría borrar la nueva.
-- Cada invocación envía como máximo lo que entra en su timeout (a 5 envíos por segundo como techo) y corta ante cuotas del proveedor o credenciales rechazadas; las siguientes continúan con lo pendiente.
+- Cada invocación envía como máximo lo que entra en su timeout (a 5 envíos por segundo como techo) y corta ante cuotas del proveedor o credenciales rechazadas; las siguientes continúan con lo pendiente. Solo reserva un envío con 16 s restantes y solo llama al proveedor con 14 s (8 s de espera y 6 s para registrar el resultado). Si el presupuesto se agota tras reservar, se omite el envío y se intenta liberar la reserva. Una liberación confirmada deja una reserva nueva en `rejected` y conserva `uncertain` si había una duda previa. Si la liberación falla, incluso una reserva nueva puede quedar en `sending`. Al vencer los 60 s se trata como incierta. Si sigue sin resolverse, el primer reintento a partir de las 23 h desde `firstAttemptAt` la pasa a `review` para revisión manual, sin reenviar.
 
 - `state/posts.json` se actualiza con lectura-modificación-escritura sin lock: invocaciones concurrentes de `process-release` pueden pisarse. El workflow invocador debe serializar publicaciones.
 

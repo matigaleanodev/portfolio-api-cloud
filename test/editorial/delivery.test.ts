@@ -51,6 +51,7 @@ function run(
     remainingMs?: () => number;
     send?: SendBlogEmail;
     onUnsubscribeId?: (email: string) => void;
+    sleep?: (milliseconds: number) => Promise<unknown>;
   } = {},
 ) {
   return notifyPost(
@@ -63,7 +64,7 @@ function run(
       },
       ledger: createDeliveryLedger(store, secret, () => now),
       notify: createBlogNotifier(config, overrides.send ?? send),
-      sleep: async () => undefined,
+      sleep: overrides.sleep ?? (async () => undefined),
     }),
     overrides.remainingMs ? { remainingMs: overrides.remainingMs } : {},
   );
@@ -226,7 +227,7 @@ describe('envío sin duplicados', () => {
 
 describe('límites de la ejecución y del proveedor', () => {
   it('deja sin reservar lo que no entra en el tiempo disponible', async () => {
-    let remaining = 30_000;
+    let remaining = 31_000;
     const slow: SendBlogEmail = async (email, options) => {
       remaining -= 15_000;
       return send(email, options);
@@ -277,5 +278,137 @@ describe('límites de la ejecución y del proveedor', () => {
     for (const text of [persisted, logs.join('\n'), String((error as Error).message)])
       expect(text).not.toMatch(/@example\.com/);
     expect(calls.map((call) => call.key).join()).not.toContain('example');
+  });
+});
+
+describe('presupuesto de tiempo de la ejecución', () => {
+  let remaining: number;
+  const budgeted = (overrides: Parameters<typeof run>[0] = {}) =>
+    run({ remainingMs: () => remaining, ...overrides });
+  /** Deja `left` ms disponibles cuando la reserva queda escrita. */
+  const slowClaim = (left: number) => {
+    const put = store.put.bind(store);
+    return vi.spyOn(store, 'put').mockImplementation(async (record, previousVersion) => {
+      const stored = await put(record, previousVersion);
+      if (record.status === 'sending') remaining = left;
+      return stored;
+    });
+  };
+  const record = () => [...store.records.values()][0]!;
+
+  beforeEach(() => {
+    remaining = 30_000;
+    subscribers = ['uno@example.com'];
+  });
+
+  it('no inicia un envío si las lecturas y la reserva dejan 4 s, y libera la reserva', async () => {
+    subscribers = ['uno@example.com', 'dos@example.com'];
+    const slow = slowClaim(4_000);
+    await expect(budgeted()).rejects.toMatchObject({
+      ...incomplete,
+      message: expect.stringContaining('"deferred":2'),
+    });
+    expect(calls).toHaveLength(0);
+    expect(store.records.size).toBe(1);
+    expect(record()).toMatchObject({
+      status: 'rejected',
+      uncertain: false,
+      leaseUntil: 0,
+      code: 'insufficient_time',
+    });
+    slow.mockRestore();
+    remaining = 30_000;
+    // Sin esperar el vencimiento de la reserva: quedó liberada.
+    await expect(budgeted()).resolves.toMatchObject({ statusCode: 200 });
+    expect(calls.map((call) => call.to)).toEqual(subscribers);
+  });
+
+  it.each([
+    [14_000, 1, 'sent'],
+    [13_999, 0, 'rejected'],
+  ])('con %i ms tras la reserva hace %i envío(s)', async (left, sends, status) => {
+    slowClaim(left);
+    await budgeted().catch(() => undefined);
+    expect(calls).toHaveLength(sends);
+    expect(record().status).toBe(status);
+  });
+
+  it('liberar un intento de reconciliación conserva la duda, la clave y la ventana', async () => {
+    replies.set('uno@example.com', [ambiguous]);
+    await expect(budgeted()).rejects.toMatchObject(incomplete);
+    const { firstAttemptAt, generation } = record();
+    now += 3600_000;
+    const slow = slowClaim(4_000);
+    await expect(budgeted()).rejects.toMatchObject(incomplete);
+    expect(calls).toHaveLength(1);
+    expect(record()).toMatchObject({
+      status: 'uncertain',
+      uncertain: true,
+      leaseUntil: 0,
+      firstAttemptAt,
+      generation,
+    });
+    slow.mockRestore();
+    remaining = 30_000;
+    await expect(budgeted()).resolves.toMatchObject({ statusCode: 200 });
+    expect(calls[1]).toEqual(calls[0]);
+  });
+
+  it('si no puede liberar la reserva, vence y se reconcilia con la misma clave', async () => {
+    slowClaim(4_000);
+    store.failWrites = (entry) => entry.status === 'rejected';
+    await expect(budgeted()).rejects.toMatchObject(incomplete);
+    expect(calls).toHaveLength(0);
+    expect(record().status).toBe('sending');
+  });
+
+  it.each([
+    [16_000, 1, 1],
+    [15_999, 0, 0],
+  ])(
+    'con %i ms antes de reservar consulta la baja %i vez y deja %i registro(s)',
+    async (left, asked, records) => {
+      remaining = left;
+      const lookups: string[] = [];
+      await budgeted({ onUnsubscribeId: (email) => lookups.push(email) }).catch(() => undefined);
+      expect(lookups).toHaveLength(asked);
+      expect(store.records.size).toBe(records);
+      expect(calls).toHaveLength(records);
+    },
+  );
+
+  it('no reserva si la lectura del suscriptor consumió el presupuesto', async () => {
+    await expect(
+      budgeted({ onUnsubscribeId: () => void (remaining = 15_999) }),
+    ).rejects.toMatchObject({ ...incomplete, message: expect.stringContaining('"deferred":1') });
+    expect(store.records.size).toBe(0);
+    expect(calls).toHaveLength(0);
+  });
+
+  it.each([
+    [6_000, 2],
+    [5_999, 0],
+  ])('con %i ms confirma %i destinatarios ya aceptados', async (left, confirmed) => {
+    subscribers = ['uno@example.com', 'dos@example.com'];
+    await budgeted();
+    remaining = left;
+    const result = await budgeted().then(
+      (response) => JSON.parse(response.body).recipients as number,
+      () => 0,
+    );
+    expect(result).toBe(confirmed);
+    expect(calls).toHaveLength(2);
+  });
+
+  it('no pausa por límite de frecuencia si después no entra otro destinatario', async () => {
+    subscribers = ['uno@example.com', 'dos@example.com'];
+    replies.set('uno@example.com', [failure('rate_limit_exceeded', 429)]);
+    const sleeps: number[] = [];
+    slowClaim(16_999);
+    await expect(
+      budgeted({ sleep: async (milliseconds) => void sleeps.push(milliseconds) }),
+    ).rejects.toMatchObject({ ...incomplete, message: expect.stringContaining('"deferred":1') });
+    expect(sleeps).toEqual([]);
+    expect(calls).toHaveLength(1);
   });
 });

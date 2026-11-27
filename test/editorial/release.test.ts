@@ -137,31 +137,12 @@ describe('process-release: procesamiento', () => {
     const response = await processRelease({ manifest: manifest(post('a')) }, resolve);
     expect(response.statusCode).toBe(500);
     expect(invoke).toHaveBeenCalledTimes(2);
-    expect(putBodies()[0].a.lastFailure).toMatchObject({
+    expect(putBodies().at(-1).a.lastFailure).toMatchObject({
       stage: 'notify-post',
       attempts: 1,
       message: 'NotificationIncompleteError',
     });
   });
-
-  it.each([
-    [34_999, 1],
-    [35_000, 2],
-  ])(
-    'con %i ms restantes intenta %i vez una etapa que falla, y guarda su estado',
-    async (remaining, attempts) => {
-      send.mockRejectedValueOnce(notFound()).mockResolvedValueOnce({});
-      invoke.mockRejectedValue(new StageInvocationError('Sandbox.Timedout', 'detalle'));
-
-      const response = await processRelease({ manifest: manifest(post('a')) }, resolve, {
-        remainingMs: () => remaining,
-      });
-
-      expect(response.statusCode).toBe(500);
-      expect(invoke).toHaveBeenCalledTimes(attempts);
-      expect(putBodies()[0].a.lastFailure).toMatchObject({ stage: 'generate-og', attempts });
-    },
-  );
 
   it('no hay posts nuevos cuando todos están notificados (estado legado)', async () => {
     send.mockResolvedValueOnce({
@@ -215,7 +196,7 @@ describe('process-release: procesamiento', () => {
       Bucket: 'test-bucket',
       Key: 'state/posts.json',
     });
-    const put = send.mock.calls[1]?.[0] as PutObjectCommand;
+    const put = send.mock.calls.at(-1)?.[0] as PutObjectCommand;
     expect(put.input).toMatchObject({
       Bucket: 'test-bucket',
       Key: 'state/posts.json',
@@ -315,9 +296,10 @@ describe('process-release: procesamiento', () => {
         },
       ],
     });
-    expect(send).toHaveBeenCalledTimes(3);
+    // Lectura y, por post, el avance de la OG más el resultado.
+    expect(send).toHaveBeenCalledTimes(5);
     expect(invoke).toHaveBeenCalledTimes(5);
-    const [afterFailure, afterSuccess] = putBodies();
+    const [, afterFailure, , afterSuccess] = putBodies();
     expect(afterFailure.fallido).toMatchObject({
       ogGeneratedAt: expect.any(String),
       lastFailure: {
@@ -541,5 +523,187 @@ describe('estado state/posts.json', () => {
         pending: { ogGeneratedAt: 'x', updatedAt: 'x' },
       }).map(({ slug }) => slug),
     ).toEqual(['b', 'pending']);
+  });
+});
+
+describe('process-release: presupuesto de tiempo', () => {
+  let remaining: number;
+  const run = (...posts: ReturnType<typeof post>[]) =>
+    processRelease({ manifest: manifest(...posts) }, resolve, { remainingMs: () => remaining });
+  const insufficient = { attempts: 0, message: 'insufficient_time' };
+
+  beforeEach(() => {
+    remaining = 54_000;
+    send.mockImplementation(async (command: GetObjectCommand | PutObjectCommand) => {
+      if (command instanceof GetObjectCommand) throw notFound();
+      return {};
+    });
+    invoke.mockResolvedValue(ok('done'));
+  });
+
+  it('con 22 s tras generate-og no invoca notify-post y guarda ogGeneratedAt', async () => {
+    invoke.mockImplementationOnce(async () => {
+      remaining = 22_000;
+      return ok('OG image generated');
+    });
+    const response = await run(post('a'));
+    expect(response.statusCode).toBe(500);
+    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(response.body)).toMatchObject({
+      processedPosts: [],
+      failedPosts: [{ slug: 'a', stage: 'notify-post', ...insufficient }],
+    });
+    const saved = putBodies().at(-1).a;
+    expect(saved).toMatchObject({
+      ogGeneratedAt: expect.any(String),
+      lastFailure: { stage: 'notify-post', ...insufficient },
+    });
+    expect(saved.notifiedAt).toBeUndefined();
+  });
+
+  it('guarda ogGeneratedAt antes de invocar notify-post', async () => {
+    let savedBeforeNotify: unknown;
+    invoke.mockImplementation(async (name: string) => {
+      if (name.endsWith('notify-post')) savedBeforeNotify = putBodies().at(-1)?.a;
+      return ok('done');
+    });
+    expect((await run(post('a'))).statusCode).toBe(200);
+    expect(savedBeforeNotify).toEqual({
+      ogGeneratedAt: expect.any(String),
+      updatedAt: expect.any(String),
+    });
+    expect(putBodies().at(-1).a.notifiedAt).toBeTypeOf('string');
+  });
+
+  it('si el aviso ya no entra, guarda la OG y el fallo en una sola escritura', async () => {
+    const writesStartedWith: number[] = [];
+    send.mockImplementation(async (command: GetObjectCommand | PutObjectCommand) => {
+      if (command instanceof GetObjectCommand) throw notFound();
+      writesStartedWith.push(remaining);
+      remaining -= 10_000;
+      return {};
+    });
+    invoke.mockImplementationOnce(async () => {
+      remaining = 12_000;
+      return ok('OG image generated');
+    });
+    expect((await run(post('a'))).statusCode).toBe(500);
+    // Un guardado previo habría dejado el del fallo sin su reserva.
+    expect(writesStartedWith).toEqual([12_000]);
+    expect(putBodies().at(-1).a).toMatchObject({
+      ogGeneratedAt: expect.any(String),
+      lastFailure: { stage: 'notify-post', ...insufficient },
+    });
+  });
+
+  it('un fallo al guardar el avance de la OG no impide avisar ni guardar al final', async () => {
+    let writes = 0;
+    send.mockImplementation(async (command: GetObjectCommand | PutObjectCommand) => {
+      if (command instanceof GetObjectCommand) throw notFound();
+      if (++writes === 1) throw new Error('R2 down');
+      return {};
+    });
+    expect((await run(post('a'))).statusCode).toBe(200);
+    expect(invoke).toHaveBeenCalledTimes(2);
+    expect(putBodies().at(-1).a).toMatchObject({
+      ogGeneratedAt: expect.any(String),
+      notifiedAt: expect.any(String),
+    });
+  });
+
+  it.each([
+    [43_000, 2, 200],
+    [42_999, 0, 500],
+  ])('con %i ms restantes hace %i invocaciones', async (left, invocations, status) => {
+    remaining = left;
+    expect((await run(post('a'))).statusCode).toBe(status);
+    expect(invoke).toHaveBeenCalledTimes(invocations);
+  });
+
+  it.each([
+    [43_000, 2],
+    [42_999, 1],
+  ])('reintenta con %i ms restantes: %i intento(s) y guarda el fallo', async (left, attempts) => {
+    invoke.mockImplementation(async () => {
+      remaining = left;
+      throw new StageInvocationError('Sandbox.Timedout', 'detalle');
+    });
+    expect((await run(post('a'))).statusCode).toBe(500);
+    expect(invoke).toHaveBeenCalledTimes(attempts);
+    expect(putBodies().at(-1).a.lastFailure).toMatchObject({
+      stage: 'generate-og',
+      attempts,
+      message: 'Sandbox.Timedout',
+    });
+  });
+
+  it('corta en la primera etapa que no entra, con una sola escritura', async () => {
+    remaining = 20_000;
+    send.mockImplementation(async (command: GetObjectCommand | PutObjectCommand) =>
+      command instanceof GetObjectCommand
+        ? state({
+            b: { ogGeneratedAt: '2026-03-08T10:00:00.000Z', updatedAt: '2026-03-08T10:00:00.000Z' },
+          })
+        : {},
+    );
+    const response = await run(post('a'), post('b'), post('c'));
+    expect(response.statusCode).toBe(500);
+    expect(invoke).not.toHaveBeenCalled();
+    expect(JSON.parse(response.body).failedPosts).toMatchObject([
+      { slug: 'a', stage: 'generate-og', ...insufficient },
+      { slug: 'b', stage: 'notify-post', ...insufficient },
+      { slug: 'c', stage: 'generate-og', ...insufficient },
+    ]);
+    expect(putBodies()).toHaveLength(1);
+    expect(putBodies()[0].b.lastFailure).toBeUndefined();
+  });
+
+  it('deja de esperar a la hija para guardar el estado, sin darla por no ejecutada', async () => {
+    const controller = new AbortController();
+    const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+    invoke.mockImplementationOnce(async () => ok('OG image generated'));
+    invoke.mockImplementationOnce(
+      (_name: string, _payload: unknown, signal: AbortSignal) =>
+        new Promise((_done, fail) => {
+          signal.addEventListener('abort', () =>
+            fail(Object.assign(new Error('Request aborted'), { name: 'AbortError' })),
+          );
+          remaining = 11_000;
+          controller.abort();
+        }),
+    );
+    const response = await run(post('a'));
+    // Cada espera deja libres los 11 s reservados para guardar.
+    expect(timeout.mock.calls).toEqual([[43_000], [43_000]]);
+    expect(invoke).toHaveBeenCalledTimes(2);
+    expect(response.statusCode).toBe(500);
+    const saved = putBodies().at(-1).a;
+    expect(saved).toMatchObject({
+      ogGeneratedAt: expect.any(String),
+      lastFailure: { stage: 'notify-post', attempts: 1, message: 'AbortError' },
+    });
+    expect(saved.notifiedAt).toBeUndefined();
+  });
+
+  it('una ejecución posterior retoma el aviso sin regenerar la OG', async () => {
+    const stored = new Map<string, string>();
+    send.mockImplementation(async (command: GetObjectCommand | PutObjectCommand) => {
+      if (command instanceof PutObjectCommand)
+        stored.set(command.input.Key!, String(command.input.Body));
+      else if (!stored.has(command.input.Key!)) throw notFound();
+      else return { Body: Readable.from([stored.get(command.input.Key!)!]) };
+      return {};
+    });
+    invoke.mockImplementationOnce(async () => {
+      remaining = 22_000;
+      return ok('OG image generated');
+    });
+    expect((await run(post('a'))).statusCode).toBe(500);
+    remaining = 54_000;
+    expect((await run(post('a'))).statusCode).toBe(200);
+    expect(invoke.mock.calls.map(([name]) => name)).toEqual([
+      'portfolio-api-cloud-test-generate-og',
+      'portfolio-api-cloud-test-notify-post',
+    ]);
   });
 });

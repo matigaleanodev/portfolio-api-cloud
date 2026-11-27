@@ -155,8 +155,12 @@ describe('entrypoints editoriales', () => {
       Payload: Buffer.from(JSON.stringify({ statusCode: 500, body: '{}' })),
     });
     const { handler } = await import(`${handlers}process-release.js`);
-    await handler(manifest, { getRemainingTimeInMillis: () => 10_000 });
+    await handler(manifest, {
+      getRemainingTimeInMillis: () => (lambda.mock.calls.length ? 10_000 : 54_000),
+    });
     expect(lambda).toHaveBeenCalledTimes(1);
+    // La invocación real recibe la señal que limita la espera.
+    expect(lambda.mock.calls[0]?.[1]?.abortSignal).toBeInstanceOf(AbortSignal);
   });
 
   it('notify-post lee /portfolio/prod/notifications, lista suscriptores y envía con Resend', async () => {

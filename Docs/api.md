@@ -67,19 +67,19 @@ Each function returns `{ statusCode, body }` with a JSON body. Event validation 
 
 ### Idempotency and limitations
 
-`process-release` stores `ogGeneratedAt`, `notifiedAt` and `lastFailure` per post in `state/posts.json`. A post with `notifiedAt` is not reprocessed; a stage with its mark is skipped, so reinvoking resumes the pending stage. Each stage is retried up to `RELEASE_STAGE_MAX_ATTEMPTS` (2 by default), except an incomplete notification: it is not repeated within the same invocation; reinvoke to continue. A retry only happens when the remaining time of `process-release` covers that stage's timeout plus 5 s to save the state; the first attempt has no such check. `lastFailure` holds stage, time, attempts and a sanitized code, never free provider text. The legacy format (a slug list) is read as processed.
+`process-release` stores `ogGeneratedAt`, `notifiedAt` and `lastFailure` per post in `state/posts.json`. A post with `notifiedAt` is not reprocessed; a stage with its mark is skipped, so reinvoking resumes the pending stage. Each stage is retried up to `RELEASE_STAGE_MAX_ATTEMPTS` (2 by default), except an incomplete notification: it is not repeated within the same invocation; reinvoke to continue. Every invocation, including the first, only happens when the remaining time of `process-release` covers that stage's timeout, 2 s for startup and transport and 11 s to save the state; the wait for the response stops at that reserve (`AbortError`), without cancelling the invoked function or marking the stage. A stage that does not fit is reported with `attempts: 0` and `insufficient_time`, as are the posts after it (only the first is recorded in the state), and is resumed by reinvoking. `ogGeneratedAt` is saved as soon as `generate-og` finishes, before notifying; if the notification no longer fits, it is saved with the failure in a single write. `lastFailure` holds stage, time, attempts and a sanitized code, never free provider text. The legacy format (a slug list) is read as processed.
 
 #### Per-recipient delivery
 
 `notify-post` records each post and recipient pair in the control table (no addresses: HMAC of the email; no expiry) and sends one at a time with a Resend `Idempotency-Key`. A post is identified by the host and path of its URL.
 
-| State       | Meaning                                          | Next invocation                              |
-| ----------- | ------------------------------------------------ | -------------------------------------------- |
-| `sent`      | The provider accepted the message                | Not resent                                   |
-| `rejected`  | Definite rejection (4xx) with no earlier doubt   | Retries with a new key                       |
-| `sending`   | Claimed by one run (60 s)                        | Waits; once expired, handled as `uncertain`  |
-| `uncertain` | Timeout, network error, 5xx, 408, 409 or no `id` | Within 23 h repeats the same key and message |
-| `review`    | Doubt unresolved after 23 h, or conflicting key  | Not resent; needs manual review              |
+| State       | Meaning                                                                                        | Next invocation                              |
+| ----------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `sent`      | The provider accepted the message                                                              | Not resent                                   |
+| `rejected`  | Definite rejection (4xx) with no earlier doubt, or claim released unsent (`insufficient_time`) | Retries with a new key                       |
+| `sending`   | Claimed by one run (60 s)                                                                      | Waits; once expired, handled as `uncertain`  |
+| `uncertain` | Timeout, network error, 5xx, 408, 409 or no `id`                                               | Within 23 h repeats the same key and message |
+| `review`    | Doubt unresolved after 23 h, or conflicting key                                                | Not resent; needs manual review              |
 
 Limits of the guarantee:
 
@@ -89,7 +89,7 @@ Limits of the guarantee:
 - Restoring the table to an earlier point can lose marks and allow resends.
 - A permanently rejected or `review` address keeps the post incomplete until resolved. Meanwhile each release returns 500, the post keeps being sent to later subscribers, and subsequent steps of the invoking workflow depend on how it handles that failure.
 - Unsubscribing deletes the record; identifier index cleanup is best effort and an orphan object holding the address can remain in the private bucket. Storage deletion is not conditional: a one-click request concurrent with an unsubscribe and resubscribe of the same address could delete the new one.
-- Each invocation sends at most what fits its timeout (capped at 5 sends per second) and stops on provider quotas or rejected credentials; later invocations continue with what is pending.
+- Each invocation sends at most what fits its timeout (capped at 5 sends per second) and stops on provider quotas or rejected credentials; later invocations continue with what is pending. It only claims a send with 16 s remaining and only calls the provider with 14 s (8 s of waiting and 6 s to record the result). If the budget runs out after claiming, the sender skips the send and attempts to release the claim. A successful release marks a new claim as `rejected` and preserves `uncertain` if an earlier attempt was ambiguous. If the release fails, even a new claim can remain `sending`. Once the 60 s lease expires, it is treated as uncertain. If still unresolved, the first retry at or after 23 h from `firstAttemptAt` moves it to `review` for manual review without resending.
 
 - `state/posts.json` is updated with read-modify-write and no lock: concurrent `process-release` invocations can overwrite each other. The invoking workflow must serialize publications.
 
