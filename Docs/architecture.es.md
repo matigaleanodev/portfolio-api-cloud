@@ -58,7 +58,7 @@ Las FAQ responden directo. `chat` lee de R2 el envelope publicado por `publish-c
 
 La generación usa solo GPT-6 Luna por Responses, con `store=false`, sin herramientas ni reintentos, y exige tarifas vigentes, cupos por sesión/origen y reserva monetaria global previa.
 
-`process-release` lee y escribe `state/posts.json` en el bucket de medios, invoca sincrónicamente `generate-og` y `notify-post` con reintentos acotados y guarda solo códigos de error saneados, porque ese bucket es público. Los suscriptores viven en `subscribers/<email>.json` de un bucket privado distinto, compartido por la fachada HTTP y `notify-post`.
+`process-release` lee y escribe `state/posts.json` en el bucket de medios, invoca sincrónicamente `generate-og` y `notify-post` con reintentos acotados y guarda solo códigos de error saneados, porque ese bucket es público. Cada intento contra R2 limita conexión (2 s), espera de respuesta e inactividad (5 s), con dos intentos como máximo; el registro de envíos en DynamoDB usa los mismos límites sin reintentos del SDK. Los suscriptores viven en `subscribers/<email>.json` de un bucket privado distinto, compartido por la fachada HTTP y `notify-post`.
 
 ## Infraestructura y costo
 

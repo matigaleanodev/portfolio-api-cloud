@@ -37,7 +37,7 @@ Every response produced inside the request scope carries `x-request-id`, includi
 
 ## Subscriptions and chat
 
-Subscribe and unsubscribe write or delete `subscribers/<email>.json` in the private R2 bucket, within 8 seconds and without retries. Responses: `Subscribed successfully` or `Unsubscribed successfully` with `email`; `Already subscribed` or `Already unsubscribed` without `email`. An email invalid for storage returns 400, an R2 failure returns 502 and cancellation or deadline 503. Emails are not logged.
+Subscribe and unsubscribe write or delete `subscribers/<email>.json` in the private R2 bucket, within a total of 8 seconds. Responses: `Subscribed successfully` or `Unsubscribed successfully` with `email`; `Already subscribed` or `Already unsubscribed` without `email`. An email invalid for storage returns 400, an R2 failure returns 502 and cancellation or deadline 503. Emails are not logged.
 
 Chat returns source `faq`, `ai` or `fallback`. FAQs do not generate AI. History travels in the request; sessionId neither authenticates nor creates persistence. AI admits five responses per session and five per origin/Argentine day, in addition to HTTP quota and global budget. Cached AI consumes allowance with zero monetary reservation. People sharing an IP share the origin allowance. Without admission, chat offers FAQs/contact; editorial questions without valid knowledge retain 503.
 
@@ -48,7 +48,7 @@ Chat returns source `faq`, `ai` or `fallback`. FAQs do not generate AI. History 
 - `POST` accepts `application/x-www-form-urlencoded` or `multipart/form-data` with `List-Unsubscribe=One-Click`, without cookies, sessions or redirects. A well-formed request returns 200 whether or not the subscription exists; repeating it has no effect. A malformed or repeated identifier, another value or content type returns 400. A storage failure returns 502 or 503.
 - `GET` and `HEAD` never change data: they return 303 to the manual page `https://matiasgaleano.dev/blog/unsubscribe`.
 
-Anyone receiving a forwarded message can use its unsubscribe link. Earlier `?email=` links and `DELETE /subscriptions` are preserved.
+The message links manual unsubscription as `/blog/unsubscribe#email=<address>`: the fragment never reaches the server and the page uses it to prefill. The frontend that reads it must be published before sending notifications with this template. Anyone receiving a forwarded message can use its unsubscribe link. Earlier `?email=` links and `DELETE /subscriptions` are preserved.
 
 ## Editorial events
 
@@ -56,18 +56,18 @@ Editorial functions have no HTTP routes. The `portfolio` publication workflow in
 
 Each function returns `{ statusCode, body }` with a JSON body. Event validation happens before reading configuration: a 400 has no effects. A configuration, R2 or provider failure that is not turned into a response ends as a Lambda function error.
 
-| Function                 | Event                                                                                                                         | Responses                                                                                                                                                                   |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `process-release`        | `{ manifest }` or the raw manifest: `generatedAt`, `siteUrl`, `content.posts[]` with `slug`, `title`, `date`, `canonicalPath` | 400 invalid manifest or future dates (Argentine time); 200 `No new posts`; 200 `processedPosts`; 500 partial with `processedPosts` and `failedPosts`                        |
-| `generate-og`            | `slug`, `title`, optional `excerpt`, `date`, `tags`                                                                           | 400 without title or slug; 200 with the public `url` of `og/<slug>.png`                                                                                                     |
-| `notify-post`            | `title`, `url`, optional `excerpt`, `date`, `tags`                                                                            | 400 without title or URL, or future date; 200 with `recipients` (accepted by the provider); if any is not accepted, the invocation fails with `NotificationIncompleteError` |
-| `publish-chat-knowledge` | `{ artifact, release?, source? }` or the raw artifact: `generatedAt`, `projects?`, `posts?`                                   | 400 invalid artifact or future dates; 200 with `key`, `generatedAt` and `contentHash`                                                                                       |
+| Function                 | Event                                                                                                                                                                          | Responses                                                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `process-release`        | `{ manifest }` or the raw manifest: `generatedAt`, `siteUrl`, `content.posts[]` with `slug`, `title`, `date`, `canonicalPath` and optional `excerpt` (passed to `notify-post`) | 400 invalid manifest or future dates (Argentine time); 200 `No new posts`; 200 `processedPosts`; 500 partial with `processedPosts` and `failedPosts`                        |
+| `generate-og`            | `slug`, `title`, optional `excerpt`, `date`, `tags`                                                                                                                            | 400 without title or slug; 200 with the public `url` of `og/<slug>.png`                                                                                                     |
+| `notify-post`            | `title`, `url`, optional `excerpt`, `date`, `tags`                                                                                                                             | 400 without title or URL, or future date; 200 with `recipients` (accepted by the provider); if any is not accepted, the invocation fails with `NotificationIncompleteError` |
+| `publish-chat-knowledge` | `{ artifact, release?, source? }` or the raw artifact: `generatedAt`, `projects?`, `posts?`                                                                                    | 400 invalid artifact or future dates; 200 with `key`, `generatedAt` and `contentHash`                                                                                       |
 
 `publish-chat-knowledge` writes the v1 envelope to `artifacts/chat/knowledge.json`: `version`, `generatedAt`, `source` (defaults to `portfolio` and `.generated/chat/knowledge.json`), optional `release`, `contentHash` (`sha256:`) and `knowledge`. It overwrites the same key.
 
 ### Idempotency and limitations
 
-`process-release` stores `ogGeneratedAt`, `notifiedAt` and `lastFailure` per post in `state/posts.json`. A post with `notifiedAt` is not reprocessed; a stage with its mark is skipped, so reinvoking resumes the pending stage. Each stage is retried up to `RELEASE_STAGE_MAX_ATTEMPTS` (2 by default), except an incomplete notification: it is not repeated within the same invocation; reinvoke to continue. `lastFailure` holds stage, time, attempts and a sanitized code, never free provider text. The legacy format (a slug list) is read as processed.
+`process-release` stores `ogGeneratedAt`, `notifiedAt` and `lastFailure` per post in `state/posts.json`. A post with `notifiedAt` is not reprocessed; a stage with its mark is skipped, so reinvoking resumes the pending stage. Each stage is retried up to `RELEASE_STAGE_MAX_ATTEMPTS` (2 by default), except an incomplete notification: it is not repeated within the same invocation; reinvoke to continue. A retry only happens when the remaining time of `process-release` covers that stage's timeout plus 5 s to save the state; the first attempt has no such check. `lastFailure` holds stage, time, attempts and a sanitized code, never free provider text. The legacy format (a slug list) is read as processed.
 
 #### Per-recipient delivery
 

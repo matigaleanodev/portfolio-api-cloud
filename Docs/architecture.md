@@ -58,7 +58,7 @@ FAQs answer directly. `chat` reads from R2 the envelope published by `publish-ch
 
 Generation uses only GPT-6 Luna through Responses, with `store=false`, no tools and no retries, and requires valid pricing, session/origin allowances and a prior global monetary reservation.
 
-`process-release` reads and writes `state/posts.json` in the media bucket, synchronously invokes `generate-og` and `notify-post` with bounded retries and stores only sanitized error codes, because that bucket is public. Subscribers live in `subscribers/<email>.json` in a separate private bucket shared by the HTTP facade and `notify-post`.
+`process-release` reads and writes `state/posts.json` in the media bucket, synchronously invokes `generate-og` and `notify-post` with bounded retries and stores only sanitized error codes, because that bucket is public. Each R2 attempt bounds connection (2 s), response wait and inactivity (5 s), with at most two attempts; the DynamoDB send ledger uses the same limits without SDK retries. Subscribers live in `subscribers/<email>.json` in a separate private bucket shared by the HTTP facade and `notify-post`.
 
 ## Infrastructure and cost
 
