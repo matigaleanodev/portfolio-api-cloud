@@ -119,6 +119,11 @@ export function createValidationProviders(scenario: ValidationScenario) {
       if (scenario !== 'success') throw new Error(`Simulated ${scenario} storage result`);
       return 'deleted';
     },
+    async unsubscribeByToken(_token, signal) {
+      if (scenario === 'pending-body') return pending(signal ?? operationSignal(8000));
+      if (scenario !== 'success') throw new Error(`Simulated ${scenario} storage result`);
+      return 'deleted';
+    },
   };
   // No hay fetch real ni transporte alternativo, incluso frente a destinos inesperados.
   const request: typeof fetch = async (input, init) => {

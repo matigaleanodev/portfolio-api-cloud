@@ -4,6 +4,7 @@ export const secretKeys = [
   'RESEND_BLOG_API_KEY',
   'OPENAI_API_KEY',
   'QUOTA_KEY_SECRET',
+  'NOTIFY_LEDGER_KEY',
   'ORIGIN_VERIFY_SECRET',
   'R2_KNOWLEDGE_ACCESS_KEY_ID',
   'R2_KNOWLEDGE_SECRET_ACCESS_KEY',
@@ -77,6 +78,7 @@ export const parameterKeys = {
     'R2_SUBSCRIBERS_ACCESS_KEY_ID',
     'R2_SUBSCRIBERS_SECRET_ACCESS_KEY',
     'RESEND_BLOG_API_KEY',
+    'NOTIFY_LEDGER_KEY',
   ],
 } as const satisfies Record<'api' | 'chat' | 'editorial' | 'notifications', readonly SecretKey[]>;
 

@@ -27,7 +27,13 @@ const http = ['@aws-sdk/client-dynamodb', '@middy/core', 'body-parser', 'class-v
 const forbidden = {
   api: ['@resvg/resvg-js', '@aws-sdk/client-lambda'],
   chat: ['resend', '@resvg/resvg-js', '@aws-sdk/client-lambda'],
-  editorial: [...http, '@resvg/resvg-js', 'class-transformer', 'rate-limiter-flexible'],
+  // notify-post guarda el registro de envíos en DynamoDB.
+  editorial: [
+    ...http.filter((name) => name !== '@aws-sdk/client-dynamodb'),
+    '@resvg/resvg-js',
+    'class-transformer',
+    'rate-limiter-flexible',
+  ],
   og: [...http, 'resend', '@aws-sdk/client-lambda', 'class-transformer', 'rate-limiter-flexible'],
   'validation-api': ['@resvg/resvg-js', '@aws-sdk/client-lambda'],
   'validation-chat': ['resend', '@resvg/resvg-js', '@aws-sdk/client-lambda'],
@@ -136,6 +142,7 @@ async function editorialSmoke() {
     R2_SUBSCRIBERS_ACCESS_KEY_ID: 'smoke',
     R2_SUBSCRIBERS_SECRET_ACCESS_KEY: 'smoke',
     RESEND_BLOG_API_KEY: 're_smoke',
+    NOTIFY_LEDGER_KEY: 'smoke'.repeat(8),
   };
   SSMClient.prototype.send = async (command) => {
     assert.ok(command instanceof GetParameterCommand);
@@ -152,7 +159,7 @@ async function editorialSmoke() {
     if (command instanceof s3.GetObjectCommand) {
       const object = objects.get(`${Bucket}/${Key}`);
       if (!object) throw Object.assign(new Error('missing'), { name: 'NoSuchKey' });
-      return { Body: { transformToString: async () => String(object.Body) } };
+      return { Body: { transformToString: async () => String(object.Body) }, ETag: '"smoke"' };
     }
     if (command instanceof s3.ListObjectsV2Command)
       return {
@@ -170,6 +177,7 @@ async function editorialSmoke() {
     BLOG_FROM_EMAIL: 'blog@example.invalid',
     GENERATE_OG_FUNCTION_NAME: 'portfolio-api-cloud-test-generate-og',
     NOTIFY_POST_FUNCTION_NAME: 'portfolio-api-cloud-test-notify-post',
+    LEDGER_TABLE_NAME: 'smoke-control',
   });
 
   if (artifact === 'og') {
@@ -270,9 +278,28 @@ async function editorialSmoke() {
 
   process.env.RUNTIME_PARAMETER_NAME = '/portfolio/prod/notifications';
   const notify = (await import('./dist/handlers/notify-post.js')).handler;
-  const notified = await notify({ title: 'A', url: 'https://matiasgaleano.dev/blog/a' });
+  const { DynamoDBClient, PutItemCommand } = await import('@aws-sdk/client-dynamodb');
+  const items = new Map();
+  DynamoDBClient.prototype.send = async (command) => {
+    if (command instanceof PutItemCommand) {
+      items.set(command.input.Item.pk.S, command.input.Item);
+      return {};
+    }
+    return { Item: items.get(command.input.Key.pk.S) };
+  };
+  objects.set('subscribers/subscribers/uno@example.com.json', {
+    Body: JSON.stringify({ email: 'uno@example.com' }),
+  });
+  const notified = await notify(
+    { title: 'A', url: 'https://matiasgaleano.dev/blog/a' },
+    { getRemainingTimeInMillis: () => 30_000 },
+  );
   assert.equal(JSON.parse(notified.body).recipients, 1);
   assert.deepEqual(sent, ['uno@example.com']);
+  assert.deepEqual(
+    [...items.values()].map((item) => item.status.S),
+    ['sent'],
+  );
   globalThis.fetch = blockedFetch;
   assert.deepEqual(
     [...new Set(parameters)],

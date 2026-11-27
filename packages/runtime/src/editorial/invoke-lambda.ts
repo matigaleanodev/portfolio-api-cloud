@@ -53,7 +53,8 @@ function isLambdaResponse(value: unknown): value is LambdaResponse {
 export function createLambdaInvoker(client?: FunctionInvocationClient): InvokeLambda {
   let instance = client;
   return async (functionName, payload) => {
-    instance ??= new LambdaClient({});
+    // Sin reintentos del SDK: repetir la invocación tras un timeout solaparía dos envíos.
+    instance ??= new LambdaClient({ maxAttempts: 1 });
     const response = await instance.send(
       new InvokeCommand({
         FunctionName: functionName,

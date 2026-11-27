@@ -1,8 +1,9 @@
+import type { ITable } from 'aws-cdk-lib/aws-dynamodb';
 import { ArnPrincipal, type IManagedPolicy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import { functions, type FunctionId } from '@portfolio-api-cloud/contracts/functions';
 import { productionAccount } from '@portfolio-api-cloud/contracts/configuration';
-import { editorialEnvironment } from '@portfolio-api-cloud/contracts/editorial';
+import { deliveryKeyPrefix, editorialEnvironment } from '@portfolio-api-cloud/contracts/editorial';
 import {
   editorialValues,
   type FunctionEnvironment,
@@ -22,6 +23,8 @@ const assets = { editorial: '.tmp/lambda-editorial', og: '.tmp/lambda-og' } as c
 export interface EditorialProps {
   readonly boundary: IManagedPolicy;
   readonly storage: StorageParameters;
+  /** Tabla de control: guarda el registro de envíos de notify-post. */
+  readonly control: ITable;
 }
 
 /**
@@ -64,7 +67,18 @@ export class Editorial extends Construct {
       });
     };
     const generateOg = create('generateOg');
-    const notifyPost = create('notifyPost');
+    const notifyPost = create('notifyPost', { LEDGER_TABLE_NAME: props.control.tableName });
+    // Solo el registro de envíos: cuotas y presupuesto de IA quedan fuera de su alcance.
+    notifyPost.role.addToPolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:PutItem'],
+        resources: [props.control.tableArn],
+        conditions: {
+          'ForAllValues:StringLike': { 'dynamodb:LeadingKeys': [`${deliveryKeyPrefix}*`] },
+          Null: { 'dynamodb:LeadingKeys': 'false' },
+        },
+      }),
+    );
     const processRelease = create('processRelease', {
       GENERATE_OG_FUNCTION_NAME: generateOg.fn.functionName,
       NOTIFY_POST_FUNCTION_NAME: notifyPost.fn.functionName,

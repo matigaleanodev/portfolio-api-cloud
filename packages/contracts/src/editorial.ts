@@ -110,6 +110,11 @@ export type ReleaseStage = 'generate-og' | 'notify-post';
 export const defaultReleaseStageMaxAttempts = 2;
 export const defaultOgObjectPrefix = 'og';
 
+/** Prefijo de las claves del registro de envíos en la tabla de control. */
+export const deliveryKeyPrefix = 'notify#';
+/** Destino HTTPS de `List-Unsubscribe`; el identificador viaja en `t`. */
+export const oneClickUnsubscribeUrl = 'https://api.matiasgaleano.dev/api/subscriptions/one-click';
+
 /**
  * Configuración no sensible por función editorial (nombres heredados de portfolio-cloud).
  * `required`: sin ella la función no compone dependencias; `optional`: tiene valor por defecto.
@@ -130,7 +135,13 @@ export const editorialEnvironment = {
   },
   notifyPost: {
     // Mismos nombres que la fachada HTTP de suscripciones; R2_BUCKET solo verifica que difieran.
-    required: ['SUBSCRIBERS_R2_ENDPOINT', 'SUBSCRIBERS_R2_BUCKET', 'R2_BUCKET', 'BLOG_FROM_EMAIL'],
+    required: [
+      'SUBSCRIBERS_R2_ENDPOINT',
+      'SUBSCRIBERS_R2_BUCKET',
+      'R2_BUCKET',
+      'BLOG_FROM_EMAIL',
+      'LEDGER_TABLE_NAME',
+    ],
     optional: ['R2_REGION'],
   },
   publishChatKnowledge: {

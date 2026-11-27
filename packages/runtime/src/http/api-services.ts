@@ -2,7 +2,7 @@ import { readContactConfiguration, readSubscriptionConfiguration } from '../conf
 import { createContactSender, createResendProvider } from '../contact.js';
 import type { RuntimeEnvironment } from '../runtime-config.js';
 import { createSharedQuota } from '../shared-control.js';
-import { createSubscriptionSender } from '../subscriptions/facade.js';
+import { createOneClickUnsubscriber, createSubscriptionSender } from '../subscriptions/facade.js';
 import { createSubscriberStore } from '../subscriptions/store.js';
 import type { CompositionContext } from './managed.js';
 import { createQuotas } from './quotas.js';
@@ -15,12 +15,14 @@ export function createApiServices(
 ): Services {
   const contact = readContactConfiguration(values);
   const subscribers = dependencies.subscribers ?? ((config) => createSubscriberStore(config));
+  const store = subscribers(readSubscriptionConfiguration(values));
   return {
     quota: createQuotas(createSharedQuota(controlStore(), values.QUOTA_KEY_SECRET!)),
     sendContact: createContactSender(
       contact,
       dependencies.sendEmail ?? createResendProvider(contact),
     ),
-    sendSubscription: createSubscriptionSender(subscribers(readSubscriptionConfiguration(values))),
+    sendSubscription: createSubscriptionSender(store),
+    oneClickUnsubscribe: createOneClickUnsubscriber(store),
   };
 }

@@ -2,7 +2,7 @@
 
 [Español](architecture.es.md)
 
-Cloudflare receives traffic for `api.matiasgaleano.dev`; API Gateway HTTP API splits the six operations between two HTTP functions. Four editorial functions without routes complete blog publication. All use Node.js 24 outside a VPC.
+Cloudflare receives traffic for `api.matiasgaleano.dev`; API Gateway HTTP API splits the seven operations between two HTTP functions. Four editorial functions without routes complete blog publication. All use Node.js 24 outside a VPC.
 
 ## Packages
 
@@ -48,7 +48,7 @@ A `before` that returns a response skips the handler and every `after`, so those
 
 On the custom domain the runtime requires a Cloudflare origin, the `x-portfolio-origin` secret and a valid IP before trusting `CF-Connecting-IP`; it ignores `X-Forwarded-For`. CORS is handled in the application and does not authenticate.
 
-DynamoDB uses conditional operations for quotas and transactions for AI admission; `api` and `chat` share table, prefixes and HMAC keys, so splitting functions does not duplicate quotas. Logical expiration does not depend on TTL. Conversations are not persisted.
+DynamoDB uses conditional operations for quotas and transactions for AI admission; `api` and `chat` share table, prefixes and HMAC keys, so splitting functions does not duplicate quotas. Logical expiration does not depend on TTL. `notify-post` uses the same table for its send ledger, with IAM limited to `notify#` keys and no TTL. Conversations are not persisted.
 
 Each request has up to 25 seconds, reduced according to Lambda's remaining time. Sends, subscriptions and ambiguous reservations are not retried; canceling transport does not undo accepted effects.
 

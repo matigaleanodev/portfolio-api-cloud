@@ -38,6 +38,10 @@ Lambda and NestJS retain HTTP and behavior so the API can be switched through fr
 
 DynamoDB prevents Lambda scaling or function splitting from multiplying allowances: `api` and `chat` share table and HMAC keys. Windows expire through application logic and AI reservations precede consumption. Deadlines and cancellation bound waiting; avoiding retries prevents repeated ambiguous effects.
 
+## Per-recipient send ledger
+
+Resend keeps an idempotency key for 24 hours, so it cannot be the source of truth. The control table stores state per post and recipient with conditional writes; the provider key only covers the ambiguous window. When a doubt expires the system chooses not to resend. Broadcasts was rejected: it documents no idempotency and requires syncing contacts, which risks reactivating unsubscribed ones. R2 remains the source of truth for subscriptions.
+
 ## FAQs and one model
 
 FAQs answer directly and provide continuity without AI. GPT-6 Luna is the only model: Responses, `reasoning.effort=none`, `store=false`, no tools and no alternative generation. Reservations are conservative without relying on cache discounts; ambiguous failures do not refund budget. Expired pricing disables paid generation only.

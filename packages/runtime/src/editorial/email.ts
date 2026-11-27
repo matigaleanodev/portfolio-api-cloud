@@ -1,8 +1,15 @@
 import { Resend } from 'resend';
-import type { NotifyPostInput } from '@portfolio-api-cloud/contracts/editorial';
+import {
+  oneClickUnsubscribeUrl,
+  type NotifyPostInput,
+} from '@portfolio-api-cloud/contracts/editorial';
 import { redactEmails } from './log.js';
 
-export type BlogNotificationInput = NotifyPostInput & { readonly to: string };
+export type BlogNotificationInput = NotifyPostInput & {
+  readonly to: string;
+  /** Identificador opaco del suscriptor; habilita la baja en un clic (RFC 8058). */
+  readonly unsubscribeId?: string;
+};
 
 export interface BlogEmail {
   from: string;
@@ -10,10 +17,25 @@ export interface BlogEmail {
   subject: string;
   text: string;
   html: string;
+  headers?: Record<string, string>;
 }
 
 /** Límite con el proveedor: misma forma `{data, error}` que `resend.emails.send`. */
-export type SendBlogEmail = (email: BlogEmail) => Promise<{ error?: { message: string } | null }>;
+export type SendBlogEmail = (email: BlogEmail, options?: SendOptions) => Promise<SendResult>;
+
+export interface SendOptions {
+  readonly idempotencyKey?: string;
+  readonly signal?: AbortSignal;
+}
+
+export interface SendResult {
+  readonly data?: { readonly id?: string } | null;
+  readonly error?: {
+    readonly message: string;
+    readonly name?: string;
+    readonly statusCode?: number | null;
+  } | null;
+}
 
 export interface BlogMailerConfig {
   readonly apiKey: string;
@@ -68,6 +90,14 @@ export function buildBlogEmail(from: string, input: BlogNotificationInput): Blog
   return {
     from,
     to: input.to,
+    ...(input.unsubscribeId
+      ? {
+          headers: {
+            'List-Unsubscribe': `<${oneClickUnsubscribeUrl}?t=${input.unsubscribeId}>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
+        }
+      : {}),
     subject: `Nuevo post en el blog — ${input.title}`,
     text: [
       'Nuevo post publicado en matiasgaleano.dev/blog',
@@ -124,25 +154,49 @@ export function buildBlogEmail(from: string, input: BlogNotificationInput): Blog
 
 export function createResendSender(apiKey: string): SendBlogEmail {
   let resend: Resend | undefined;
-  return (email) => {
+  return (email, options) => {
     resend ??= new Resend(apiKey, {
       baseUrl: 'https://api.resend.com',
       userAgent: 'portfolio-api-cloud',
     });
-    return resend.emails.send(email);
+    return resend.emails.send(email, options);
   };
 }
 
-export type BlogNotifier = (input: BlogNotificationInput) => Promise<unknown>;
+export type BlogNotifier = (
+  input: BlogNotificationInput,
+  options?: SendOptions,
+) => Promise<SendResult>;
+
+const safeCode = /^[a-z_]{1,64}$/;
+
+/** Respuesta de error del proveedor. `code` y `statusCode` son aptos para logs y registro. */
+export class DeliveryError extends Error {
+  constructor(
+    message: string,
+    readonly code: string,
+    readonly statusCode: number | null,
+  ) {
+    super(message);
+    this.name = 'DeliveryError';
+  }
+}
 
 /** Un `error` en una promesa resuelta de Resend se rechaza; el mensaje no conserva emails. */
 export function createBlogNotifier(
   config: BlogMailerConfig,
   send: SendBlogEmail = createResendSender(config.apiKey),
 ): BlogNotifier {
-  return async (input) => {
-    const result = await send(buildBlogEmail(config.fromEmail, input));
-    if (result.error) throw new Error(redactEmails(result.error.message));
+  return async (input, options) => {
+    const result = await send(buildBlogEmail(config.fromEmail, input), options);
+    if (result.error) {
+      const { message, name, statusCode } = result.error;
+      throw new DeliveryError(
+        redactEmails(message),
+        name && safeCode.test(name) ? name : 'unknown',
+        statusCode ?? null,
+      );
+    }
     return result;
   };
 }

@@ -38,6 +38,10 @@ Lambda y NestJS conservan HTTP y comportamiento para poder cambiar la API desde 
 
 DynamoDB evita que el escalado de Lambda o la separación de funciones multipliquen cupos: `api` y `chat` comparten tabla y claves HMAC. Las ventanas expiran por lógica de aplicación y las reservas de IA preceden al consumo. Deadlines y cancelación acotan esperas; no reintentar evita repetir efectos ambiguos.
 
+## Registro de envíos por destinatario
+
+Resend recuerda una clave de idempotencia 24 horas, así que no alcanza como fuente de verdad. La tabla de control guarda el estado por post y destinatario con escrituras condicionales; la clave del proveedor cubre solo la ventana ambigua. Ante una duda vencida se prefiere no reenviar. Broadcasts se descartó: no documenta idempotencia y obliga a sincronizar contactos con riesgo de reactivar bajas. R2 sigue siendo la fuente de verdad de las suscripciones.
+
 ## FAQ y un solo modelo
 
 Las FAQ responden directo y dan continuidad sin IA. GPT-6 Luna es el único modelo: Responses, `reasoning.effort=none`, `store=false`, sin herramientas ni generación alternativa. Las reservas son conservadoras sin depender de descuentos por cache; fallos ambiguos no devuelven presupuesto. Tarifas vencidas desactivan solo la generación paga.
