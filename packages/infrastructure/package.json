@@ -1,6 +1,6 @@
 {
   "name": "@portfolio-api-cloud/infrastructure",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -12,7 +12,7 @@
     "synth": "cd ../.. && cdk synth --no-lookups --context stage=production --quiet"
   },
   "dependencies": {
-    "@portfolio-api-cloud/contracts": "1.1.0",
+    "@portfolio-api-cloud/contracts": "1.2.0",
     "aws-cdk-lib": "2.274.0",
     "constructs": "10.8.1"
   },
