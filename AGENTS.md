@@ -31,6 +31,7 @@ Si existe un workspace con AGENTS.md en los directorios padre, leerlo explícita
 
 ## Restricciones
 
+- Integrar solo por PR con el merge nativo de GitHub (ver Docs/operations). No activar auto-merge hacia main sin autorización expresa del propietario.
 - Mantener runtime separado de infraestructura y sin dependencias NestJS; no agregar dependencias de producción fuera de las listas de package.mjs y check-boundaries.
 - Conservar logical IDs y nombres físicos existentes para no reemplazar recursos.
 - No duplicar escrituras con la implementación compatible portfolio-api.
