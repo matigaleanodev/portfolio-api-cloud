@@ -41,7 +41,7 @@ try {
     stdio: 'inherit',
   });
 
-  // Render de referencia desde el runtime compilado del checkout (mismo SVG que portfolio-cloud).
+  // Render de referencia desde el runtime compilado del checkout (verifica fuentes y renderer del artifact).
   const referenceOg =
     process.arch === 'x64' && process.platform === 'linux'
       ? execFileSync(
@@ -53,7 +53,7 @@ try {
               new URL('packages/runtime/dist/editorial/og.js', root).href,
             )});
             const image = await generateOgImage({
-              title: 'Test flujo completo de Resend y OG',
+              title: 'Test flujo completo de Resend y OG 🚀',
               excerpt: 'Pipeline editorial serverless con AWS Lambda, R2 y Resend alineado visualmente con el portfolio.',
               tags: ['aws', 'serverless', 'blog'],
             });
