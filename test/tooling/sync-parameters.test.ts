@@ -19,7 +19,8 @@ const step = (name: string) =>
 const validate = step('Validate every required secret before authentication');
 const publish = step('Publish every payload after validating all of them');
 const secrets = Object.fromEntries(
-  secretKeys.map((key, index) => [key, `sensitive-${index}-${key}`]),
+  // Con el largo mínimo que el workflow exige para las claves HMAC.
+  secretKeys.map((key, index) => [key, `sensitive-${index}-${key}`.padEnd(32, 'x')]),
 );
 // Mismo reparto que contracts/configuration.ts (parameterKeys).
 const segments: Record<string, readonly string[]> = parameterKeys;
@@ -118,6 +119,22 @@ test('Dado el workflow de sync, cuando se inspecciona, entonces solo se dispara 
   // Los secretos llegan solo por entorno: nunca se interpolan en scripts.
   for (const script of [validate, publish]) expect(script).not.toContain('${{');
   expect(publish).not.toMatch(/echo[^\n]*\$\{?(?:QUOTA|ORIGIN|RESEND|OPENAI|R2_)/);
+});
+
+test('Dada una clave del registro de envíos corta, cuando se valida, entonces falla sin escribir', () => {
+  const result = run(validate, { TARGET: 'production', ...secrets, NOTIFY_LEDGER_KEY: 'corta' });
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('NOTIFY_LEDGER_KEY');
+  expect(result.stderr).not.toContain('corta');
+  expect(result.calls).toEqual([]);
+});
+
+test('Dada una clave del registro de envíos en blanco, cuando se valida, entonces falla sin escribir', () => {
+  const blank = ' '.repeat(32);
+  const result = run(validate, { TARGET: 'production', ...secrets, NOTIFY_LEDGER_KEY: blank });
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('NOTIFY_LEDGER_KEY');
+  expect(result.calls).toEqual([]);
 });
 
 test('Dados todos los secrets, cuando se publica producción, entonces escribe los cuatro payloads exactos sin exponer valores', () => {

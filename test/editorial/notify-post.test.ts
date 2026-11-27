@@ -10,6 +10,8 @@ import {
   notifyPost,
   type NotifyPostDependencies,
 } from '../../packages/runtime/src/editorial/notify-post.js';
+import { createDeliveryLedger } from '../../packages/runtime/src/editorial/delivery-ledger.js';
+import { SimulatedDeliveryStore } from '../support/delivery.js';
 
 let listSubscriberEmails: AnyMock;
 let notify: AnyMock;
@@ -19,7 +21,13 @@ let logs: string[];
 beforeEach(() => {
   listSubscriberEmails = vi.fn();
   notify = vi.fn();
-  resolve = vi.fn(async (): Promise<NotifyPostDependencies> => ({ listSubscriberEmails, notify }));
+  resolve = vi.fn(async (): Promise<NotifyPostDependencies> => ({
+    listSubscriberEmails,
+    notify,
+    unsubscribeId: async () => 'sid',
+    ledger: createDeliveryLedger(new SimulatedDeliveryStore(), 'k'.repeat(32)),
+    sleep: async () => undefined,
+  }));
   logs = [];
   for (const level of ['info', 'error', 'warn', 'log'] as const)
     vi.spyOn(console, level).mockImplementation((...values: unknown[]) => {
@@ -79,14 +87,19 @@ describe('notify-post', () => {
       }),
     });
     expect(notify).toHaveBeenCalledTimes(2);
-    expect(notify).toHaveBeenNthCalledWith(1, {
-      to: 'one@example.com',
-      title: 'Arquitectura de Modo Playa',
-      url: 'https://matiasgaleano.dev/blog/arquitectura-modo-playa',
-      excerpt: 'Excerpt',
-      date: '2026-03-07',
-      tags: ['nestjs', 'architecture'],
-    });
+    expect(notify).toHaveBeenNthCalledWith(
+      1,
+      {
+        to: 'one@example.com',
+        unsubscribeId: 'sid',
+        title: 'Arquitectura de Modo Playa',
+        url: 'https://matiasgaleano.dev/blog/arquitectura-modo-playa',
+        excerpt: 'Excerpt',
+        date: '2026-03-07',
+        tags: ['nestjs', 'architecture'],
+      },
+      { idempotencyKey: expect.any(String), signal: expect.any(AbortSignal) },
+    );
     expect(logs.join('\n')).not.toMatch(/@example\.com/);
   });
 
@@ -96,12 +109,12 @@ describe('notify-post', () => {
     expect(JSON.parse(response.body).recipients).toBe(0);
   });
 
-  it('propaga el rechazo del proveedor en lugar de confirmar la notificación', async () => {
+  it('falla ante el rechazo del proveedor en lugar de confirmar la notificación', async () => {
     listSubscriberEmails.mockResolvedValue(['audit@example.com']);
     notify.mockRejectedValue(new Error('Rate limit exceeded'));
     await expect(
       notifyPost({ title: 'Prueba', url: 'https://example.com/post' }, resolve),
-    ).rejects.toThrow('Rate limit exceeded');
+    ).rejects.toMatchObject({ name: 'NotificationIncompleteError' });
   });
 
   it('propaga un fallo al listar suscriptores sin enviar', async () => {
@@ -116,7 +129,7 @@ describe('notify-post', () => {
 describe('mail del blog (Resend 6.34.1)', () => {
   const config = { apiKey: 're_test', fromEmail: 'blog@matiasgaleano.dev' };
 
-  it('arma el payload con contenido escapado, tags y baja', async () => {
+  it('arma el payload con contenido escapado y baja, sin tags', async () => {
     const send = vi.fn(async (_email: BlogEmail) => ({ data: { id: 'email_123' }, error: null }));
     await expect(
       createBlogNotifier(
@@ -140,17 +153,15 @@ describe('mail del blog (Resend 6.34.1)', () => {
     expect(payload.text).toContain('Arquitectura <Modo Playa>');
     expect(payload.text).toContain('Backend & cloud con <tags>');
     expect(payload.text).toContain(
-      'Cancelar suscripcion: https://matiasgaleano.dev/blog/unsubscribe?email=contacto%40matiasgaleano.dev',
+      'Darme de baja: https://matiasgaleano.dev/blog/unsubscribe#email=contacto%40matiasgaleano.dev',
     );
     expect(payload.html).toContain('Arquitectura &lt;Modo Playa&gt;');
     expect(payload.html).toContain('Backend &amp; cloud con &lt;tags&gt;');
-    expect(payload.html).toContain('mar');
-    expect(payload.html).toContain('2026');
-    expect(payload.html).toContain('serverless');
+    expect(payload.html).toContain('8 mar 2026');
+    expect(payload.html).not.toContain('serverless');
     expect(payload.html).toContain(
-      'https://matiasgaleano.dev/blog/unsubscribe?email=contacto%40matiasgaleano.dev',
+      'https://matiasgaleano.dev/blog/unsubscribe#email=contacto%40matiasgaleano.dev',
     );
-    expect(payload.html).not.toContain('extra');
   });
 
   it('rechaza el `error` que Resend devuelve en una promesa resuelta, sin emails en el mensaje', async () => {
@@ -177,9 +188,9 @@ describe('mail del blog (Resend 6.34.1)', () => {
     });
     expect(payload.text).toContain('Nuevo post');
     expect(payload.text).toContain('https://matiasgaleano.dev/blog/nuevo-post');
-    expect(payload.text).toContain('Cancelar suscripcion:');
-    expect(payload.html).toContain('matiasgaleano.dev/blog');
-    expect(payload.html).toContain('esta pagina');
+    expect(payload.text).toContain('Darme de baja:');
+    expect(payload.html).toContain('Matias Galeano · Blog técnico');
+    expect(payload.html).toContain('Darme de baja');
   });
 
   it('con el SDK real: usa la clave del blog y envía al endpoint de Resend', async () => {

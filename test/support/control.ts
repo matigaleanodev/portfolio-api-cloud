@@ -1,8 +1,10 @@
+import { createHash } from 'node:crypto';
 import type {
   AiReservation,
   ControlStore,
   Counter,
 } from '../../packages/runtime/src/shared-control.js';
+import { testNow } from './clock.js';
 import { createSubscriberStore } from '../../packages/runtime/src/subscriptions/store.js';
 import type { SubscriptionConfiguration } from '../../packages/runtime/src/config.js';
 export class SimulatedControlStore implements ControlStore {
@@ -58,7 +60,7 @@ export const runtimeConfiguration = () => ({
   SUBSCRIBERS_R2_ENDPOINT: 'https://r2.example.invalid',
   SUBSCRIBERS_R2_BUCKET: 'subscribers',
   AI_DAILY_BUDGET_MICROUSD: '1000000',
-  AI_PRICING_VALID_UNTIL: new Date(Date.now() + 86400_000).toISOString(),
+  AI_PRICING_VALID_UNTIL: new Date(testNow + 86400_000).toISOString(),
 });
 export const productionParameter = '/portfolio/prod/api';
 export const managedEnvironment = {
@@ -76,7 +78,7 @@ export const chatEnvironment = {
   RUNTIME_PARAMETER_NAME: '/portfolio/prod/chat',
   CORS_ORIGIN: 'https://frontend.example.invalid',
   AI_DAILY_BUDGET_MICROUSD: '1000000',
-  AI_PRICING_VALID_UNTIL: new Date(Date.now() + 86400_000).toISOString(),
+  AI_PRICING_VALID_UNTIL: new Date(testNow + 86400_000).toISOString(),
 };
 
 /**
@@ -89,6 +91,12 @@ export class SimulatedObjectStorage {
   readonly commands: { name: string; input: Record<string, unknown> }[] = [];
   failure: Error | undefined;
   pending = false;
+  /** Fallo dirigido a un comando y clave concretos. */
+  failOn: ((name: string, key: string) => boolean) | undefined;
+  private readonly metadata = new Map<string, Record<string, string>>();
+  private etag(body: string) {
+    return `"${createHash('md5').update(body).digest('hex')}"`;
+  }
   async send(command: object, options?: { abortSignal?: AbortSignal }): Promise<unknown> {
     const { name } = command.constructor;
     const input = (command as { input: Record<string, unknown> }).input;
@@ -100,13 +108,30 @@ export class SimulatedObjectStorage {
       });
     if (this.failure) throw this.failure;
     const key = `${String(input.Bucket)}/${String(input.Key)}`;
+    if (this.failOn?.(name, key)) throw new Error('targeted failure');
+    const current = this.objects.get(key);
     if (name === 'HeadObjectCommand') {
-      if (!this.objects.has(key)) throw Object.assign(new Error('missing'), { name: 'NotFound' });
-      return {};
+      if (current === undefined) throw Object.assign(new Error('missing'), { name: 'NotFound' });
+      return { Metadata: this.metadata.get(key) ?? {} };
     }
-    if (name === 'PutObjectCommand') this.objects.set(key, String(input.Body));
-    else if (name === 'DeleteObjectCommand') this.objects.delete(key);
-    else throw new Error(`Unexpected command ${name}`);
+    if (name === 'GetObjectCommand') {
+      if (current === undefined) throw Object.assign(new Error('missing'), { name: 'NoSuchKey' });
+      return {
+        Body: { transformToString: async () => current },
+        ETag: this.etag(current),
+      };
+    }
+    if (name === 'PutObjectCommand') {
+      if (input.IfNoneMatch === '*' && current !== undefined)
+        throw Object.assign(new Error('precondition'), { name: 'PreconditionFailed' });
+      if (input.IfMatch && (current === undefined || this.etag(current) !== input.IfMatch))
+        throw Object.assign(new Error('precondition'), { name: 'PreconditionFailed' });
+      this.objects.set(key, String(input.Body));
+      this.metadata.set(key, (input.Metadata as Record<string, string>) ?? {});
+    } else if (name === 'DeleteObjectCommand') {
+      this.objects.delete(key);
+      this.metadata.delete(key);
+    } else throw new Error(`Unexpected command ${name}`);
     return {};
   }
 }

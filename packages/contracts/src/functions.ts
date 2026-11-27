@@ -71,7 +71,8 @@ export const functions = {
     handler: 'dist/handlers/process-release.handler',
     artifact: 'editorial',
     memorySize: 512,
-    timeoutSeconds: 30,
+    // Cubre generate-og y notify-post; menor que el timeout de lectura del CLI del CI (60 s).
+    timeoutSeconds: 55,
     architecture: 'arm64',
     requiredSecrets: ['R2_MEDIA_ACCESS_KEY_ID', 'R2_MEDIA_SECRET_ACCESS_KEY'],
     optionalSecrets: [],
@@ -99,6 +100,7 @@ export const functions = {
     architecture: 'arm64',
     requiredSecrets: [
       'RESEND_BLOG_API_KEY',
+      'NOTIFY_LEDGER_KEY',
       'R2_SUBSCRIBERS_ACCESS_KEY_ID',
       'R2_SUBSCRIBERS_SECRET_ACCESS_KEY',
     ],

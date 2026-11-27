@@ -22,10 +22,40 @@ export class SubscriptionError extends Error {
   }
 }
 
-export type SubscriberOperations = Pick<SubscriberStore, 'createSubscriber' | 'deleteSubscriber'>;
+export type SubscriberOperations = Pick<
+  SubscriberStore,
+  'createSubscriber' | 'deleteSubscriber' | 'unsubscribeByToken'
+>;
+export type OneClickUnsubscriber = (token: string) => Promise<void>;
 
 const unavailable = 'No se pudo conectar con el servicio de suscripciones.';
 const failed = 'No se pudo procesar la suscripcion en este momento.';
+
+/** Deadline, métrica y traducción de fallos de almacenamiento (502, o 503 si venció). */
+async function withStorage<T>(operation: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  const signal = operationSignal(8_000);
+  const startedAt = performance.now();
+  const metric = (outcome: 'success' | 'timeout' | 'error') =>
+    runtimeMetric('subscription_provider', outcome, {
+      durationMs: Math.round(performance.now() - startedAt),
+    });
+  try {
+    const result = await abortable(signal, () => operation(signal));
+    metric('success');
+    return result;
+  } catch (error) {
+    if (error instanceof SubscriptionError) throw error;
+    metric(signal.aborted ? 'timeout' : 'error');
+    throw new SubscriptionError(signal.aborted ? 503 : 502, signal.aborted ? unavailable : failed);
+  }
+}
+
+/** Baja por identificador opaco; no distingue si existía y no registra el identificador. */
+export function createOneClickUnsubscriber(store: SubscriberOperations): OneClickUnsubscriber {
+  return async (token) => {
+    await withStorage((signal) => store.unsubscribeByToken(token, signal));
+  };
+}
 
 /**
  * Alta y baja en proceso con el contrato que exponía portfolio-cloud: mismos mensajes,
@@ -34,33 +64,16 @@ const failed = 'No se pudo procesar la suscripcion en este momento.';
  */
 export function createSubscriptionSender(store: SubscriberOperations): SubscriptionSender {
   return async (method, dto) => {
-    const signal = operationSignal(8_000);
-    const startedAt = performance.now();
     const email = normalizeSubscriberEmail(dto.email);
-    try {
+    return withStorage(async (signal): Promise<SubscriptionResponse> => {
       if (!isValidSubscriberEmail(email)) throw new SubscriptionError(400, 'Invalid email');
-      const result = await abortable(signal, async (): Promise<SubscriptionResponse> => {
-        if (method === 'POST')
-          return (await store.createSubscriber(email, signal)) === 'exists'
-            ? { message: 'Already subscribed' }
-            : { message: 'Subscribed successfully', email };
-        return (await store.deleteSubscriber(email, signal)) === 'missing'
-          ? { message: 'Already unsubscribed' }
-          : { message: 'Unsubscribed successfully', email };
-      });
-      runtimeMetric('subscription_provider', 'success', {
-        durationMs: Math.round(performance.now() - startedAt),
-      });
-      return result;
-    } catch (error) {
-      if (error instanceof SubscriptionError) throw error;
-      runtimeMetric('subscription_provider', signal.aborted ? 'timeout' : 'error', {
-        durationMs: Math.round(performance.now() - startedAt),
-      });
-      throw new SubscriptionError(
-        signal.aborted ? 503 : 502,
-        signal.aborted ? unavailable : failed,
-      );
-    }
+      if (method === 'POST')
+        return (await store.createSubscriber(email, signal)) === 'exists'
+          ? { message: 'Already subscribed' }
+          : { message: 'Subscribed successfully', email };
+      return (await store.deleteSubscriber(email, signal)) === 'missing'
+        ? { message: 'Already unsubscribed' }
+        : { message: 'Unsubscribed successfully', email };
+    });
   };
 }

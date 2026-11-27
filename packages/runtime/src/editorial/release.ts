@@ -10,14 +10,30 @@ import type {
   ReleasePost,
   ReleaseStage,
 } from '@portfolio-api-cloud/contracts/editorial';
+import { functions } from '@portfolio-api-cloud/contracts/functions';
 import { storageKeys } from '@portfolio-api-cloud/contracts/storage';
 import { isPublicationDue } from '../chat/publication.js';
-import { isObjectNotFoundError, type ObjectStorageClient } from '../subscriptions/store.js';
+import {
+  isObjectNotFoundError,
+  r2MaxAttempts,
+  r2RequestTimeoutMs,
+  type ObjectStorageClient,
+} from '../subscriptions/store.js';
 import { assertLambdaSuccess, invocationFailureCode, type InvokeLambda } from './invoke-lambda.js';
-import { isRecord, jsonResponse } from './lambda.js';
+import { isNonEmptyString, isRecord, jsonResponse } from './lambda.js';
 import { errorMessage, logError, logInfo } from './log.js';
 
 const legacyProcessedAt = new Date(0).toISOString();
+/** Guardar el estado con todos sus intentos, más el cierre de la función. */
+const stateSaveReserveMs = r2MaxAttempts * r2RequestTimeoutMs + 1_000;
+/** Arranque en frío y transporte de la invocación, fuera del timeout de la función hija. */
+const invokeOverheadMs = 2_000;
+const stageTimeoutMs: Record<ReleaseStage, number> = {
+  'generate-og': functions.generateOg.timeoutSeconds * 1000,
+  'notify-post': functions.notifyPost.timeoutSeconds * 1000,
+};
+/** Código persistible de una etapa que no se invocó. */
+const notInvokedCode = 'insufficient_time';
 
 /**
  * `message` conserva el nombre del campo heredado pero desde 1.1.0 solo guarda un código saneado
@@ -55,6 +71,8 @@ export interface ReleaseDependencies {
   readonly generateOgFunctionName: string;
   readonly notifyPostFunctionName: string;
   readonly maxAttempts: number;
+  /** Tiempo restante de esta ejecución; limita cada invocación y su espera. */
+  readonly remainingMs?: () => number;
 }
 
 type StringReadable = Readable | { transformToString?: (encoding?: string) => Promise<string> };
@@ -209,6 +227,15 @@ export function detectNewPosts(
   return manifestPosts.filter((post) => !processed.has(post.slug));
 }
 
+/** Solo se invoca si la función hija puede agotar su timeout y aún queda guardar el estado. */
+function stageFits(deps: ReleaseDependencies, stage: ReleaseStage): boolean {
+  const remaining = deps.remainingMs?.();
+  return (
+    remaining === undefined ||
+    remaining >= stageTimeoutMs[stage] + invokeOverheadMs + stateSaveReserveMs
+  );
+}
+
 async function invokeWithRetry(
   deps: ReleaseDependencies,
   functionName: string,
@@ -218,9 +245,17 @@ async function invokeWithRetry(
 ): Promise<void> {
   const maxAttempts = deps.maxAttempts;
   let lastError: unknown;
+  let attempts = 0;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    if (!stageFits(deps, stage)) break;
+    const remaining = deps.remainingMs?.();
+    attempts = attempt;
     try {
-      assertLambdaSuccess(functionName, await deps.invoke(functionName, payload));
+      // La espera termina antes de consumir la reserva. Sin respuesta, la etapa queda sin marca.
+      const response = await (remaining === undefined
+        ? deps.invoke(functionName, payload)
+        : deps.invoke(functionName, payload, AbortSignal.timeout(remaining - stateSaveReserveMs)));
+      assertLambdaSuccess(functionName, response);
       if (attempt > 1) logInfo('Stage succeeded after retry', { slug, stage, attempt });
       return;
     } catch (error) {
@@ -234,13 +269,15 @@ async function invokeWithRetry(
         code: invocationFailureCode(error),
         detail: errorMessage(error, String(error)),
       });
+      // Otra corrida inmediata no cambia lo pendiente y no entra en el timeout de esta función.
+      if (invocationFailureCode(error) === 'NotificationIncompleteError') break;
     }
   }
   throw {
     slug,
     stage,
-    attempts: maxAttempts,
-    message: invocationFailureCode(lastError),
+    attempts,
+    message: attempts === 0 ? notInvokedCode : invocationFailureCode(lastError),
   } satisfies PostProcessingFailure;
 }
 
@@ -283,12 +320,16 @@ async function runStage(
   }
 }
 
-/** Etapas idempotentes por post: cada una se salta si su marca ya existe. */
+/**
+ * Etapas idempotentes por post: cada una se salta si su marca ya existe. `checkpoint` recibe el
+ * avance de la OG antes de avisar, para conservarlo si la ejecución no llega al final.
+ */
 export async function processPost(
   deps: ReleaseDependencies,
   post: ReleasePost,
   siteUrl: string,
   currentState?: ProcessedPostStateEntry,
+  checkpoint?: (state: ProcessedPostStateEntry) => Promise<void>,
 ): Promise<ProcessedPostStateEntry> {
   const postUrl = buildCanonicalUrl(siteUrl, post.canonicalPath);
   let nextState = currentState ?? { updatedAt: new Date().toISOString() };
@@ -306,6 +347,8 @@ export async function processPost(
       ogGeneratedAt: new Date().toISOString(),
       lastFailure: undefined,
     });
+    // Si el aviso ya no entra, la marca se guarda junto con el fallo para no gastar su reserva.
+    if (!nextState.notifiedAt && stageFits(deps, 'notify-post')) await checkpoint?.(nextState);
   }
 
   if (!nextState.notifiedAt) {
@@ -313,7 +356,12 @@ export async function processPost(
       deps,
       nextState,
       deps.notifyPostFunctionName,
-      { title: post.title, url: postUrl, date: post.date },
+      {
+        title: post.title,
+        url: postUrl,
+        date: post.date,
+        ...(isNonEmptyString(post.excerpt) ? { excerpt: post.excerpt } : {}),
+      },
       'notify-post',
       post.slug,
     );
@@ -332,6 +380,7 @@ export async function processPost(
 export async function processRelease(
   event: ProcessReleaseEvent,
   resolve: () => Promise<ReleaseDependencies>,
+  options: { readonly remainingMs?: () => number } = {},
 ): Promise<LambdaResponse> {
   const manifest = event.manifest;
   if (!isReleaseManifest(manifest))
@@ -339,7 +388,7 @@ export async function processRelease(
   if (manifest.content.posts.some((post) => !isPublicationDue(post.date)))
     return jsonResponse(400, { error: 'Manifest contains invalid or future publication dates' });
 
-  const deps = await resolve();
+  const deps: ReleaseDependencies = { ...(await resolve()), ...options };
   const processedState = await loadProcessedPostsState(deps.storage, deps.bucket);
   const newPosts = detectNewPosts(manifest.content.posts, processedState);
   if (newPosts.length === 0) return jsonResponse(200, { message: 'No new posts' });
@@ -347,7 +396,7 @@ export async function processRelease(
   const processedPosts: string[] = [];
   const failedPosts: PostProcessingFailure[] = [];
 
-  for (const post of newPosts) {
+  for (const [index, post] of newPosts.entries()) {
     logInfo('Processing release post', { slug: post.slug });
     try {
       processedState[post.slug] = await processPost(
@@ -355,6 +404,19 @@ export async function processRelease(
         post,
         manifest.siteUrl,
         processedState[post.slug],
+        async (progress) => {
+          processedState[post.slug] = progress;
+          try {
+            await saveProcessedPostsState(deps.storage, deps.bucket, processedState);
+          } catch (error) {
+            // El guardado al terminar el post vuelve a incluir este avance.
+            logError('State checkpoint failed', {
+              slug: post.slug,
+              code: invocationFailureCode(error),
+              detail: errorMessage(error, String(error)),
+            });
+          }
+        },
       );
       await saveProcessedPostsState(deps.storage, deps.bucket, processedState);
       processedPosts.push(post.slug);
@@ -386,6 +448,18 @@ export async function processRelease(
       );
       await saveProcessedPostsState(deps.storage, deps.bucket, processedState);
       failedPosts.push(failure);
+      if (failure.attempts === 0) {
+        // El tiempo restante no vuelve a crecer: el resto se informa sin invocar ni escribir.
+        failedPosts.push(
+          ...newPosts.slice(index + 1).map(({ slug }): PostProcessingFailure => ({
+            slug,
+            stage: processedState[slug]?.ogGeneratedAt ? 'notify-post' : 'generate-og',
+            attempts: 0,
+            message: notInvokedCode,
+          })),
+        );
+        break;
+      }
     }
   }
 

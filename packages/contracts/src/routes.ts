@@ -40,6 +40,13 @@ export const routes = {
     pattern: /^\/api\/subscriptions\/?$/i,
     group: 'api',
   },
+  oneClick: {
+    id: 'oneClick',
+    methods: ['GET', 'HEAD', 'POST'],
+    path: '/api/subscriptions/one-click',
+    pattern: /^\/api\/subscriptions\/one-click\/?$/i,
+    group: 'api',
+  },
   chatStarters: {
     id: 'chatStarters',
     methods: ['GET', 'HEAD'],

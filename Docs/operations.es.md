@@ -29,10 +29,10 @@ Cada función lee un parámetro SSM `SecureString` estándar con un JSON que con
 | `/portfolio/prod/api`              | `QUOTA_KEY_SECRET`, `ORIGIN_VERIFY_SECRET`, `RESEND_CONTACT_API_KEY`, `R2_SUBSCRIBERS_*` | `api`                                                      |
 | `/portfolio/prod/chat`             | `QUOTA_KEY_SECRET`, `ORIGIN_VERIFY_SECRET`, `OPENAI_API_KEY`, `R2_KNOWLEDGE_*`           | `chat`; `api` para variantes de chat                       |
 | `/portfolio/prod/editorial`        | `R2_MEDIA_ACCESS_KEY_ID`, `R2_MEDIA_SECRET_ACCESS_KEY`                                   | `process-release`, `generate-og`, `publish-chat-knowledge` |
-| `/portfolio/prod/notifications`    | `R2_SUBSCRIBERS_*`, `RESEND_BLOG_API_KEY`                                                | `notify-post`                                              |
+| `/portfolio/prod/notifications`    | `R2_SUBSCRIBERS_*`, `RESEND_BLOG_API_KEY`, `NOTIFY_LEDGER_KEY`                           | `notify-post`                                              |
 | `/portfolio/validation/{api,chat}` | Valores sintéticos para proveedores ficticios                                            | Variante de validación                                     |
 
-`api` recibe además `CHAT_PARAMETER_NAME` y carga el parámetro de chat solo al atender una variante de chat, por eso su rol también puede leerlo. `QUOTA_KEY_SECRET` y `ORIGIN_VERIFY_SECRET` se publican en api y chat desde el mismo valor. Cada función exige solo sus claves requeridas del [catálogo](../packages/contracts/src/functions.ts); `OPENAI_API_KEY`, `ORIGIN_VERIFY_SECRET` y las credenciales de conocimiento son opcionales y degradan a FAQ/fallback. `QUOTA_KEY_SECRET` requiere al menos 32 caracteres y debe mantenerse estable mientras haya ventanas activas. Claves no sensibles dentro del parámetro se ignoran.
+`api` recibe además `CHAT_PARAMETER_NAME` y carga el parámetro de chat solo al atender una variante de chat, por eso su rol también puede leerlo. `QUOTA_KEY_SECRET` y `ORIGIN_VERIFY_SECRET` se publican en api y chat desde el mismo valor. Cada función exige solo sus claves requeridas del [catálogo](../packages/contracts/src/functions.ts); `OPENAI_API_KEY`, `ORIGIN_VERIFY_SECRET` y las credenciales de conocimiento son opcionales y degradan a FAQ/fallback. `QUOTA_KEY_SECRET` requiere al menos 32 caracteres y debe mantenerse estable mientras haya ventanas activas. `NOTIFY_LEDGER_KEY` requiere al menos 32 caracteres y **no se rota**: cambiarla desconoce los envíos registrados y permite reenviarlos. Claves no sensibles dentro del parámetro se ignoran.
 
 La lectura usa `GetParameter` con descifrado, sin reintentos y con deadline de 3 segundos. El valor validado se cachea hasta cinco minutos; un refresco fallido no reutiliza el snapshot vencido y responde 503 sin exponer detalles.
 
@@ -42,7 +42,7 @@ Limitación actual: las claves R2 están separadas por propósito (knowledge, me
 
 ### Fuente de verdad y actualización
 
-Los GitHub Actions Secrets del environment `production-parameters` son la única fuente: `RESEND_CONTACT_API_KEY`, `RESEND_BLOG_API_KEY`, `OPENAI_API_KEY`, `QUOTA_KEY_SECRET`, `ORIGIN_VERIFY_SECRET`, `R2_KNOWLEDGE_ACCESS_KEY_ID`, `R2_KNOWLEDGE_SECRET_ACCESS_KEY`, `R2_MEDIA_ACCESS_KEY_ID`, `R2_MEDIA_SECRET_ACCESS_KEY`, `R2_SUBSCRIBERS_ACCESS_KEY_ID` y `R2_SUBSCRIBERS_SECRET_ACCESS_KEY`. Los parámetros no se editan en la consola.
+Los GitHub Actions Secrets del environment `production-parameters` son la única fuente: `RESEND_CONTACT_API_KEY`, `RESEND_BLOG_API_KEY`, `OPENAI_API_KEY`, `QUOTA_KEY_SECRET`, `NOTIFY_LEDGER_KEY`, `ORIGIN_VERIFY_SECRET`, `R2_KNOWLEDGE_ACCESS_KEY_ID`, `R2_KNOWLEDGE_SECRET_ACCESS_KEY`, `R2_MEDIA_ACCESS_KEY_ID`, `R2_MEDIA_SECRET_ACCESS_KEY`, `R2_SUBSCRIBERS_ACCESS_KEY_ID` y `R2_SUBSCRIBERS_SECRET_ACCESS_KEY`. Los parámetros no se editan en la consola.
 
 [sync-parameters.yml](../.github/workflows/sync-parameters.yml) corre solo por `workflow_dispatch` desde `main`, con `target` `production` o `validation`. Valida todos los secrets y payloads antes de autenticarse y escribir, y publica siempre los payloads completos con `--overwrite`; su rol OIDC no puede leer ni descifrar. Una clave vacía corta la ejecución sin escrituras, así que no se puede omitir una clave para desactivar una capacidad: para apagar la IA paga, dejar vencer `AI_PRICING_VALID_UNTIL` o bajar el presupuesto. Las funciones toman el valor nuevo en hasta cinco minutos, sin desplegar.
 
@@ -56,7 +56,7 @@ No guardar valores en archivos del checkout ni en variables de environment no se
 
 ## Entrega protegida
 
-1. Integrar por PR en `dev` y promover a `main` con CI exitoso. `verify` es requerido; [merge.yml](../.github/workflows/merge.yml) exige el SHA completo revisado e identidad real de `matigaleanodev`, con `MERGE_USER_TOKEN` del environment `merge`, sin fallback de App ni bypass de PR/CI.
+1. Integrar por PR en `dev` y promover a `main` según [integración de pull requests](#integración-de-pull-requests).
 2. Seleccionar `api-assembly-<sha>-<run>-<attempt>` de un CI por push exitoso y una revisión promovida a `main`. Comparar run, ID, digest e inventario. La retención es de 30 días; conservar una copia verificada para recuperación posterior.
 3. [plan-foundation-production.yml](../.github/workflows/plan-foundation-production.yml) prepara foundation, roles y boundaries por separado. Exige `previous_runtime_secret_arn`: el ARN del secreto que todavía lee un runtime anterior, o `none` para no conceder nada.
 4. [plan-production.yml](../.github/workflows/plan-production.yml) toma las variables del environment `production`, verifica sin descifrar que existan los cuatro parámetros productivos como `SecureString` y prepara el changeset desde el assembly sin recompilar el runtime. El recibo publica los parámetros de CloudFormation como `sha256`, y su digest ata la ejecución a esos valores.
@@ -65,6 +65,25 @@ No guardar valores en archivos del checkout ni en variables de environment no se
 Los environments productivos admiten `main`; las banderas `*_ENABLED` quedan desactivadas fuera de su operación. OIDC restringe owner, repositorio y environment. Planificación, publicación, ejecución de CloudFormation, sincronización de parámetros y runtime usan roles separados. Push y tags no despliegan automáticamente.
 
 `recover_bundle.py` valida artifacts actuales e históricos `test-assembly-*` sin relajar hashes ni extracción segura.
+
+## Integración de pull requests
+
+`dev` y `main` exigen, sin excepciones: pull request, `verify` de GitHub Actions aprobado sobre una rama actualizada, conversaciones resueltas y merge commit; no admiten push directo, force push ni borrado. No se exige aprobación de otra persona.
+
+Una segunda regla restringe quién actualiza esas ramas a la cuenta propietaria:
+
+- Con la exención `exempt` para esa cuenta, se integra con el botón de merge de GitHub y se puede activar auto-merge a mano en cada pull request.
+- Mientras la exención siga en modo `pull_request`, se integra con [merge.yml](../.github/workflows/merge.yml), que exige el SHA completo revisado y usa `MERGE_USER_TOKEN` del environment `merge`.
+
+Para integrar exactamente la revisión mirada:
+
+```bash
+gh pr merge <numero> --merge --match-head-commit <sha-revisado>
+```
+
+El auto-merge integra el head que exista cuando se cumplan las condiciones, incluidos commits agregados después de activarlo.
+
+Cada promoción deja en `main` un merge commit que `dev` no tiene. Antes de la siguiente, crear `fix/sync-main-<sha>` desde `main`, abrir un pull request hacia `dev` e integrarlo con merge commit. Si está atrasado, **Update branch** actualiza la rama de sincronización.
 
 ## Ingress, observabilidad y capacidad
 
@@ -87,7 +106,7 @@ API Gateway limita rate/burst del stage y DynamoDB mantiene cuotas y reservas. L
 Procedimiento genérico para pasar de un runtime anterior (secreto en Secrets Manager y publicación editorial en otro stack) a esta arquitectura, o para repetir un despliegue. Cada paso con efectos requiere autorización explícita.
 
 1. Aplicar `delivery-access.template.json` con un rol administrador: incluye el rol de sincronización de parámetros, confiado solo al environment `production-parameters` y limitado a escribir los parámetros declarados.
-2. Configurar los once secrets en el environment `production-parameters` (solo `main`, revisor requerido), las variables no sensibles en `production` y las variables de repositorio.
+2. Configurar los doce secrets en el environment `production-parameters` (solo `main`, revisor requerido), las variables no sensibles en `production` y las variables de repositorio.
 3. Integrar la revisión en `main`: el sync solo corre desde ahí.
 4. Ejecutar `sync-parameters.yml` con `target=production` (y `validation` si se usará esa variante).
 5. Planificar y aplicar foundation con `previous_runtime_secret_arn` igual al ARN del secreto anterior mientras el runtime desplegado lo lea; `none` si ya no hay runtime anterior. Foundation actualiza las boundaries: lectura de parámetros para el runtime y verificación sin descifrar para el rol de plan.
@@ -100,7 +119,12 @@ Rollback:
 - Editorial: volver las variables del workflow a las funciones anteriores.
 - Aplicación: ejecutar el changeset del artifact anterior por el mismo proceso. Solo funciona mientras el secreto anterior siga legible y la foundation conceda acceso a él (paso 5).
 - Tráfico: restaurar el CNAME proxied al destino anterior conservado, verificando destino y disponibilidad. Volver DNS no revierte datos, suscripciones ni envíos.
-- Notify parcial: revisar `lastFailure` en `state/posts.json` y los logs antes de reinvocar; reinvocar a ciegas puede reenviar avisos (ver [limitaciones](api.es.md#idempotencia-y-limitaciones)).
+- Notify incompleto: los logs de `notify-post` muestran totales y, por cada pendiente, `reference` (clave del item), post, estado y código. Reinvocar no repite lo aceptado (ver [garantías](api.es.md#envío-por-destinatario)) y dentro de las 23 h resuelve los envíos dudosos.
+- Item en `review`: cambiar solo `status` y conservar `version` y el resto. Usar `sent` si Resend muestra el envío o si no se puede determinar (nunca reenvía). Usar `rejected` con `uncertain=false` únicamente con evidencia de que no existió; el item no guarda la dirección.
+- Primer despliegue del registro de envíos: publicar antes los parámetros con `NOTIFY_LEDGER_KEY` (el plan no valida su contenido) y verificar que todo post publicado figure con `notifiedAt` en `state/posts.json`, tenga o no `lastFailure`. Un post sin esa marca no tiene historial y se enviaría a todos: contrastarlo con Resend y marcarlo antes.
+- Cambio de la plantilla del aviso: desplegar sin publicaciones en curso ni envíos dudosos (`sending` o `uncertain`) dentro de las 23 h. Reintentarlos con otro mensaje los pasa a `review`.
+- Enlaces de baja con `#email=`: publicar primero el frontend que los lee y verificarlo; recién después desplegar esta plantilla. Con ella activa, no volver el frontend a una versión anterior: no precompletaría la baja y cargaría analytics con la dirección en la URL.
+- Dirección rechazada de forma permanente (`rejected`, 4xx): el post queda incompleto. Confirmar en los [registros de la API de Resend](https://resend.com/docs/dashboard/logs/introduction) que el motivo es la dirección y no el dominio, la clave o la plantilla; el item y los logs de la función solo guardan `reference`. Si es la dirección, darla de baja con la página de baja y reejecutar la publicación.
 
 No recompilar una revisión vieja ni tratar el rollback de CloudFormation como restauración de datos. Preservar la tabla, las reservas y los parámetros; no reiniciar el presupuesto para recuperar servicio.
 

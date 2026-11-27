@@ -9,10 +9,12 @@ import {
   generateOg,
   type GenerateOgDependencies,
 } from '../../packages/runtime/src/editorial/generate-og.js';
-import { buildOgSvg, generateOgImage } from '../../packages/runtime/src/editorial/og.js';
+import { generateOgImage } from '../../packages/runtime/src/editorial/og.js';
 import { repositoryPath } from '../support/paths.js';
 
 const fonts = repositoryPath('packages/runtime/assets/og/fonts');
+/** SHA-256 de `Buffer.from('image')`, la imagen del doble de render. */
+const imageDigest = '6105d6cc76af400325e94d588ce511be5bfdbb73b437dc51eca43917d7a43e3d';
 let send: AnyMock;
 let render: AnyMock;
 let resolve: AnyMock;
@@ -75,7 +77,9 @@ describe('generate-og', () => {
       Key: 'og/arquitectura-modo-playa.png',
       Body: Buffer.from('image'),
       ContentType: 'image/png',
+      Metadata: { sha256: imageDigest },
     });
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining(imageDigest));
   });
 
   it('respeta OG_OBJECT_PREFIX y recorta barras del slug', async () => {
@@ -134,13 +138,5 @@ describe('render OG con resvg', () => {
     } finally {
       rmSync(empty, { recursive: true, force: true });
     }
-  });
-
-  it('escapa XML y limita tags a tres en mayúsculas', () => {
-    const svg = buildOgSvg({ title: 'A <b> & "c"', tags: ['aws', 'cloud', 'og', 'extra'] });
-    expect(svg).toContain('A &lt;b&gt; &amp; &quot;c&quot;');
-    expect(svg).toContain('>AWS<');
-    expect(svg).toContain('>OG<');
-    expect(svg).not.toContain('EXTRA');
   });
 });

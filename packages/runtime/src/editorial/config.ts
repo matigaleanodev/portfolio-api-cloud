@@ -84,6 +84,7 @@ export interface NotifyPostConfig {
   readonly subscribers: BucketLocation;
   readonly publicBucket: string;
   readonly fromEmail: string;
+  readonly ledgerTable: string;
 }
 
 export function readNotifyPostConfig(env: EditorialEnvironment): NotifyPostConfig {
@@ -96,6 +97,7 @@ export function readNotifyPostConfig(env: EditorialEnvironment): NotifyPostConfi
     },
     publicBucket: env.R2_BUCKET!.trim(),
     fromEmail: env.BLOG_FROM_EMAIL!,
+    ledgerTable: env.LEDGER_TABLE_NAME!.trim(),
   };
 }
 

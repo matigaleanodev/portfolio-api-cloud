@@ -10,6 +10,7 @@ import {
   validateEnvironment,
 } from '../packages/runtime/src/validation/providers.js';
 import { httpEvent } from './fixtures.js';
+import { useTestClock } from './support/clock.js';
 import {
   managedEnvironment,
   productionParameter,
@@ -47,6 +48,7 @@ function event(method: string, path: string, body?: unknown) {
   if (body) e.body = JSON.stringify(body);
   return e;
 }
+beforeEach(() => useTestClock());
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => undefined));
 afterEach(() => {
   vi.useRealTimers();
@@ -150,7 +152,11 @@ for (const scenario of scenarios)
       ...providers,
       sendEmail,
       request,
-      subscribers: () => ({ createSubscriber, deleteSubscriber }),
+      subscribers: () => ({
+        createSubscriber,
+        deleteSubscriber,
+        unsubscribeByToken: async () => 'missing' as const,
+      }),
       store,
       readParameter,
     });
