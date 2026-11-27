@@ -1,8 +1,10 @@
-import { test, expect, vi, afterEach } from 'vitest';
+import { test, expect, vi, afterEach, beforeEach } from 'vitest';
 import { verifiedVisitorIp, verifyOriginSecret } from '../packages/runtime/src/ingress.js';
 import { createApiHandler as createManagedHandler } from '../packages/runtime/src/handlers/api.js';
 import { httpEvent } from './fixtures.js';
+import { useTestClock } from './support/clock.js';
 import { managedEnvironment, runtimeSecret, SimulatedControlStore } from './support/control.js';
+beforeEach(() => useTestClock());
 afterEach(() => vi.restoreAllMocks());
 const secret = 'origin'.repeat(8);
 function event(source = '173.245.48.1', visitor = '192.0.2.10') {

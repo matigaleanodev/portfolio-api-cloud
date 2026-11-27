@@ -26,6 +26,7 @@ import { createChatHandler } from '../packages/runtime/src/handlers/chat.js';
 import { functions } from '@portfolio-api-cloud/contracts/functions';
 import { OpenAiService } from '../packages/runtime/src/chat/openai.service.js';
 import { httpEvent } from './fixtures.js';
+import { useTestClock } from './support/clock.js';
 import {
   SimulatedControlStore,
   chatEnvironment,
@@ -35,6 +36,7 @@ import {
   runtimeSecret,
 } from './support/control.js';
 
+beforeEach(() => useTestClock());
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => undefined));
 afterEach(() => {
   vi.useRealTimers();

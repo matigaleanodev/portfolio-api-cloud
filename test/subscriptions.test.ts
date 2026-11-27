@@ -1,5 +1,6 @@
 import { repositoryPath } from './support/paths.js';
 import { createApiHandler as createManagedHandler } from '../packages/runtime/src/handlers/api.js';
+import { useTestClock } from './support/clock.js';
 import {
   managedEnvironment,
   runtimeSecret,
@@ -7,7 +8,7 @@ import {
   SimulatedObjectStorage,
   simulatedSubscribers,
 } from './support/control.js';
-import { test, vi } from 'vitest';
+import { test, vi, beforeEach } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
@@ -71,6 +72,7 @@ function subscriptionEvent(method: SubscriptionMethod = 'POST', input: unknown =
   return event;
 }
 
+beforeEach(() => useTestClock());
 for (const scenario of reference.validation) {
   const given = scenario.label.startsWith('una ')
     ? 'Dada'
