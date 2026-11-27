@@ -56,7 +56,7 @@ No guardar valores en archivos del checkout ni en variables de environment no se
 
 ## Entrega protegida
 
-1. Integrar por PR en `dev` y promover a `main` con CI exitoso. `verify` es requerido; [merge.yml](../.github/workflows/merge.yml) exige el SHA completo revisado e identidad real de `matigaleanodev`, con `MERGE_USER_TOKEN` del environment `merge`, sin fallback de App ni bypass de PR/CI.
+1. Integrar por PR en `dev` y promover a `main` según [integración de pull requests](#integración-de-pull-requests).
 2. Seleccionar `api-assembly-<sha>-<run>-<attempt>` de un CI por push exitoso y una revisión promovida a `main`. Comparar run, ID, digest e inventario. La retención es de 30 días; conservar una copia verificada para recuperación posterior.
 3. [plan-foundation-production.yml](../.github/workflows/plan-foundation-production.yml) prepara foundation, roles y boundaries por separado. Exige `previous_runtime_secret_arn`: el ARN del secreto que todavía lee un runtime anterior, o `none` para no conceder nada.
 4. [plan-production.yml](../.github/workflows/plan-production.yml) toma las variables del environment `production`, verifica sin descifrar que existan los cuatro parámetros productivos como `SecureString` y prepara el changeset desde el assembly sin recompilar el runtime. El recibo publica los parámetros de CloudFormation como `sha256`, y su digest ata la ejecución a esos valores.
@@ -65,6 +65,25 @@ No guardar valores en archivos del checkout ni en variables de environment no se
 Los environments productivos admiten `main`; las banderas `*_ENABLED` quedan desactivadas fuera de su operación. OIDC restringe owner, repositorio y environment. Planificación, publicación, ejecución de CloudFormation, sincronización de parámetros y runtime usan roles separados. Push y tags no despliegan automáticamente.
 
 `recover_bundle.py` valida artifacts actuales e históricos `test-assembly-*` sin relajar hashes ni extracción segura.
+
+## Integración de pull requests
+
+`dev` y `main` exigen, sin excepciones: pull request, `verify` de GitHub Actions aprobado sobre una rama actualizada, conversaciones resueltas y merge commit; no admiten push directo, force push ni borrado. No se exige aprobación de otra persona.
+
+Una segunda regla restringe quién actualiza esas ramas a la cuenta propietaria:
+
+- Con la exención `exempt` para esa cuenta, se integra con el botón de merge de GitHub y se puede activar auto-merge a mano en cada pull request.
+- Mientras la exención siga en modo `pull_request`, se integra con [merge.yml](../.github/workflows/merge.yml), que exige el SHA completo revisado y usa `MERGE_USER_TOKEN` del environment `merge`.
+
+Para integrar exactamente la revisión mirada:
+
+```bash
+gh pr merge <numero> --merge --match-head-commit <sha-revisado>
+```
+
+El auto-merge integra el head que exista cuando se cumplan las condiciones, incluidos commits agregados después de activarlo.
+
+Cada promoción deja en `main` un merge commit que `dev` no tiene. Antes de la siguiente, crear `fix/sync-main-<sha>` desde `main`, abrir un pull request hacia `dev` e integrarlo con merge commit. Si está atrasado, **Update branch** actualiza la rama de sincronización.
 
 ## Ingress, observabilidad y capacidad
 
