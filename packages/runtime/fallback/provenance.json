@@ -2,8 +2,8 @@
   "version": 1,
   "sourceRepository": "portfolio",
   "sourcePath": ".generated/chat/knowledge.json",
-  "generatedAt": "2026-10-25T16:18:39.003Z",
-  "contentHash": "sha256:35c3d29ca1e5cd1bb37370397c7bc8843705485cb762cfc4d0fa6edefd4a210c",
-  "sourceSha256": "d79c7a8698fd399b19ab7da869d02e993cb9e73c59a31d1b706d6cb1c4dbc05c",
-  "scope": "Published editorial knowledge verified from the canonical portfolio-cloud R2 object on 2026-10-25."
+  "generatedAt": "2026-11-27T21:40:51.816Z",
+  "contentHash": "sha256:102195239187b32ce09a637de46214a2057fe7493067a2c8e35c88f5d92ea187",
+  "sourceSha256": "ca576a07399273639ab7cae071013c4677b1d1ed62606abdeaef8b018dc9ed38",
+  "scope": "Published editorial knowledge generated with the official portfolio build scripts from its versioned content; not read from nor published to the production R2 object."
 }
