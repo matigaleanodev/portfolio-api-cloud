@@ -1,7 +1,7 @@
 ---
 name: Índigo de taller (email and Open Graph)
-revision: 1
-adapts: portfolio design system revision 2
+revision: 2
+adapts: portfolio design system revision 4
 colors:
   light-canvas: '#F3F4F7'
   light-surface: '#FCFCFE'
@@ -62,7 +62,7 @@ components:
 
 [Español](DESIGN.es.md)
 
-This document adapts **revision 2** of the [portfolio design system](https://github.com/matigaleanodev/portfolio/blob/main/DESIGN.md) (source `DESIGN.md` SHA-256 `6efe16bb919649431bea95c1b3cb2054b91184d50c91864dabb84bc9c05a89b6`). It is not a second source of visual decisions: it only states how that system applies where email clients and a deterministic renderer limit it. On any difference not listed here, the source wins. A new source revision is adopted by editing this document; there is no shared package or automatic synchronization.
+This document adapts **revision 4** of the [portfolio design system](https://github.com/matigaleanodev/portfolio/blob/main/DESIGN.md) (source `DESIGN.md` SHA-256 `37ed42a6355f95a11dc878c21db8afb5780f57463f1ccb461a328c1ddceaf042`). It is not a second source of visual decisions: it only states how that system applies where email clients and a deterministic renderer limit it. On any difference not listed here, the source wins. A new source revision is adopted by editing this document; there is no shared package or automatic synchronization.
 
 **MUST** rules are acceptance criteria; **SHOULD** rules admit a recorded deviation.
 
@@ -97,11 +97,11 @@ All pairs above meet 4.5:1. `divider` is decorative.
 
 ## Typography
 
-| Output          | Primary                                                | Fallback                          |
-| --------------- | ------------------------------------------------------ | --------------------------------- |
-| Email           | `'Segoe UI'`, Arial                                    | Client sans-serif; no web fonts.  |
-| Email signature | Consolas, `'Courier New'`                              | monospace                         |
-| Open Graph      | Packaged IBM Plex Sans SemiBold and Mono Regular files | None: a missing font is an error. |
+| Output          | Primary                                                                                         | Fallback                          |
+| --------------- | ----------------------------------------------------------------------------------------------- | --------------------------------- |
+| Email           | `'Segoe UI'`, Arial                                                                             | Client sans-serif; no web fonts.  |
+| Email signature | Consolas, `'Courier New'`                                                                       | monospace                         |
+| Open Graph      | Packaged IBM Plex Sans SemiBold and Mono Regular files; Noto Emoji (monochrome) for emoji only. | None: a missing font is an error. |
 
 Packaged fonts are under the SIL Open Font License 1.1 and MUST ship with the license text.
 
@@ -124,6 +124,7 @@ Packaged fonts are under the SIL Open Font License 1.1 and MUST ship with the li
 - Top rule: 36px `accent`, full width. Side padding 96px. All text inside x 96–1104 and y 84–546.
 - Content, left aligned, its block centered between y 84 and 546 (center y 315): signature (Mono 38px, `accent`), 48px gap, title (SemiBold, tracking -0.03em, line height 1.08).
 - No excerpt, tags, secondary column, gradients or decoration.
+- Fallback: a title with nothing to draw, or with a visible grapheme longer than 32 UTF-16 units (it cannot fit a line), uses the same composition with “Nuevo artículo en el blog”.
 
 ## Elevation & Depth
 
@@ -137,15 +138,15 @@ Only the 5px email action is rounded. Rules are straight.
 
 ### Variable content
 
-| Case                           | Email                                                                         | Open Graph                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------------------------ | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Long title                     | Full title, wraps.                                                            | First preset that fits without splitting words: 84px (≤2 lines), 75px (≤3), 62px (≤4). Otherwise stay at 62px, split any word wider than the line, and cut at a word boundary with “…” on line 4. Last resort: if there is no word boundary to cut at (the first word alone exceeds the four lines), cut between graphemes, never inside one, so that “…” fits within line 4. |
-| Unbreakable word or URL        | `overflow-wrap: anywhere` and `word-break: break-word`.                       | At 62px only, break between graphemes.                                                                                                                                                                                                                                                                                                                                        |
-| Accents and special characters | UTF-8; escape all HTML and attribute values.                                  | NFC normalization; segment by graphemes (`Intl.Segmenter`); escape XML.                                                                                                                                                                                                                                                                                                       |
-| Glyph not covered (e.g. emoji) | Left to the client.                                                           | Treatment not fixed by this revision. A grapheme is covered when the packaged font maps all its code points (joiners and variation selectors aside). The solution MUST be deterministic and preserve the meaning of the title; silently dropping glyphs is not accepted as final. Alternatives MUST be evaluated and one approved before the generator changes.               |
-| Missing excerpt or date        | Remove the block with its spacing.                                            | Not shown.                                                                                                                                                                                                                                                                                                                                                                    |
-| Tags                           | Not shown.                                                                    | Not shown.                                                                                                                                                                                                                                                                                                                                                                    |
-| Date                           | Format the calendar date in UTC so the day never shifts; omit an invalid one. | —                                                                                                                                                                                                                                                                                                                                                                             |
+| Case                           | Email                                                                         | Open Graph                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Long title                     | Full title, wraps.                                                            | First preset that fits without splitting words: 84px (≤2 lines), 75px (≤3), 62px (≤4). Otherwise stay at 62px, split any word wider than the line, and cut at a word boundary with “…” on line 4. Last resort: if there is no word boundary on lines 3 or 4 (an indivisible word spans them), cut between graphemes, never inside one, so that “…” fits within line 4. |
+| Unbreakable word or URL        | `overflow-wrap: anywhere` and `word-break: break-word`.                       | At 62px only, break between graphemes.                                                                                                                                                                                                                                                                                                                                 |
+| Accents and special characters | UTF-8; escape all HTML and attribute values.                                  | NFC normalization; segment by graphemes (`Intl.Segmenter`); escape XML.                                                                                                                                                                                                                                                                                                |
+| Glyph not covered (e.g. emoji) | Left to the client.                                                           | Emoji are drawn with the packaged Noto Emoji, in the title color and as separate runs, never splitting a sequence. Other scripts without coverage show the font missing glyph (visible, not dropped); their treatment is not fixed. Controls and invisible characters with no visual effect are discarded.                                                             |
+| Missing excerpt or date        | Remove the block with its spacing.                                            | Not shown.                                                                                                                                                                                                                                                                                                                                                             |
+| Tags                           | Not shown.                                                                    | Not shown.                                                                                                                                                                                                                                                                                                                                                             |
+| Date                           | Format the calendar date in UTC so the day never shifts; omit an invalid one. | —                                                                                                                                                                                                                                                                                                                                                                      |
 
 ### Interactive states
 
@@ -178,6 +179,7 @@ The only control is the email action, which is a link, not a button. It follows 
 
 - The same input MUST produce the same image with the pinned renderer and packaged fonts: no system fonts, network, clock, locale defaults or randomness.
 - Line fitting MUST measure with the packaged font metrics, not character counts.
+- The uploaded object carries the SHA-256 of its bytes in the `sha256` metadata.
 - MUST keep existing object keys and public URLs. The image alternative text belongs to the frontend.
 - MUST review each reference at 1200×630, 300×157 (title lines readable, signature recognizable) and 160×84 (title lines distinct and top rule visible; the signature need not be readable).
 - A visual change MUST update render references deliberately and record the accepted differences.
@@ -189,7 +191,7 @@ The only control is the email action, which is a link, not a button. It follows 
 | Signature “Matias Galeano · Blog técnico”                     | Defined here for email and image; the source does not define it.             |
 | Email date in sans (web: Mono recommended for dates)          | Approved decision.                                                           |
 | System fonts in email                                         | Web fonts are unreliable in clients.                                         |
-| 4px email and 36px image top rules (web: 3px)                 | Adaptation per medium; the image must read as a thumbnail.                   |
+| 4px email and 36px image top rules (web: no identity rule)    | Adaptation per medium; the image must read as a thumbnail.                   |
 | Outer `surface` around a `canvas` letter                      | Frames the letter where the client controls the page.                        |
 | Light base in email; fixed light image                        | Client and social platforms control the theme.                               |
 | Truncation allowed in the image only                          | Fixed canvas; the full title remains on the page.                            |
@@ -198,7 +200,7 @@ The only control is the email action, which is a link, not a button. It follows 
 
 ## Value origin
 
-Colors and typefaces come from the source. The signature belongs to this adaptation and comes from the approved composition. Approved: fixed light image, sans email date, preheader taken from the excerpt, and as initial reference the 84/75/62px title presets, weight 600, line height 1.08 and four-line limit. From the approved composition: email top rule, letter framing, 28px title, 5px action, image top rule and 96px padding. Derived for robustness: tracking -0.03em, safe area, 600px width, remaining email sizes and spacing, title as preheader without excerpt, date wording and omission of tags.
+Colors and typefaces come from the source. The signature belongs to this adaptation and comes from the approved composition. Approved: fixed light image, sans email date, preheader taken from the excerpt, and as initial reference the 84/75/62px title presets, weight 600, line height 1.08 and four-line limit, and monochrome Noto Emoji for emoji. From the approved composition: email top rule, letter framing, 28px title, 5px action, image top rule and 96px padding. Derived for robustness: tracking -0.03em, fallback text, safe area, 600px width, remaining email sizes and spacing, title as preheader without excerpt, date wording and omission of tags.
 
 ## Do's and Don'ts
 

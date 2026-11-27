@@ -197,14 +197,22 @@ async function editorialSmoke() {
       ['resvg-js', 'resvg-js-linux-x64-gnu'],
       'Solo el binario linux-x64-gnu',
     );
-    assert.equal(readdirSync('assets/og/fonts').length, 4);
+    assert.deepEqual(readdirSync('assets/og/fonts').sort(), [
+      'IBMPlexMono-Medium.ttf',
+      'IBMPlexMono-Regular.ttf',
+      'IBMPlexSans-Regular.ttf',
+      'IBMPlexSans-SemiBold.ttf',
+      'NotoEmoji.ttf',
+      'OFL-IBMPlex.txt',
+      'OFL-NotoEmoji.txt',
+    ]);
     if (process.arch !== 'x64' || process.platform !== 'linux') {
       report('host no linux-x64: render omitido');
       return;
     }
     const response = await handler({
       slug: 'smoke',
-      title: 'Test flujo completo de Resend y OG',
+      title: 'Test flujo completo de Resend y OG 🚀',
       excerpt:
         'Pipeline editorial serverless con AWS Lambda, R2 y Resend alineado visualmente con el portfolio.',
       tags: ['aws', 'serverless', 'blog'],
