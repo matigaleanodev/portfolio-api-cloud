@@ -82,15 +82,15 @@ El auto-merge es el nativo de GitHub y es opcional: se activa en cada pull reque
 Casos que requieren una acción adicional:
 
 - Rama atrasada: **Update branch**. El auto-merge no actualiza la rama; si el destino avanza mientras espera, hay que pulsarlo.
-- Check `CodeRabbit` ausente o cancelado: comentar `@coderabbitai review` en el pull request.
+- Check `CodeRabbit` ausente o cancelado: comentar `@coderabbitai full review` en el pull request.
 
-El check `CodeRabbit` indica que su revisión terminó, no que aprobó. También pasa cuando la omite y, con la configuración predeterminada, cuando falla o alcanza su límite de uso. Sus observaciones bloquean mientras sus conversaciones sigan sin resolver.
+El check `CodeRabbit` indica que su revisión terminó, no que aprobó. También pasa cuando la omite, cuando la pausa o alcanza su límite de uso y, con la configuración predeterminada, cuando falla. Las observaciones abiertas como conversación bloquean hasta resolverlas; las incluidas solo en el cuerpo de la revisión no bloquean: leerlas antes de integrar.
 
 Integrar en `main` ejecuta la CI y no despliega: la entrega sigue el proceso de [entrega protegida](#entrega-protegida).
 
 ### Sincronización de `main` hacia `dev`
 
-Cada promoción deja en `main` un merge commit que `dev` no tiene. Al terminar de integrarla, abrir desde la web un pull request con base `dev` y rama de comparación `main`, e integrarlo con el mismo botón. Si `dev` ya avanzó, ese pull request queda atrasado y `main` no admite actualizarse: crear desde `main` una rama `fix/sync-main` en el selector de ramas, abrir el pull request desde ella y usar **Update branch**. Mientras `dev` no contenga `main`, un pull request de `dev` a `main` no se puede integrar.
+Cada promoción deja en `main` un merge commit que `dev` no tiene. Al terminar de integrarla, abrir desde la web un pull request con base `dev` y rama de comparación `main`, e integrarlo con el mismo botón. Si `dev` ya avanzó o hay conflictos, ese pull request no se puede actualizar porque `main` está protegida: crear desde `main` una rama `fix/sync-main-<sha>` en el selector de ramas, abrir el pull request desde ella y usar **Update branch** o **Resolve conflicts**. Si el editor web no admite el conflicto, resolverlo localmente en esa rama y subirlo; la integración sigue siendo con el botón. Mientras `dev` no contenga `main`, un pull request de `dev` a `main` no se puede integrar.
 
 ## Ingress, observabilidad y capacidad
 

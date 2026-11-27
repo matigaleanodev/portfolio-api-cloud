@@ -82,15 +82,15 @@ Auto-merge is GitHub's native feature and is optional: enable it on each pull re
 Cases that need an extra action:
 
 - Branch behind: **Update branch**. Auto-merge does not update the branch; if the target moves while it waits, the button has to be pressed.
-- `CodeRabbit` check missing or cancelled: comment `@coderabbitai review` on the pull request.
+- `CodeRabbit` check missing or cancelled: comment `@coderabbitai full review` on the pull request.
 
-The `CodeRabbit` check means its review finished, not that it approved. It also passes when the review is skipped and, with the default configuration, when it fails or hits its usage limit. Its findings block while their conversations remain unresolved.
+The `CodeRabbit` check means its review finished, not that it approved. It also passes when the review is skipped, paused or rate limited and, with the default configuration, when it fails. Findings opened as conversations block until resolved; those listed only in the review body do not: read them before merging.
 
 Merging into `main` runs CI and does not deploy: delivery follows the [protected delivery](#protected-delivery) process.
 
 ### Synchronizing `main` into `dev`
 
-Each promotion leaves on `main` a merge commit that `dev` lacks. Once it is merged, open a pull request from the web with base `dev` and compare branch `main`, and merge it with the same button. If `dev` has already moved, that pull request is behind and `main` cannot be updated: create a `fix/sync-main` branch from `main` in the branch selector, open the pull request from it and use **Update branch**. While `dev` lacks `main`, a pull request from `dev` into `main` cannot be merged.
+Each promotion leaves on `main` a merge commit that `dev` lacks. Once it is merged, open a pull request from the web with base `dev` and compare branch `main`, and merge it with the same button. If `dev` has already moved or there are conflicts, that pull request cannot be updated because `main` is protected: create a `fix/sync-main-<sha>` branch from `main` in the branch selector, open the pull request from it and use **Update branch** or **Resolve conflicts**. If the web editor cannot handle the conflict, resolve it locally on that branch and push; merging still uses the button. While `dev` lacks `main`, a pull request from `dev` into `main` cannot be merged.
 
 ## Ingress, observability and capacity
 
