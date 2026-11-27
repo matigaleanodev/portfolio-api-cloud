@@ -84,7 +84,7 @@ Cases that need an extra action:
 - Branch behind: **Update branch**. Auto-merge does not update the branch; if the target moves while it waits, the button has to be pressed.
 - `CodeRabbit` check missing or cancelled: comment `@coderabbitai full review` on the pull request.
 
-The `CodeRabbit` check means its review finished, not that it approved. It also passes when the review is skipped, paused or rate limited and, with the default configuration, when it fails. Findings opened as conversations block until resolved; those listed only in the review body do not block, and auto-merge does not wait for them to be read. To review them before merging, merge manually.
+The `CodeRabbit` check means its review finished, not that it approved. It also passes when the review is skipped, paused or rate limited and, with the default configuration, when it fails. Findings opened as conversations block until resolved; those listed only in the review body do not block, and auto-merge does not wait for them to be read, including those on commits added after enabling it. To review them before merging, merge manually.
 
 Merging into `main` runs CI and does not deploy: delivery follows the [protected delivery](#protected-delivery) process.
 
