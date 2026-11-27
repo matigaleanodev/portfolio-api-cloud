@@ -18,7 +18,7 @@ It arrives as environment variables of each function from CloudFormation paramet
 | `MEDIA_BASE_URL`, `BLOG_FROM_EMAIL`      | Public media URL and blog sender.                                               |
 | `CERTIFICATE_ARN`, `ALARM_TOPIC_ARN`     | Domain ACM certificate and alarm SNS topic (empty disables them).               |
 
-Repository variables enable each workflow (`PRODUCTION_PLAN_ENABLED`, `PRODUCTION_FOUNDATION_ENABLED`, `PRODUCTION_EXECUTE_ENABLED`, `PARAMETERS_SYNC_ENABLED`, `MERGE_WORKFLOW_ENABLED`) and name the delivery roles (`PRODUCTION_AWS_ROLE_ARN`, `PRODUCTION_CDK_DEPLOY_ROLE_ARN`, `PRODUCTION_EXECUTION_ROLE_ARN`). Environment key names are in [configuration.ts](../packages/contracts/src/configuration.ts) and [editorial.ts](../packages/contracts/src/editorial.ts).
+Repository variables enable each workflow (`PRODUCTION_PLAN_ENABLED`, `PRODUCTION_FOUNDATION_ENABLED`, `PRODUCTION_EXECUTE_ENABLED`, `PARAMETERS_SYNC_ENABLED`) and name the delivery roles (`PRODUCTION_AWS_ROLE_ARN`, `PRODUCTION_CDK_DEPLOY_ROLE_ARN`, `PRODUCTION_EXECUTION_ROLE_ARN`). Environment key names are in [configuration.ts](../packages/contracts/src/configuration.ts) and [editorial.ts](../packages/contracts/src/editorial.ts).
 
 ## Sensitive configuration
 
@@ -70,10 +70,7 @@ Production environments admit `main`; `*_ENABLED` flags stay disabled outside th
 
 `dev` and `main` require, without exceptions: a pull request, the GitHub Actions `verify` check passing on an up-to-date branch, resolved conversations and a merge commit; they reject direct pushes, force pushes and deletion. No approval from another person is required.
 
-A second rule restricts who updates those branches to the owner account:
-
-- With the `exempt` exemption for that account, merge with the GitHub merge button; auto-merge can be enabled by hand on each pull request.
-- While the exemption stays in `pull_request` mode, merge with [merge.yml](../.github/workflows/merge.yml), which requires the full reviewed SHA and uses `MERGE_USER_TOKEN` from the `merge` environment.
+A second rule restricts who updates those branches to the owner account, which holds an `exempt` exemption: merge with the GitHub merge button; auto-merge can be enabled by hand on each pull request.
 
 To merge exactly the reviewed revision:
 
