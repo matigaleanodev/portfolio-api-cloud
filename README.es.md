@@ -14,16 +14,17 @@ Contacto y avisos del blog usan Resend. El chat combina FAQ locales, conocimient
 
 ## Endpoints
 
-| Método | Ruta                 | Éxito |
-| ------ | -------------------- | ----- |
-| GET    | `/api/health`        | 200   |
-| POST   | `/api/contact`       | 204   |
-| GET    | `/api/chat/starters` | 200   |
-| POST   | `/api/chat`          | 201   |
-| POST   | `/api/subscriptions` | 200   |
-| DELETE | `/api/subscriptions` | 200   |
+| Método | Ruta                           | Éxito |
+| ------ | ------------------------------ | ----- |
+| GET    | `/api/health`                  | 200   |
+| POST   | `/api/contact`                 | 204   |
+| GET    | `/api/chat/starters`           | 200   |
+| POST   | `/api/chat`                    | 201   |
+| POST   | `/api/subscriptions`           | 200   |
+| DELETE | `/api/subscriptions`           | 200   |
+| POST   | `/api/subscriptions/one-click` | 200   |
 
-Validación de DTO, CORS por origen, cuotas compartidas y errores controlados. Las FAQ no invocan IA; la generación paga exige reserva monetaria previa. Las funciones editoriales no tienen rutas HTTP: las invoca el workflow de publicación de `portfolio`.
+Validación de DTO, CORS por origen, cuotas compartidas y errores controlados. La baja en un clic ([RFC 8058](https://www.rfc-editor.org/rfc/rfc8058.txt)) usa el identificador opaco incluido en cada aviso. Las FAQ no invocan IA; la generación paga exige reserva monetaria previa. Las funciones editoriales no tienen rutas HTTP: las invoca el workflow de publicación de `portfolio`.
 
 ## Desarrollo local
 

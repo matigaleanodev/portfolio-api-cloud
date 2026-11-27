@@ -14,16 +14,17 @@ Contact and blog notifications use Resend. Chat combines local FAQs, editorial k
 
 ## Endpoints
 
-| Method | Route                | Success |
-| ------ | -------------------- | ------- |
-| GET    | `/api/health`        | 200     |
-| POST   | `/api/contact`       | 204     |
-| GET    | `/api/chat/starters` | 200     |
-| POST   | `/api/chat`          | 201     |
-| POST   | `/api/subscriptions` | 200     |
-| DELETE | `/api/subscriptions` | 200     |
+| Method | Route                          | Success |
+| ------ | ------------------------------ | ------- |
+| GET    | `/api/health`                  | 200     |
+| POST   | `/api/contact`                 | 204     |
+| GET    | `/api/chat/starters`           | 200     |
+| POST   | `/api/chat`                    | 201     |
+| POST   | `/api/subscriptions`           | 200     |
+| DELETE | `/api/subscriptions`           | 200     |
+| POST   | `/api/subscriptions/one-click` | 200     |
 
-DTO validation, origin-based CORS, shared quotas and controlled errors. FAQs do not invoke AI; paid generation requires a prior monetary reservation. Editorial functions have no HTTP routes: the `portfolio` publication workflow invokes them.
+DTO validation, origin-based CORS, shared quotas and controlled errors. One-click unsubscribe ([RFC 8058](https://www.rfc-editor.org/rfc/rfc8058.txt)) uses the opaque identifier included in each notification. FAQs do not invoke AI; paid generation requires a prior monetary reservation. Editorial functions have no HTTP routes: the `portfolio` publication workflow invokes them.
 
 ## Local development
 
