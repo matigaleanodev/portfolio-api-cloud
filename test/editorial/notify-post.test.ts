@@ -153,14 +153,14 @@ describe('mail del blog (Resend 6.34.1)', () => {
     expect(payload.text).toContain('Arquitectura <Modo Playa>');
     expect(payload.text).toContain('Backend & cloud con <tags>');
     expect(payload.text).toContain(
-      'Darme de baja: https://matiasgaleano.dev/blog/unsubscribe?email=contacto%40matiasgaleano.dev',
+      'Darme de baja: https://matiasgaleano.dev/blog/unsubscribe#email=contacto%40matiasgaleano.dev',
     );
     expect(payload.html).toContain('Arquitectura &lt;Modo Playa&gt;');
     expect(payload.html).toContain('Backend &amp; cloud con &lt;tags&gt;');
     expect(payload.html).toContain('8 mar 2026');
     expect(payload.html).not.toContain('serverless');
     expect(payload.html).toContain(
-      'https://matiasgaleano.dev/blog/unsubscribe?email=contacto%40matiasgaleano.dev',
+      'https://matiasgaleano.dev/blog/unsubscribe#email=contacto%40matiasgaleano.dev',
     );
   });
 

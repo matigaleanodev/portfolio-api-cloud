@@ -70,7 +70,8 @@ function formatDateLabel(date?: string): string | null {
 }
 
 function buildUnsubscribeUrl(email: string): string {
-  return `${unsubscribeBaseUrl}?email=${encodeURIComponent(email)}`;
+  // El fragmento no viaja al servidor: la página lo lee para precompletar la baja.
+  return `${unsubscribeBaseUrl}#email=${encodeURIComponent(email)}`;
 }
 
 const signature = 'Matias Galeano · Blog técnico';

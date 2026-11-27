@@ -14,7 +14,7 @@ const input: BlogNotificationInput = {
   tags: ['aws', 'serverless'],
 };
 const unsubscribeUrl =
-  'https://matiasgaleano.dev/blog/unsubscribe?email=lector%2Bblog%40example.com';
+  'https://matiasgaleano.dev/blog/unsubscribe#email=lector%2Bblog%40example.com';
 
 /** `undefined` en un override quita el campo opcional. */
 const build = (
