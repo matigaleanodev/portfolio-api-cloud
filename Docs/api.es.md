@@ -85,7 +85,7 @@ Límites de la garantía:
 
 - No es entrega exactamente una vez. La deduplicación de un intento ambiguo depende de la ventana de 24 h de las [claves de idempotencia](https://resend.com/docs/dashboard/emails/idempotency-keys); fuera de ella el sistema prefiere no reenviar.
 - `sent` significa aceptación, no entrega: rebotes, supresiones y filtros ocurren después.
-- Si cambian título, extracto, fecha o tags entre intentos de un envío dudoso, el proveedor rechaza la clave y el registro pasa a `review`.
+- Si entre intentos de un envío dudoso cambia el mensaje (título, extracto, fecha o la plantilla desplegada), el proveedor rechaza la clave y el registro pasa a `review`.
 - Restaurar la tabla a un punto anterior puede perder marcas y permitir reenvíos.
 - Una dirección rechazada de forma permanente o en `review` impide completar el post hasta resolverla. Mientras tanto cada release responde 500, el post se sigue enviando a quienes se suscriban después y los pasos posteriores del workflow invocador dependen de cómo trate ese fallo.
 - La baja elimina el registro; el índice del identificador se limpia sin garantía y puede quedar un objeto huérfano con la dirección en el bucket privado. El borrado del almacenamiento no es condicional: una baja en un clic simultánea con una baja y alta de la misma dirección podría borrar la nueva.

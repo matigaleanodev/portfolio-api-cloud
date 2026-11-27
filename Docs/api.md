@@ -85,7 +85,7 @@ Limits of the guarantee:
 
 - This is not exactly-once delivery. Deduplicating an ambiguous attempt relies on the 24 h window of [idempotency keys](https://resend.com/docs/dashboard/emails/idempotency-keys); outside it the system chooses not to resend.
 - `sent` means accepted, not delivered: bounces, suppressions and filtering happen later.
-- If title, excerpt, date or tags change between attempts of a doubtful send, the provider rejects the key and the record moves to `review`.
+- If the message changes between attempts of a doubtful send (title, excerpt, date or the deployed template), the provider rejects the key and the record moves to `review`.
 - Restoring the table to an earlier point can lose marks and allow resends.
 - A permanently rejected or `review` address keeps the post incomplete until resolved. Meanwhile each release returns 500, the post keeps being sent to later subscribers, and subsequent steps of the invoking workflow depend on how it handles that failure.
 - Unsubscribing deletes the record; identifier index cleanup is best effort and an orphan object holding the address can remain in the private bucket. Storage deletion is not conditional: a one-click request concurrent with an unsubscribe and resubscribe of the same address could delete the new one.
