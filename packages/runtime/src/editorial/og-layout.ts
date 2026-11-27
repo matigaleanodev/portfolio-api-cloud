@@ -25,7 +25,7 @@ const breakingSpace = new RegExp(`(?:(?![${noBreakSpaces}])\\s)+`, 'u');
 const discarded = /(?!\s)[\p{Cc}\p{Cs}\p{Noncharacter_Code_Point}­​⁠﻿]/gu;
 
 /** Palabra sin nada que dibujar: solo caracteres de formato o ignorables. */
-const invisibleWord = /^[\p{Cf}\p{Default_Ignorable_Code_Point}]*$/u;
+const invisibleWord = /^[\s\p{Cf}\p{Default_Ignorable_Code_Point}]*$/u;
 /** Las secuencias de emoji reales quedan por debajo; más largo no entra en una línea. */
 const maxGraphemeLength = 32;
 

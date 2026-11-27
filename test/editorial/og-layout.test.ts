@@ -209,6 +209,11 @@ describe('entradas degeneradas', () => {
     },
   );
 
+  it('usa el respaldo cuando solo quedan espacios de no separación e invisibles', () => {
+    expect(compose('\u00a0\u200b')).toMatchObject({ fallback: true });
+    expect(compose('\u202f\u200e')).toMatchObject({ fallback: true });
+  });
+
   it('descarta palabras formadas solo por invisibles', () => {
     expect(compose('Hola ‎ mundo').lines).toEqual(['Hola mundo']);
     expect(compose(`Hola ${'‎'.repeat(500)}`).lines).toEqual(['Hola']);
