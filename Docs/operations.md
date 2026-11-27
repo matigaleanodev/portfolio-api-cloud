@@ -103,6 +103,7 @@ Rollback:
 - Incomplete notify: `notify-post` logs show totals and, for each pending send, `reference` (item key), post, status and code. Reinvoking does not repeat accepted messages (see [guarantees](api.md#per-recipient-delivery)) and within 23 h resolves doubtful sends.
 - `review` item: change only `status`, keeping `version` and the rest. Use `sent` if Resend shows the message or it cannot be determined (never resends). Use `rejected` with `uncertain=false` only with evidence that it never existed; the item stores no address.
 - First deployment of the send ledger: publish the parameters with `NOTIFY_LEDGER_KEY` first (the plan does not validate their content) and check that every published post has `notifiedAt` in `state/posts.json`, with or without `lastFailure`. A post without that mark has no history and would be sent to everyone: compare with Resend and mark it first.
+- Changing the notification template: deploy with no publication in progress and no doubtful sends (`sending` or `uncertain`) within the 23 h window. Retrying them with a different message moves them to `review`.
 
 Do not recompile an old revision or treat CloudFormation rollback as data restoration. Preserve the table, reservations and parameters; do not reset the budget to recover service.
 

@@ -53,39 +53,120 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#39;');
 }
 
+const calendarDate = new Intl.DateTimeFormat('es-AR', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+/** Fecha calendario (`AAAA-MM-DD`) como "26 nov 2026"; formateada en UTC para no correr el día. */
 function formatDateLabel(date?: string): string | null {
-  if (!date) return null;
-  const parsedDate = new Date(date);
-  if (Number.isNaN(parsedDate.getTime())) return null;
-  return new Intl.DateTimeFormat('es-AR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(parsedDate);
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const parsed = new Date(`${date}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) return null;
+  const parts = new Map(calendarDate.formatToParts(parsed).map((p) => [p.type, p.value]));
+  return `${parts.get('day')} ${parts.get('month')} ${parts.get('year')}`;
 }
 
 function buildUnsubscribeUrl(email: string): string {
   return `${unsubscribeBaseUrl}?email=${encodeURIComponent(email)}`;
 }
 
-/** Contenido idéntico al mail de portfolio-cloud. */
+const signature = 'Matias Galeano · Blog técnico';
+const actionLabel = 'Leer artículo';
+const footerNotice = 'Recibís este aviso porque te suscribiste al blog.';
+const unsubscribeLabel = 'Darme de baja';
+
+// Adaptación de correo de DESIGN.md: estilos en línea claros y, aparte, tokens oscuros opcionales.
+const sans = "font-family:'Segoe UI',Arial,sans-serif";
+const mono = "font-family:Consolas,'Courier New',monospace";
+const wrap = 'overflow-wrap:anywhere;word-break:break-word';
+const layoutTable = 'role="presentation" cellpadding="0" cellspacing="0" border="0"';
+
+const headStyles = `
+@media only screen and (max-width:480px) {
+  .outer { padding:16px 8px !important; }
+  .card { padding:16px !important; }
+  .title { font-size:24px !important; }
+}
+@media (prefers-color-scheme: dark) {
+  .page { background-color:#1F2937 !important; }
+  .card { background-color:#141A24 !important; border-top-color:#B7B8EE !important; }
+  .title, .excerpt { color:#EAECF2 !important; }
+  .date, .footer { color:#AEB7C9 !important; }
+  .signature, .link { color:#B7B8EE !important; }
+  .divider { border-top-color:#394355 !important; }
+  .action { background-color:#B7B8EE !important; }
+  .action-link { color:#141A24 !important; }
+}`;
+
+interface BlogEmailContent {
+  readonly title: string;
+  readonly url: string;
+  readonly date: string | null;
+  readonly excerpt: string | undefined;
+  readonly unsubscribeUrl: string;
+}
+
+function renderHtml(content: BlogEmailContent): string {
+  const title = escapeHtml(content.title);
+  const excerpt = content.excerpt ? escapeHtml(content.excerpt) : null;
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>${title}</title>
+<style>:root { color-scheme: light dark; }${headStyles}
+</style>
+</head>
+<body class="page" style="margin:0;padding:0;background-color:#FCFCFE;">
+<div lang="es" style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${excerpt ?? title}</div>
+<table ${layoutTable} lang="es" class="page" width="100%" bgcolor="#FCFCFE" style="width:100%;background-color:#FCFCFE;">
+<tr>
+<td class="outer" align="center" style="padding:32px 16px;">
+<!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" align="center"><tr><td><![endif]-->
+<table ${layoutTable} width="100%" style="width:100%;max-width:600px;table-layout:fixed;">
+<tr>
+<td class="card" align="left" bgcolor="#F3F4F7" style="padding:32px;background-color:#F3F4F7;border-top:4px solid #5B5F8F;text-align:left;${sans};color:#1F2937;">
+<p class="signature" style="margin:0 0 24px;${mono};font-size:14px;line-height:20px;color:#5B5F8F;">${signature}</p>
+<h1 class="title" style="margin:0 0 16px;${sans};font-size:28px;line-height:1.2;font-weight:600;color:#1F2937;${wrap};">${title}</h1>
+${content.date ? `<p class="date" style="${sans};margin:0 0 16px;font-size:14px;line-height:20px;color:#4B5563;">${content.date}</p>\n` : ''}${excerpt ? `<p class="excerpt" style="${sans};margin:0 0 24px;font-size:16px;line-height:1.6;color:#1F2937;${wrap};">${excerpt}</p>\n` : ''}<table ${layoutTable}>
+<tr>
+<td class="action" bgcolor="#5B5F8F" style="padding:14px 24px;background-color:#5B5F8F;border-radius:5px;">
+<a class="action-link" href="${escapeHtml(content.url)}" style="${sans};font-size:16px;line-height:20px;font-weight:600;color:#FCFCFE;text-decoration:none;">${actionLabel}</a>
+</td>
+</tr>
+</table>
+<table ${layoutTable} width="100%" style="width:100%;">
+<tr><td height="24" style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>
+<tr><td class="divider" style="border-top:1px solid #C8CCD7;padding-top:16px;">
+<p class="footer" style="${sans};margin:0;font-size:14px;line-height:1.6;color:#4B5563;">${footerNotice} <a class="link" href="${escapeHtml(content.unsubscribeUrl)}" style="${sans};color:#5B5F8F;text-decoration:underline;">${unsubscribeLabel}</a></p>
+</td></tr>
+</table>
+</td>
+</tr>
+</table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td>
+</tr>
+</table>
+</body>
+</html>`;
+}
+
+/** Aviso de post nuevo. Debe ser determinista: un reintento repite la misma Idempotency-Key. */
 export function buildBlogEmail(from: string, input: BlogNotificationInput): BlogEmail {
-  const safeTitle = escapeHtml(input.title);
-  const safeUrl = escapeHtml(input.url);
-  const safeExcerpt = input.excerpt ? escapeHtml(input.excerpt) : null;
-  const formattedDate = formatDateLabel(input.date);
-  const unsubscribeUrl = buildUnsubscribeUrl(input.to);
-  const safeUnsubscribeUrl = escapeHtml(unsubscribeUrl);
-  const tags = (input.tags ?? []).slice(0, 4).map((tag) => escapeHtml(tag));
-  const tagMarkup = tags
-    .map(
-      (tag) => `
-        <span style="display:inline-block;margin:0 8px 8px 0;padding:8px 12px;border:1px solid rgba(31,41,55,0.10);border-radius:999px;background:rgba(255,255,255,0.22);font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#1f2937;">
-          ${tag}
-        </span>
-      `,
-    )
-    .join('');
+  const content: BlogEmailContent = {
+    title: input.title,
+    url: input.url,
+    date: formatDateLabel(input.date),
+    excerpt: input.excerpt,
+    unsubscribeUrl: buildUnsubscribeUrl(input.to),
+  };
 
   return {
     from,
@@ -100,55 +181,17 @@ export function buildBlogEmail(from: string, input: BlogNotificationInput): Blog
       : {}),
     subject: `Nuevo post en el blog — ${input.title}`,
     text: [
-      'Nuevo post publicado en matiasgaleano.dev/blog',
-      input.title,
-      safeExcerpt ? (input.excerpt ?? '') : '',
-      input.url,
-      `Cancelar suscripcion: ${unsubscribeUrl}`,
+      signature,
+      content.title,
+      content.date,
+      content.excerpt,
+      `${actionLabel}: ${content.url}`,
+      footerNotice,
+      `${unsubscribeLabel}: ${content.unsubscribeUrl}`,
     ]
       .filter(Boolean)
       .join('\n\n'),
-    html: `
-      <div style="margin:0;padding:32px 20px;background:#e5e7eb;font-family:'IBM Plex Sans','Segoe UI',Arial,sans-serif;color:#1f2937;">
-        <div style="max-width:680px;margin:0 auto;">
-          <div style="margin-bottom:16px;padding:24px 28px;border:1px solid rgba(31,41,55,0.08);border-radius:28px;background:linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0.06));box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 28px 60px -40px rgba(31,41,55,0.45);">
-            <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:18px;">
-              <span style="display:inline-block;width:56px;height:4px;border-radius:999px;background:#5b5f8f;"></span>
-              <span style="font-family:'IBM Plex Mono','Courier New',monospace;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(31,41,55,0.62);">Post tecnico</span>
-            </div>
-
-            <p style="margin:0 0 10px;font-family:'IBM Plex Mono','Courier New',monospace;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(31,41,55,0.56);">
-              ${formattedDate ?? 'matiasgaleano.dev/blog'}
-            </p>
-
-            <h1 style="margin:0 0 16px;font-size:38px;line-height:0.95;font-weight:650;letter-spacing:-0.04em;color:#1f2937;">
-              ${safeTitle}
-            </h1>
-
-            ${
-              safeExcerpt
-                ? `<p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#4b5563;">${safeExcerpt}</p>`
-                : ''
-            }
-
-            ${tagMarkup ? `<div style="margin:0 0 18px;">${tagMarkup}</div>` : ''}
-
-            <a href="${safeUrl}" style="display:inline-block;padding:14px 18px;border-radius:16px;background:#1f2937;color:#e5e7eb;text-decoration:none;font-weight:600;">
-              Leer articulo
-            </a>
-          </div>
-
-          <div style="padding:0 6px;font-size:13px;line-height:1.65;color:#4b5563;">
-            <p style="margin:0 0 8px;">Recibiste este mail porque te suscribiste al blog de Matias Galeano.</p>
-            <p style="margin:0 0 8px;">Blog de arquitectura, backend, cloud y productos reales.</p>
-            <p style="margin:0;">
-              Si ya no queres recibir estos mails, podes darte de baja en
-              <a href="${safeUnsubscribeUrl}" style="color:#1f2937;font-weight:600;">esta pagina</a>.
-            </p>
-          </div>
-        </div>
-      </div>
-    `,
+    html: renderHtml(content),
   };
 }
 

@@ -129,7 +129,7 @@ describe('notify-post', () => {
 describe('mail del blog (Resend 6.34.1)', () => {
   const config = { apiKey: 're_test', fromEmail: 'blog@matiasgaleano.dev' };
 
-  it('arma el payload con contenido escapado, tags y baja', async () => {
+  it('arma el payload con contenido escapado y baja, sin tags', async () => {
     const send = vi.fn(async (_email: BlogEmail) => ({ data: { id: 'email_123' }, error: null }));
     await expect(
       createBlogNotifier(
@@ -153,17 +153,15 @@ describe('mail del blog (Resend 6.34.1)', () => {
     expect(payload.text).toContain('Arquitectura <Modo Playa>');
     expect(payload.text).toContain('Backend & cloud con <tags>');
     expect(payload.text).toContain(
-      'Cancelar suscripcion: https://matiasgaleano.dev/blog/unsubscribe?email=contacto%40matiasgaleano.dev',
+      'Darme de baja: https://matiasgaleano.dev/blog/unsubscribe?email=contacto%40matiasgaleano.dev',
     );
     expect(payload.html).toContain('Arquitectura &lt;Modo Playa&gt;');
     expect(payload.html).toContain('Backend &amp; cloud con &lt;tags&gt;');
-    expect(payload.html).toContain('mar');
-    expect(payload.html).toContain('2026');
-    expect(payload.html).toContain('serverless');
+    expect(payload.html).toContain('8 mar 2026');
+    expect(payload.html).not.toContain('serverless');
     expect(payload.html).toContain(
       'https://matiasgaleano.dev/blog/unsubscribe?email=contacto%40matiasgaleano.dev',
     );
-    expect(payload.html).not.toContain('extra');
   });
 
   it('rechaza el `error` que Resend devuelve en una promesa resuelta, sin emails en el mensaje', async () => {
@@ -190,9 +188,9 @@ describe('mail del blog (Resend 6.34.1)', () => {
     });
     expect(payload.text).toContain('Nuevo post');
     expect(payload.text).toContain('https://matiasgaleano.dev/blog/nuevo-post');
-    expect(payload.text).toContain('Cancelar suscripcion:');
-    expect(payload.html).toContain('matiasgaleano.dev/blog');
-    expect(payload.html).toContain('esta pagina');
+    expect(payload.text).toContain('Darme de baja:');
+    expect(payload.html).toContain('Matias Galeano · Blog técnico');
+    expect(payload.html).toContain('Darme de baja');
   });
 
   it('con el SDK real: usa la clave del blog y envía al endpoint de Resend', async () => {

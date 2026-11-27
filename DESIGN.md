@@ -1,7 +1,7 @@
 ---
 name: Índigo de taller (email and Open Graph)
 revision: 1
-adapts: portfolio design system revision 1
+adapts: portfolio design system revision 2
 colors:
   light-canvas: '#F3F4F7'
   light-surface: '#FCFCFE'
@@ -62,7 +62,7 @@ components:
 
 [Español](DESIGN.es.md)
 
-This document adapts **revision 1** of the [portfolio design system](https://github.com/matigaleanodev/portfolio/blob/main/DESIGN.md) (source `DESIGN.md` SHA-256 `01d31ab4024d849b9379791e5a72cb200a4891d3cd54f2953cde8599671d964d`). It is not a second source of visual decisions: it only states how that system applies where email clients and a deterministic renderer limit it. On any difference not listed here, the source wins. A new source revision is adopted by editing this document; there is no shared package or automatic synchronization.
+This document adapts **revision 2** of the [portfolio design system](https://github.com/matigaleanodev/portfolio/blob/main/DESIGN.md) (source `DESIGN.md` SHA-256 `6efe16bb919649431bea95c1b3cb2054b91184d50c91864dabb84bc9c05a89b6`). It is not a second source of visual decisions: it only states how that system applies where email clients and a deterministic renderer limit it. On any difference not listed here, the source wins. A new source revision is adopted by editing this document; there is no shared package or automatic synchronization.
 
 **MUST** rules are acceptance criteria; **SHOULD** rules admit a recorded deviation.
 
