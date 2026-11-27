@@ -3,6 +3,7 @@ import type {
   ControlStore,
   Counter,
 } from '../../packages/runtime/src/shared-control.js';
+import { testNow } from './clock.js';
 import { createSubscriberStore } from '../../packages/runtime/src/subscriptions/store.js';
 import type { SubscriptionConfiguration } from '../../packages/runtime/src/config.js';
 export class SimulatedControlStore implements ControlStore {
@@ -58,7 +59,7 @@ export const runtimeConfiguration = () => ({
   SUBSCRIBERS_R2_ENDPOINT: 'https://r2.example.invalid',
   SUBSCRIBERS_R2_BUCKET: 'subscribers',
   AI_DAILY_BUDGET_MICROUSD: '1000000',
-  AI_PRICING_VALID_UNTIL: new Date(Date.now() + 86400_000).toISOString(),
+  AI_PRICING_VALID_UNTIL: new Date(testNow + 86400_000).toISOString(),
 });
 export const productionParameter = '/portfolio/prod/api';
 export const managedEnvironment = {
@@ -76,7 +77,7 @@ export const chatEnvironment = {
   RUNTIME_PARAMETER_NAME: '/portfolio/prod/chat',
   CORS_ORIGIN: 'https://frontend.example.invalid',
   AI_DAILY_BUDGET_MICROUSD: '1000000',
-  AI_PRICING_VALID_UNTIL: new Date(Date.now() + 86400_000).toISOString(),
+  AI_PRICING_VALID_UNTIL: new Date(testNow + 86400_000).toISOString(),
 };
 
 /**

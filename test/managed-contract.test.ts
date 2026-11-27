@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { createApiHandler } from '../packages/runtime/src/handlers/api.js';
 import { createChatHandler } from '../packages/runtime/src/handlers/chat.js';
 import { httpEvent } from './fixtures.js';
+import { useTestClock } from './support/clock.js';
 import {
   chatEnvironment,
   managedEnvironment,
@@ -14,6 +15,7 @@ import {
 // con dobles solo en DynamoDB, SSM, Resend, OpenAI y R2. Las rutas canónicas de chat van a la
 // función chat y las variantes a api, como enruta el HTTP API.
 
+beforeEach(() => useTestClock());
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => undefined));
 afterEach(() => vi.restoreAllMocks());
 

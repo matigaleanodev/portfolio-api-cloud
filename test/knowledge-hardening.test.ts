@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ChatKnowledgeRepository } from '../packages/runtime/src/chat/chat-knowledge.repository.js';
+import { useTestClock } from './support/clock.js';
 import { getChatKnowledgeR2Config } from '../packages/runtime/src/chat/chat.config.js';
 let directory: string;
 const config = getChatKnowledgeR2Config({
@@ -14,6 +15,7 @@ const config = getChatKnowledgeR2Config({
   CHAT_KNOWLEDGE_CACHE_TTL_MS: '1000',
 })!;
 beforeEach(async () => {
+  useTestClock();
   directory = await mkdtemp(join(tmpdir(), 'portfolio-hardened-knowledge-'));
   vi.spyOn(console, 'info').mockImplementation(() => undefined);
 });
