@@ -212,7 +212,8 @@ export function createSubscriberStore(
           );
           return token;
         } catch (error) {
-          await discardIndex(token, signal);
+          // El índice se conserva: la escritura pudo aplicarse aunque llegue un error, y
+          // sobrante es inocuo porque la baja exige que el registro tenga ese identificador.
           if (!(error instanceof Error && error.name === 'PreconditionFailed')) throw error;
         }
       }

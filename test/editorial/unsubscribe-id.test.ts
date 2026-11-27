@@ -50,6 +50,22 @@ describe('identificador de baja', () => {
     expect(results.sort()).toEqual(['created', 'exists']);
   });
 
+  it('conserva el índice si la escritura del registro se aplicó pese a un error', async () => {
+    await store.createSubscriber(email);
+    const send = storage.send.bind(storage);
+    storage.send = async (command, options) => {
+      const result = await send(command, options);
+      const { Key } = (command as { input: { Key?: string } }).input;
+      if (command.constructor.name === 'PutObjectCommand' && Key === `subscribers/${email}.json`)
+        throw new Error('connection reset');
+      return result;
+    };
+    await expect(store.ensureUnsubscribeId(email)).rejects.toThrow('connection reset');
+    storage.send = send;
+    const id = (await store.ensureUnsubscribeId(email))!;
+    expect(await store.unsubscribeByToken(id)).toBe('deleted');
+  });
+
   it('no recrea un suscriptor inexistente', async () => {
     expect(await store.ensureUnsubscribeId(email)).toBeNull();
     expect(storage.objects.size).toBe(0);

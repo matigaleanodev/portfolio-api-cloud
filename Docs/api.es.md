@@ -67,7 +67,7 @@ Cada función responde `{ statusCode, body }` con body JSON. Las validaciones de
 
 ### Idempotencia y limitaciones
 
-`process-release` guarda por post `ogGeneratedAt`, `notifiedAt` y `lastFailure` en `state/posts.json`. Un post con `notifiedAt` no se reprocesa; una etapa con marca se omite, así que reinvocar retoma la etapa pendiente. Cada etapa se reintenta hasta `RELEASE_STAGE_MAX_ATTEMPTS` (2 por defecto). `lastFailure` guarda etapa, fecha, intentos y un código saneado, nunca texto libre del proveedor. El formato legado (lista de slugs) se lee como procesado.
+`process-release` guarda por post `ogGeneratedAt`, `notifiedAt` y `lastFailure` en `state/posts.json`. Un post con `notifiedAt` no se reprocesa; una etapa con marca se omite, así que reinvocar retoma la etapa pendiente. Cada etapa se reintenta hasta `RELEASE_STAGE_MAX_ATTEMPTS` (2 por defecto), salvo un aviso incompleto: no se repite en la misma invocación; hay que reinvocar para continuar. `lastFailure` guarda etapa, fecha, intentos y un código saneado, nunca texto libre del proveedor. El formato legado (lista de slugs) se lee como procesado.
 
 #### Envío por destinatario
 

@@ -67,7 +67,7 @@ Each function returns `{ statusCode, body }` with a JSON body. Event validation 
 
 ### Idempotency and limitations
 
-`process-release` stores `ogGeneratedAt`, `notifiedAt` and `lastFailure` per post in `state/posts.json`. A post with `notifiedAt` is not reprocessed; a stage with its mark is skipped, so reinvoking resumes the pending stage. Each stage is retried up to `RELEASE_STAGE_MAX_ATTEMPTS` (2 by default). `lastFailure` holds stage, time, attempts and a sanitized code, never free provider text. The legacy format (a slug list) is read as processed.
+`process-release` stores `ogGeneratedAt`, `notifiedAt` and `lastFailure` per post in `state/posts.json`. A post with `notifiedAt` is not reprocessed; a stage with its mark is skipped, so reinvoking resumes the pending stage. Each stage is retried up to `RELEASE_STAGE_MAX_ATTEMPTS` (2 by default), except an incomplete notification: it is not repeated within the same invocation; reinvoke to continue. `lastFailure` holds stage, time, attempts and a sanitized code, never free provider text. The legacy format (a slug list) is read as processed.
 
 #### Per-recipient delivery
 

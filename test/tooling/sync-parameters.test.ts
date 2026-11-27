@@ -129,6 +129,14 @@ test('Dada una clave del registro de envíos corta, cuando se valida, entonces f
   expect(result.calls).toEqual([]);
 });
 
+test('Dada una clave del registro de envíos en blanco, cuando se valida, entonces falla sin escribir', () => {
+  const blank = ' '.repeat(32);
+  const result = run(validate, { TARGET: 'production', ...secrets, NOTIFY_LEDGER_KEY: blank });
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('NOTIFY_LEDGER_KEY');
+  expect(result.calls).toEqual([]);
+});
+
 test('Dados todos los secrets, cuando se publica producción, entonces escribe los cuatro payloads exactos sin exponer valores', () => {
   const env = { TARGET: 'production', ...secrets };
   expect(run(validate, env).status).toBe(0);
