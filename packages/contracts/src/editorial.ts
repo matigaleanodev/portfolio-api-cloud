@@ -48,6 +48,8 @@ export interface ReleasePost {
   readonly title: string;
   readonly date: string;
   readonly canonicalPath: string;
+  /** Resumen para el aviso por correo; puede faltar en manifiestos anteriores. */
+  readonly excerpt?: string;
 }
 
 export interface ReleaseManifest {

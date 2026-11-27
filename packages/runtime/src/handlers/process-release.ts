@@ -2,6 +2,7 @@ import type {
   LambdaResponse,
   ProcessReleaseInvocation,
 } from '@portfolio-api-cloud/contracts/editorial';
+import type { Context } from 'aws-lambda';
 import { functions } from '@portfolio-api-cloud/contracts/functions';
 import { createR2Client } from '../subscriptions/store.js';
 import { readProcessReleaseConfig } from '../editorial/config.js';
@@ -30,5 +31,12 @@ const dependencies = memoizeBySnapshot(
 );
 
 /** Acepta `{manifest}` o el manifiesto crudo que envía el CI de portfolio. */
-export const handler = async (event: ProcessReleaseInvocation): Promise<LambdaResponse> =>
-  processRelease(normalizeProcessReleaseEvent(event), dependencies);
+export const handler = async (
+  event: ProcessReleaseInvocation,
+  context?: Pick<Context, 'getRemainingTimeInMillis'>,
+): Promise<LambdaResponse> =>
+  processRelease(
+    normalizeProcessReleaseEvent(event),
+    dependencies,
+    context ? { remainingMs: () => context.getRemainingTimeInMillis() } : {},
+  );

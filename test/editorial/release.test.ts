@@ -65,6 +65,34 @@ const putBodies = () =>
     .filter((command) => command instanceof PutObjectCommand)
     .map((command: PutObjectCommand) => JSON.parse(String(command.input.Body)));
 
+describe('process-release: resumen del aviso', () => {
+  const notifyPayload = async (extra: Record<string, unknown>) => {
+    send.mockRejectedValueOnce(notFound()).mockResolvedValue({});
+    invoke.mockResolvedValue(ok('done'));
+    const response = await processRelease(
+      { manifest: manifest({ ...post('a'), ...extra }) },
+      resolve,
+    );
+    expect(response.statusCode).toBe(200);
+    return invoke.mock.calls[1]?.[1];
+  };
+  const base = { title: 'Post a', url: 'https://matiasgaleano.dev/blog/a', date: '2026-03-08' };
+
+  it('pasa el excerpt del manifiesto a notify-post', async () => {
+    await expect(notifyPayload({ excerpt: 'Resumen del post.' })).resolves.toEqual({
+      ...base,
+      excerpt: 'Resumen del post.',
+    });
+  });
+
+  it.each([{}, { excerpt: '' }, { excerpt: '   ' }, { excerpt: 42 }])(
+    'acepta el manifiesto sin un excerpt utilizable (%o) y no lo envía',
+    async (extra) => {
+      await expect(notifyPayload(extra)).resolves.toEqual(base);
+    },
+  );
+});
+
 describe('process-release: validación previa a efectos', () => {
   it('rechaza un manifiesto futuro sin componer dependencias, leer estado ni invocar', async () => {
     const response = await processRelease(
@@ -115,6 +143,25 @@ describe('process-release: procesamiento', () => {
       message: 'NotificationIncompleteError',
     });
   });
+
+  it.each([
+    [34_999, 1],
+    [35_000, 2],
+  ])(
+    'con %i ms restantes intenta %i vez una etapa que falla, y guarda su estado',
+    async (remaining, attempts) => {
+      send.mockRejectedValueOnce(notFound()).mockResolvedValueOnce({});
+      invoke.mockRejectedValue(new StageInvocationError('Sandbox.Timedout', 'detalle'));
+
+      const response = await processRelease({ manifest: manifest(post('a')) }, resolve, {
+        remainingMs: () => remaining,
+      });
+
+      expect(response.statusCode).toBe(500);
+      expect(invoke).toHaveBeenCalledTimes(attempts);
+      expect(putBodies()[0].a.lastFailure).toMatchObject({ stage: 'generate-og', attempts });
+    },
+  );
 
   it('no hay posts nuevos cuando todos están notificados (estado legado)', async () => {
     send.mockResolvedValueOnce({

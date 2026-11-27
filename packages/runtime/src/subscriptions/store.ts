@@ -84,6 +84,16 @@ export function createR2Client(config: R2ClientConfig): S3Client {
     endpoint: config.endpoint,
     region: config.region || r2Region,
     credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
+    // El SDK no limita la espera por defecto: una llamada colgada agotaría la función.
+    // `requestTimeout` cubre hasta las cabeceras y `socketTimeout` la inactividad posterior;
+    // ambos rigen por intento.
+    maxAttempts: 2,
+    requestHandler: {
+      connectionTimeout: 2_000,
+      requestTimeout: 5_000,
+      socketTimeout: 5_000,
+      throwOnRequestTimeout: true,
+    },
   });
 }
 
@@ -184,10 +194,16 @@ export function createSubscriberStore(
     },
     async ensureUnsubscribeId(email, signal) {
       const key = buildSubscriberKey(email);
-      for (let attempt = 0; attempt < 3; attempt++) {
+      let unpublished: string | undefined;
+      // Tres escrituras como máximo; tras cada rechazo se relee antes de seguir o abandonar.
+      for (let attempt = 0; ; attempt++) {
         const current = await read(key, signal);
+        // Si el registro releído no tiene el identificador anterior, su índice quedó sobrante.
+        if (unpublished && current?.value.unsubscribeId !== unpublished)
+          await discardIndex(unpublished, signal);
         if (!current) return null;
         if (current.value.unsubscribeId) return current.value.unsubscribeId;
+        if (attempt === 3) throw new Error('Subscriber record kept changing');
         if (!current.etag) throw new Error('Subscriber record without ETag');
         const token = randomBytes(32).toString('base64url');
         // El índice va primero: un identificador publicado en el registro siempre resuelve.
@@ -212,12 +228,15 @@ export function createSubscriberStore(
           );
           return token;
         } catch (error) {
-          // El índice se conserva: la escritura pudo aplicarse aunque llegue un error, y
-          // sobrante es inocuo porque la baja exige que el registro tenga ese identificador.
-          if (!(error instanceof Error && error.name === 'PreconditionFailed')) throw error;
+          // La escritura pudo aplicarse aunque llegue un error: el índice solo se descarta
+          // después de releer. Sobrante es inocuo porque la baja exige ese identificador.
+          const rejected =
+            isObjectNotFoundError(error) ||
+            (error instanceof Error && error.name === 'PreconditionFailed');
+          if (!rejected) throw error;
+          unpublished = token;
         }
       }
-      throw new Error('Subscriber record kept changing');
     },
     async unsubscribeByToken(token, signal) {
       if (!unsubscribeTokenPattern.test(token)) return 'missing';
