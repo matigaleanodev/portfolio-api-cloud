@@ -46,6 +46,15 @@ describe('invocación Lambda', () => {
     });
   });
 
+  it('pasa la señal de cancelación de la espera al SDK', async () => {
+    const send = vi.fn().mockResolvedValue({
+      Payload: payload({ statusCode: 200, body: '{}' }),
+    });
+    const { signal } = new AbortController();
+    await createLambdaInvoker({ send })('fn', {}, signal);
+    expect(send.mock.calls[0]?.[1]).toEqual({ abortSignal: signal });
+  });
+
   it('el cliente por defecto no reintenta una invocación', async () => {
     const send = vi.spyOn(LambdaClient.prototype, 'send').mockResolvedValue({
       Payload: payload({ statusCode: 200, body: '{}' }),

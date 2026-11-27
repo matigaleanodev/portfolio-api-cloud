@@ -4,7 +4,11 @@ import type {
   NotifyPostInput,
 } from '@portfolio-api-cloud/contracts/editorial';
 import { isPublicationDue } from '../chat/publication.js';
-import type { DeliveryLedger, DeliveryOutcome } from './delivery-ledger.js';
+import {
+  ledgerRequestTimeoutMs,
+  type DeliveryLedger,
+  type DeliveryOutcome,
+} from './delivery-ledger.js';
 import { DeliveryError, type BlogNotifier } from './email.js';
 import { isNonEmptyString, isRecord, jsonResponse, normalizeTags } from './lambda.js';
 import { logError, logInfo } from './log.js';
@@ -34,9 +38,16 @@ export class NotificationIncompleteError extends Error {
 /** Resend admite 10 solicitudes por segundo por equipo; se usa la mitad. */
 const sendIntervalMs = 200;
 const rateLimitPauseMs = 1_000;
+/** No se acorta según el tiempo restante: cortar antes solo agrega envíos dudosos. */
 const sendTimeoutMs = 8_000;
-/** Margen para un envío completo y su registro antes del timeout de la función. */
-const minimumRemainingMs = 10_000;
+/** Una operación del registro (leer, guardar el resultado o liberar) y el cierre de la función. */
+const recordReserveMs = ledgerRequestTimeoutMs + 1_000;
+/** Para iniciar un envío: su espera completa y el registro del resultado. */
+const minimumToSendMs = sendTimeoutMs + recordReserveMs;
+/** Para reservar: aun si la lectura y la escritura se demoran al máximo, entra la liberación. */
+const minimumToClaimMs = 2 * ledgerRequestTimeoutMs + recordReserveMs;
+/** Código de una reserva liberada sin llamar al proveedor. */
+const notSentCode = 'insufficient_time';
 const runStoppers = new Set(['daily_quota_exceeded', 'monthly_quota_exceeded']);
 
 function failureOutcome(error: unknown): Exclude<DeliveryOutcome, { kind: 'accepted' }> {
@@ -94,12 +105,17 @@ export async function notifyPost(
   const subscribers = await deps.listSubscriberEmails();
   const summary = { sent: 0, removed: 0, busy: 0, review: 0, failed: 0, deferred: 0 };
   let lastSendAt = 0;
+  const fits = (milliseconds: number) =>
+    !options.remainingMs || options.remainingMs() >= milliseconds;
 
   for (const [index, email] of subscribers.entries()) {
-    if (options.remainingMs && options.remainingMs() < minimumRemainingMs) {
+    /** Deja para otra corrida a este destinatario y a los siguientes si `needed` no entra. */
+    const defer = (needed: number) => {
+      if (fits(needed)) return false;
       summary.deferred = subscribers.length - index;
-      break;
-    }
+      return true;
+    };
+    if (defer(recordReserveMs)) break;
     let reference: string | undefined;
     const pending = (status: string, code?: string) =>
       logError('Post notification pending', { post: input.url, reference, status, code });
@@ -111,11 +127,13 @@ export async function notifyPost(
         if (known.kind === 'review') pending('review');
         continue;
       }
+      if (defer(minimumToClaimMs)) break;
       const unsubscribeId = await deps.unsubscribeId(email);
       if (unsubscribeId === null) {
         summary.removed++;
         continue;
       }
+      if (defer(minimumToClaimMs)) break;
       const claim = await deps.ledger.claim(input.url, email);
       reference = claim.reference;
       if (claim.kind !== 'send') {
@@ -125,6 +143,12 @@ export async function notifyPost(
       }
       const wait = lastSendAt + sendIntervalMs - Date.now();
       if (wait > 0) await sleep(wait);
+      if (!fits(minimumToSendMs)) {
+        // El proveedor no recibió nada: se libera sin crear una duda ni borrar una anterior.
+        pending(await claim.settle({ kind: 'rejected', code: notSentCode }), notSentCode);
+        summary.deferred = subscribers.length - index;
+        break;
+      }
       lastSendAt = Date.now();
 
       let outcome: DeliveryOutcome;
@@ -148,8 +172,14 @@ export async function notifyPost(
         summary.deferred = subscribers.length - index - 1;
         break;
       }
-      if (failure instanceof DeliveryError && failure.code === 'rate_limit_exceeded')
+      if (failure instanceof DeliveryError && failure.code === 'rate_limit_exceeded') {
+        // Pausar sin presupuesto para otro envío solo consume el cierre.
+        if (!fits(rateLimitPauseMs + minimumToClaimMs)) {
+          summary.deferred = subscribers.length - index - 1;
+          break;
+        }
         await sleep(rateLimitPauseMs);
+      }
     } catch (error) {
       summary.failed++;
       pending('unavailable', error instanceof Error ? error.name : 'unknown');

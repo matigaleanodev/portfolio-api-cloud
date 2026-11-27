@@ -7,6 +7,8 @@ import { normalizeSubscriberEmail } from '../subscriptions/store.js';
 export const reconciliationWindowMs = 23 * 3600_000;
 /** Supera el timeout de notify-post: una reserva vigente pertenece a una ejecución viva. */
 const leaseMs = 60_000;
+/** Espera máxima de cada lectura o escritura del registro; el cliente no reintenta. */
+export const ledgerRequestTimeoutMs = 5_000;
 
 const statuses = ['sending', 'sent', 'rejected', 'uncertain', 'review'] as const;
 export type DeliveryStatus = (typeof statuses)[number];
@@ -18,7 +20,10 @@ export interface DeliveryRecord {
   readonly status: DeliveryStatus;
   /** Algún intento de la generación vigente pudo haber sido aceptado. */
   readonly uncertain: boolean;
-  /** Cambia solo después de un rechazo definitivo; define la Idempotency-Key. */
+  /**
+   * Cambia solo después de un rechazo definitivo, o de una reserva liberada sin envío ni dudas
+   * previas; define la Idempotency-Key.
+   */
   readonly generation: number;
   readonly firstAttemptAt: number;
   readonly leaseUntil: number;

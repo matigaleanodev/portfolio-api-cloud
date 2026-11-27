@@ -79,6 +79,10 @@ export function isObjectNotFoundError(error: unknown): boolean {
   return error instanceof Error && (error.name === 'NotFound' || error.name === 'NoSuchKey');
 }
 
+/** Intentos y espera por intento de cada operación R2. */
+export const r2MaxAttempts = 2;
+export const r2RequestTimeoutMs = 5_000;
+
 export function createR2Client(config: R2ClientConfig): S3Client {
   return new S3Client({
     endpoint: config.endpoint,
@@ -87,11 +91,11 @@ export function createR2Client(config: R2ClientConfig): S3Client {
     // El SDK no limita la espera por defecto: una llamada colgada agotaría la función.
     // `requestTimeout` cubre hasta las cabeceras y `socketTimeout` la inactividad posterior;
     // ambos rigen por intento.
-    maxAttempts: 2,
+    maxAttempts: r2MaxAttempts,
     requestHandler: {
       connectionTimeout: 2_000,
-      requestTimeout: 5_000,
-      socketTimeout: 5_000,
+      requestTimeout: r2RequestTimeoutMs,
+      socketTimeout: r2RequestTimeoutMs,
       throwOnRequestTimeout: true,
     },
   });
