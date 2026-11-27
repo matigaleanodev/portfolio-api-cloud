@@ -1,3 +1,4 @@
+import { StageInvocationError } from '../../packages/runtime/src/editorial/invoke-lambda.js';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { Readable } from 'node:stream';
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
@@ -100,6 +101,21 @@ describe('process-release: validación previa a efectos', () => {
 });
 
 describe('process-release: procesamiento', () => {
+  it('no repite en la misma invocación un aviso incompleto', async () => {
+    send.mockRejectedValueOnce(notFound()).mockResolvedValueOnce({});
+    invoke
+      .mockResolvedValueOnce(ok('OG image generated'))
+      .mockRejectedValue(new StageInvocationError('NotificationIncompleteError', 'detalle'));
+    const response = await processRelease({ manifest: manifest(post('a')) }, resolve);
+    expect(response.statusCode).toBe(500);
+    expect(invoke).toHaveBeenCalledTimes(2);
+    expect(putBodies()[0].a.lastFailure).toMatchObject({
+      stage: 'notify-post',
+      attempts: 1,
+      message: 'NotificationIncompleteError',
+    });
+  });
+
   it('no hay posts nuevos cuando todos están notificados (estado legado)', async () => {
     send.mockResolvedValueOnce({
       Body: { transformToString: vi.fn().mockResolvedValue(JSON.stringify(['a'])) },

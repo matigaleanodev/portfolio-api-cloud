@@ -11,12 +11,13 @@ import {
 } from '@portfolio-api-cloud/contracts/configuration';
 import { storageKeys } from '@portfolio-api-cloud/contracts/storage';
 
-test('Dado el catálogo de rutas, cuando se inspecciona, entonces publica las seis operaciones con su id, grupo y variantes compatibles', () => {
+test('Dado el catálogo de rutas, cuando se inspecciona, entonces publica las siete operaciones con su id, grupo y variantes compatibles', () => {
   expect(Object.keys(routes)).toEqual([
     'health',
     'contact',
     'subscribe',
     'unsubscribe',
+    'oneClick',
     'chatStarters',
     'chat',
   ]);
@@ -45,10 +46,11 @@ test('Dadas las cuotas, cuando se comparan con las operaciones, entonces cubren 
     contact: { limit: 5, windowSeconds: 3600, prefix: 'contact' },
     subscribe: { limit: 10, windowSeconds: 3600, prefix: 'subscribe' },
     unsubscribe: { limit: 10, windowSeconds: 3600, prefix: 'unsubscribe' },
+    oneClick: { limit: 60, windowSeconds: 60, prefix: 'one-click' },
     chatStarters: { limit: 20, windowSeconds: 60, prefix: 'starters' },
     chat: { limit: 20, windowSeconds: 60, prefix: 'chat' },
   });
-  expect(new Set(Object.values(quotas).map((quota) => quota.prefix)).size).toBe(5);
+  expect(new Set(Object.values(quotas).map((quota) => quota.prefix)).size).toBe(6);
   expect(aiRequestLimit).toBe(5);
 });
 
@@ -140,5 +142,13 @@ test('Dadas claves R2, cuando se consultan, entonces conservan las rutas publica
     ogPrefix: 'og/',
     subscribersPrefix: 'subscribers/',
     subscriberSuffix: '.json',
+    unsubscribeIndexPrefix: 'unsubscribe-index/',
   });
+});
+
+test('Dada la orquestación editorial, cuando se fijan timeouts, entonces cubre notify-post y queda bajo la lectura del CLI del CI', () => {
+  expect(functions.processRelease.timeoutSeconds).toBeGreaterThan(
+    functions.notifyPost.timeoutSeconds,
+  );
+  expect(functions.processRelease.timeoutSeconds).toBeLessThan(60);
 });

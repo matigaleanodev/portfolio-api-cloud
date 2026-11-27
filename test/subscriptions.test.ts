@@ -248,7 +248,11 @@ test('Dado un almacenamiento pendiente, cuando se envía una baja, entonces se e
         resolve = done;
       }),
   );
-  const store: SubscriberOperations = { createSubscriber: vi.fn(), deleteSubscriber };
+  const store: SubscriberOperations = {
+    createSubscriber: vi.fn(),
+    deleteSubscriber,
+    unsubscribeByToken: vi.fn(),
+  };
   const app = createApplication(cors, undefined, createSubscriptionSender(store));
   let finished = false;
   const result = app(subscriptionEvent('DELETE')).then((response) => {
@@ -323,6 +327,7 @@ test('Dado un almacenamiento que ignora el abort, cuando vence el límite, enton
   const store: SubscriberOperations = {
     createSubscriber: () => new Promise(() => undefined),
     deleteSubscriber: () => new Promise(() => undefined),
+    unsubscribeByToken: () => new Promise(() => undefined),
   };
   const response = createApplication(
     cors,

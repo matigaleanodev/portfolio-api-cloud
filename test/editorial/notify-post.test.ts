@@ -10,6 +10,8 @@ import {
   notifyPost,
   type NotifyPostDependencies,
 } from '../../packages/runtime/src/editorial/notify-post.js';
+import { createDeliveryLedger } from '../../packages/runtime/src/editorial/delivery-ledger.js';
+import { SimulatedDeliveryStore } from '../support/delivery.js';
 
 let listSubscriberEmails: AnyMock;
 let notify: AnyMock;
@@ -19,7 +21,13 @@ let logs: string[];
 beforeEach(() => {
   listSubscriberEmails = vi.fn();
   notify = vi.fn();
-  resolve = vi.fn(async (): Promise<NotifyPostDependencies> => ({ listSubscriberEmails, notify }));
+  resolve = vi.fn(async (): Promise<NotifyPostDependencies> => ({
+    listSubscriberEmails,
+    notify,
+    unsubscribeId: async () => 'sid',
+    ledger: createDeliveryLedger(new SimulatedDeliveryStore(), 'k'.repeat(32)),
+    sleep: async () => undefined,
+  }));
   logs = [];
   for (const level of ['info', 'error', 'warn', 'log'] as const)
     vi.spyOn(console, level).mockImplementation((...values: unknown[]) => {
@@ -79,14 +87,19 @@ describe('notify-post', () => {
       }),
     });
     expect(notify).toHaveBeenCalledTimes(2);
-    expect(notify).toHaveBeenNthCalledWith(1, {
-      to: 'one@example.com',
-      title: 'Arquitectura de Modo Playa',
-      url: 'https://matiasgaleano.dev/blog/arquitectura-modo-playa',
-      excerpt: 'Excerpt',
-      date: '2026-03-07',
-      tags: ['nestjs', 'architecture'],
-    });
+    expect(notify).toHaveBeenNthCalledWith(
+      1,
+      {
+        to: 'one@example.com',
+        unsubscribeId: 'sid',
+        title: 'Arquitectura de Modo Playa',
+        url: 'https://matiasgaleano.dev/blog/arquitectura-modo-playa',
+        excerpt: 'Excerpt',
+        date: '2026-03-07',
+        tags: ['nestjs', 'architecture'],
+      },
+      { idempotencyKey: expect.any(String), signal: expect.any(AbortSignal) },
+    );
     expect(logs.join('\n')).not.toMatch(/@example\.com/);
   });
 
@@ -96,12 +109,12 @@ describe('notify-post', () => {
     expect(JSON.parse(response.body).recipients).toBe(0);
   });
 
-  it('propaga el rechazo del proveedor en lugar de confirmar la notificación', async () => {
+  it('falla ante el rechazo del proveedor en lugar de confirmar la notificación', async () => {
     listSubscriberEmails.mockResolvedValue(['audit@example.com']);
     notify.mockRejectedValue(new Error('Rate limit exceeded'));
     await expect(
       notifyPost({ title: 'Prueba', url: 'https://example.com/post' }, resolve),
-    ).rejects.toThrow('Rate limit exceeded');
+    ).rejects.toMatchObject({ name: 'NotificationIncompleteError' });
   });
 
   it('propaga un fallo al listar suscriptores sin enviar', async () => {

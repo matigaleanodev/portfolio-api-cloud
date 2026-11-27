@@ -25,7 +25,7 @@ concurrency:
 jobs:
   sync:
     if: github.repository == 'matigaleanodev/portfolio-api-cloud' && github.ref == 'refs/heads/main' && vars.PARAMETERS_SYNC_ENABLED == 'true'
-    # Environment dedicado: solo este job ve los 11 secrets; las variables siguen en production.
+    # Environment dedicado: solo este job ve los 12 secrets; las variables siguen en production.
     environment: production-parameters
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -43,6 +43,7 @@ jobs:
           RESEND_BLOG_API_KEY: ${{ inputs.target == 'production' && secrets.RESEND_BLOG_API_KEY || '' }}
           OPENAI_API_KEY: ${{ inputs.target == 'production' && secrets.OPENAI_API_KEY || '' }}
           QUOTA_KEY_SECRET: ${{ inputs.target == 'production' && secrets.QUOTA_KEY_SECRET || '' }}
+          NOTIFY_LEDGER_KEY: ${{ inputs.target == 'production' && secrets.NOTIFY_LEDGER_KEY || '' }}
           ORIGIN_VERIFY_SECRET: ${{ inputs.target == 'production' && secrets.ORIGIN_VERIFY_SECRET || '' }}
           R2_KNOWLEDGE_ACCESS_KEY_ID: ${{ inputs.target == 'production' && secrets.R2_KNOWLEDGE_ACCESS_KEY_ID || '' }}
           R2_KNOWLEDGE_SECRET_ACCESS_KEY: ${{ inputs.target == 'production' && secrets.R2_KNOWLEDGE_SECRET_ACCESS_KEY || '' }}
@@ -56,11 +57,16 @@ jobs:
           [[ "$TARGET" == production || "$TARGET" == validation ]]
           if [[ "$TARGET" == production ]]; then
             missing=()
-            for key in RESEND_CONTACT_API_KEY RESEND_BLOG_API_KEY OPENAI_API_KEY QUOTA_KEY_SECRET ORIGIN_VERIFY_SECRET R2_KNOWLEDGE_ACCESS_KEY_ID R2_KNOWLEDGE_SECRET_ACCESS_KEY R2_MEDIA_ACCESS_KEY_ID R2_MEDIA_SECRET_ACCESS_KEY R2_SUBSCRIBERS_ACCESS_KEY_ID R2_SUBSCRIBERS_SECRET_ACCESS_KEY; do
-              [[ -n "${!key:-}" ]] || missing+=("$key")
+            for key in RESEND_CONTACT_API_KEY RESEND_BLOG_API_KEY OPENAI_API_KEY QUOTA_KEY_SECRET NOTIFY_LEDGER_KEY ORIGIN_VERIFY_SECRET R2_KNOWLEDGE_ACCESS_KEY_ID R2_KNOWLEDGE_SECRET_ACCESS_KEY R2_MEDIA_ACCESS_KEY_ID R2_MEDIA_SECRET_ACCESS_KEY R2_SUBSCRIBERS_ACCESS_KEY_ID R2_SUBSCRIBERS_SECRET_ACCESS_KEY; do
+              value="${!key:-}"
+              [[ -n "${value//[[:space:]]/}" ]] || missing+=("$key")
             done
             if (( ${#missing[@]} )); then
               echo "Faltan secrets del environment: ${missing[*]}. No se escribió ningún parámetro." >&2
+              exit 1
+            fi
+            if (( ${#NOTIFY_LEDGER_KEY} < 32 )); then
+              echo "NOTIFY_LEDGER_KEY requiere al menos 32 caracteres. No se escribió ningún parámetro." >&2
               exit 1
             fi
           fi
@@ -77,6 +83,7 @@ jobs:
           RESEND_BLOG_API_KEY: ${{ inputs.target == 'production' && secrets.RESEND_BLOG_API_KEY || '' }}
           OPENAI_API_KEY: ${{ inputs.target == 'production' && secrets.OPENAI_API_KEY || '' }}
           QUOTA_KEY_SECRET: ${{ inputs.target == 'production' && secrets.QUOTA_KEY_SECRET || '' }}
+          NOTIFY_LEDGER_KEY: ${{ inputs.target == 'production' && secrets.NOTIFY_LEDGER_KEY || '' }}
           ORIGIN_VERIFY_SECRET: ${{ inputs.target == 'production' && secrets.ORIGIN_VERIFY_SECRET || '' }}
           R2_KNOWLEDGE_ACCESS_KEY_ID: ${{ inputs.target == 'production' && secrets.R2_KNOWLEDGE_ACCESS_KEY_ID || '' }}
           R2_KNOWLEDGE_SECRET_ACCESS_KEY: ${{ inputs.target == 'production' && secrets.R2_KNOWLEDGE_SECRET_ACCESS_KEY || '' }}
@@ -99,7 +106,7 @@ jobs:
             [api]="QUOTA_KEY_SECRET ORIGIN_VERIFY_SECRET RESEND_CONTACT_API_KEY R2_SUBSCRIBERS_ACCESS_KEY_ID R2_SUBSCRIBERS_SECRET_ACCESS_KEY"
             [chat]="QUOTA_KEY_SECRET ORIGIN_VERIFY_SECRET OPENAI_API_KEY R2_KNOWLEDGE_ACCESS_KEY_ID R2_KNOWLEDGE_SECRET_ACCESS_KEY"
             [editorial]="R2_MEDIA_ACCESS_KEY_ID R2_MEDIA_SECRET_ACCESS_KEY"
-            [notifications]="R2_SUBSCRIBERS_ACCESS_KEY_ID R2_SUBSCRIBERS_SECRET_ACCESS_KEY RESEND_BLOG_API_KEY"
+            [notifications]="R2_SUBSCRIBERS_ACCESS_KEY_ID R2_SUBSCRIBERS_SECRET_ACCESS_KEY RESEND_BLOG_API_KEY NOTIFY_LEDGER_KEY"
           )
           if [[ "$TARGET" == production ]]; then
             prefix=/portfolio/prod

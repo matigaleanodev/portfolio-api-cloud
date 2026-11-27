@@ -1,7 +1,10 @@
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import type { Context } from 'aws-lambda';
 import type { LambdaResponse, NotifyPostEvent } from '@portfolio-api-cloud/contracts/editorial';
 import { functions } from '@portfolio-api-cloud/contracts/functions';
 import { assertPrivateSubscribersBucket, createSubscriberStore } from '../subscriptions/store.js';
 import { readNotifyPostConfig } from '../editorial/config.js';
+import { createDeliveryLedger, createDynamoDeliveryStore } from '../editorial/delivery-ledger.js';
 import { createBlogNotifier } from '../editorial/email.js';
 import { notifyPost } from '../editorial/notify-post.js';
 import { createSensitiveConfiguration, memoizeBySnapshot } from '../editorial/runtime.js';
@@ -18,6 +21,11 @@ const dependencies = memoizeBySnapshot(
     });
     return {
       listSubscriberEmails: () => store.listSubscriberEmails(),
+      unsubscribeId: (email: string) => store.ensureUnsubscribeId(email),
+      ledger: createDeliveryLedger(
+        createDynamoDeliveryStore(new DynamoDBClient({ maxAttempts: 1 }), config.ledgerTable),
+        sensitive.NOTIFY_LEDGER_KEY!,
+      ),
       notify: createBlogNotifier({
         apiKey: sensitive.RESEND_BLOG_API_KEY!,
         fromEmail: config.fromEmail,
@@ -26,5 +34,8 @@ const dependencies = memoizeBySnapshot(
   },
 );
 
-export const handler = async (event: NotifyPostEvent): Promise<LambdaResponse> =>
-  notifyPost(event, dependencies);
+export const handler = async (
+  event: NotifyPostEvent,
+  context: Pick<Context, 'getRemainingTimeInMillis'>,
+): Promise<LambdaResponse> =>
+  notifyPost(event, dependencies, { remainingMs: () => context.getRemainingTimeInMillis() });

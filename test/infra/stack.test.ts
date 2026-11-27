@@ -228,6 +228,7 @@ test('Dada configuración no sensible, cuando se declara, entonces llega por par
     SUBSCRIBERS_R2_BUCKET: { Ref: 'R2SubscribersBucket' },
     R2_BUCKET: { Ref: 'R2Bucket' },
     BLOG_FROM_EMAIL: { Ref: 'BlogFromEmail' },
+    LEDGER_TABLE_NAME: { Ref: 'RuntimeControlE474B2D1' },
   });
   expect(variables('publish-chat-knowledge')).toMatchObject({
     CHAT_KNOWLEDGE_OBJECT_KEY: 'artifacts/chat/knowledge.json',
@@ -352,6 +353,9 @@ test('Dado IAM por función, cuando se inspeccionan permisos, entonces cada rol 
         'ssm:GetParameter',
         ...(http ? ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'] : []),
         ...(invoker ? ['lambda:InvokeFunction'] : []),
+        ...(contract.functionName === 'portfolio-api-cloud-test-notify-post'
+          ? ['dynamodb:GetItem', 'dynamodb:PutItem']
+          : []),
       ].sort(),
     );
     const arns = parameterAccess[contract.functionName]!.map(parameter);
@@ -383,6 +387,15 @@ test('Dado IAM por función, cuando se inspeccionan permisos, entonces cada rol 
       expect([statement.Action].flat().every((a) => !a.endsWith('*'))).toBe(true);
     }
   }
+  const ledger = statementsOf('portfolio-api-cloud-test-notify-post').find(
+    (s) => [s.Action].flat()[0] === 'dynamodb:GetItem',
+  )!;
+  expect(ledger.Resource).toEqual(control);
+  expect(ledger.Condition).toEqual({
+    'ForAllValues:StringLike': { 'dynamodb:LeadingKeys': ['notify#*'] },
+    Null: { 'dynamodb:LeadingKeys': 'false' },
+  });
+
   const invoke = statementsOf('portfolio-api-cloud-test-process-release').find(
     (s) => s.Action === 'lambda:InvokeFunction',
   )!;

@@ -11,6 +11,7 @@ export const quotas = {
   contact: { limit: 5, windowSeconds: 3600, prefix: 'contact' },
   subscribe: { limit: 10, windowSeconds: 3600, prefix: 'subscribe' },
   unsubscribe: { limit: 10, windowSeconds: 3600, prefix: 'unsubscribe' },
+  oneClick: { limit: 60, windowSeconds: 60, prefix: 'one-click' },
   chatStarters: { limit: 20, windowSeconds: 60, prefix: 'starters' },
   chat: { limit: 20, windowSeconds: 60, prefix: 'chat' },
 } as const satisfies Record<Exclude<OperationId, 'health'>, QuotaPolicy>;

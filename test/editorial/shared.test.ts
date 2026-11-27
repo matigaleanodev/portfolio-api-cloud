@@ -1,4 +1,4 @@
-import { InvokeCommand } from '@aws-sdk/client-lambda';
+import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import { describe, expect, it, vi } from 'vitest';
 import { isPublicationDue } from '../../packages/runtime/src/chat/publication.js';
 import {
@@ -44,6 +44,16 @@ describe('invocación Lambda', () => {
       FunctionName: 'portfolio-api-cloud-test-generate-og',
       Payload: payload({ slug: 'test-post' }),
     });
+  });
+
+  it('el cliente por defecto no reintenta una invocación', async () => {
+    const send = vi.spyOn(LambdaClient.prototype, 'send').mockResolvedValue({
+      Payload: payload({ statusCode: 200, body: '{}' }),
+    } as never);
+    await createLambdaInvoker()('fn', {});
+    const client = send.mock.contexts[0] as unknown as LambdaClient;
+    expect(await client.config.maxAttempts()).toBe(1);
+    send.mockRestore();
   });
 
   it('FunctionError: detalle para logs y código saneado desde errorType', async () => {
@@ -161,6 +171,7 @@ describe('configuración no sensible por función', () => {
         SUBSCRIBERS_R2_ENDPOINT: 'https://r2.example.invalid',
         SUBSCRIBERS_R2_BUCKET: 'subscribers',
         BLOG_FROM_EMAIL: 'blog@matiasgaleano.dev',
+        LEDGER_TABLE_NAME: 'control',
       }),
     ).toEqual({
       subscribers: {
@@ -170,6 +181,7 @@ describe('configuración no sensible por función', () => {
       },
       publicBucket: 'media',
       fromEmail: 'blog@matiasgaleano.dev',
+      ledgerTable: 'control',
     });
   });
 

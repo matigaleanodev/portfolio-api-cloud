@@ -6,16 +6,17 @@ Public base: `https://api.matiasgaleano.dev/api`. Routes are case-insensitive an
 
 ## Operations
 
-| Method and route        | Input                                          | Success                                       | Per-IP quota         |
-| ----------------------- | ---------------------------------------------- | --------------------------------------------- | -------------------- |
-| `GET /health`           | No body                                        | 200, `{ "status": "ok" }`                     | No application quota |
-| `POST /contact`         | `name`, `email`, `message`, optional `company` | 204, no body                                  | 5/h                  |
-| `GET /chat/starters`    | No body                                        | 200, `suggestedQuestions`                     | 20/min               |
-| `POST /chat`            | `message`, optional `sessionId` and `history`  | 201, `answer`, `suggestedQuestions`, `source` | 20/min               |
-| `POST /subscriptions`   | `email`                                        | 200, `message` and optional `email`           | 10/h                 |
-| `DELETE /subscriptions` | `email` in JSON body                           | 200, same schema as subscribe                 | 10/h                 |
+| Method and route                   | Input                                          | Success                                       | Per-IP quota         |
+| ---------------------------------- | ---------------------------------------------- | --------------------------------------------- | -------------------- |
+| `GET /health`                      | No body                                        | 200, `{ "status": "ok" }`                     | No application quota |
+| `POST /contact`                    | `name`, `email`, `message`, optional `company` | 204, no body                                  | 5/h                  |
+| `GET /chat/starters`               | No body                                        | 200, `suggestedQuestions`                     | 20/min               |
+| `POST /chat`                       | `message`, optional `sessionId` and `history`  | 201, `answer`, `suggestedQuestions`, `source` | 20/min               |
+| `POST /subscriptions`              | `email`                                        | 200, `message` and optional `email`           | 10/h                 |
+| `DELETE /subscriptions`            | `email` in JSON body                           | 200, same schema as subscribe                 | 10/h                 |
+| `POST /subscriptions/one-click?t=` | `List-Unsubscribe=One-Click` form              | 200, `{ "message": "Unsubscribed" }`          | 60/min               |
 
-Subscribe, unsubscribe, chat and starters have independent quotas, defined in [quotas.ts](../packages/contracts/src/quotas.ts). Health checks liveness; it does not certify providers or readiness.
+Subscribe, unsubscribe, one-click, chat and starters have independent quotas, defined in [quotas.ts](../packages/contracts/src/quotas.ts). Health checks liveness; it does not certify providers or readiness.
 
 ## Validation
 
@@ -40,26 +41,56 @@ Subscribe and unsubscribe write or delete `subscribers/<email>.json` in the priv
 
 Chat returns source `faq`, `ai` or `fallback`. FAQs do not generate AI. History travels in the request; sessionId neither authenticates nor creates persistence. AI admits five responses per session and five per origin/Argentine day, in addition to HTTP quota and global budget. Cached AI consumes allowance with zero monetary reservation. People sharing an IP share the origin allowance. Without admission, chat offers FAQs/contact; editorial questions without valid knowledge retain 503.
 
+## One-click unsubscribe
+
+`/subscriptions/one-click?t=<identifier>` is the `List-Unsubscribe` target ([RFC 8058](https://www.rfc-editor.org/rfc/rfc8058.txt)). The identifier is opaque, random (32 bytes, base64url), specific to one subscription and does not expire: it stops working once that subscription is removed, and a new subscription gets another one.
+
+- `POST` accepts `application/x-www-form-urlencoded` or `multipart/form-data` with `List-Unsubscribe=One-Click`, without cookies, sessions or redirects. A well-formed request returns 200 whether or not the subscription exists; repeating it has no effect. A malformed or repeated identifier, another value or content type returns 400. A storage failure returns 502 or 503.
+- `GET` and `HEAD` never change data: they return 303 to the manual page `https://matiasgaleano.dev/blog/unsubscribe`.
+
+Anyone receiving a forwarded message can use its unsubscribe link. Earlier `?email=` links and `DELETE /subscriptions` are preserved.
+
 ## Editorial events
 
 Editorial functions have no HTTP routes. The `portfolio` publication workflow invokes `process-release` and `publish-chat-knowledge` with `aws lambda invoke` (resource policy limited to its release role); `process-release` invokes `generate-og` and `notify-post`. Types live in [editorial.ts](../packages/contracts/src/editorial.ts) and R2 keys in [storage.ts](../packages/contracts/src/storage.ts).
 
 Each function returns `{ statusCode, body }` with a JSON body. Event validation happens before reading configuration: a 400 has no effects. A configuration, R2 or provider failure that is not turned into a response ends as a Lambda function error.
 
-| Function                 | Event                                                                                                                         | Responses                                                                                                                                            |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `process-release`        | `{ manifest }` or the raw manifest: `generatedAt`, `siteUrl`, `content.posts[]` with `slug`, `title`, `date`, `canonicalPath` | 400 invalid manifest or future dates (Argentine time); 200 `No new posts`; 200 `processedPosts`; 500 partial with `processedPosts` and `failedPosts` |
-| `generate-og`            | `slug`, `title`, optional `excerpt`, `date`, `tags`                                                                           | 400 without title or slug; 200 with the public `url` of `og/<slug>.png`                                                                              |
-| `notify-post`            | `title`, `url`, optional `excerpt`, `date`, `tags`                                                                            | 400 without title or URL, or future date; 200 with `recipients`; a provider rejection fails the invocation                                           |
-| `publish-chat-knowledge` | `{ artifact, release?, source? }` or the raw artifact: `generatedAt`, `projects?`, `posts?`                                   | 400 invalid artifact or future dates; 200 with `key`, `generatedAt` and `contentHash`                                                                |
+| Function                 | Event                                                                                                                         | Responses                                                                                                                                                                   |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `process-release`        | `{ manifest }` or the raw manifest: `generatedAt`, `siteUrl`, `content.posts[]` with `slug`, `title`, `date`, `canonicalPath` | 400 invalid manifest or future dates (Argentine time); 200 `No new posts`; 200 `processedPosts`; 500 partial with `processedPosts` and `failedPosts`                        |
+| `generate-og`            | `slug`, `title`, optional `excerpt`, `date`, `tags`                                                                           | 400 without title or slug; 200 with the public `url` of `og/<slug>.png`                                                                                                     |
+| `notify-post`            | `title`, `url`, optional `excerpt`, `date`, `tags`                                                                            | 400 without title or URL, or future date; 200 with `recipients` (accepted by the provider); if any is not accepted, the invocation fails with `NotificationIncompleteError` |
+| `publish-chat-knowledge` | `{ artifact, release?, source? }` or the raw artifact: `generatedAt`, `projects?`, `posts?`                                   | 400 invalid artifact or future dates; 200 with `key`, `generatedAt` and `contentHash`                                                                                       |
 
 `publish-chat-knowledge` writes the v1 envelope to `artifacts/chat/knowledge.json`: `version`, `generatedAt`, `source` (defaults to `portfolio` and `.generated/chat/knowledge.json`), optional `release`, `contentHash` (`sha256:`) and `knowledge`. It overwrites the same key.
 
 ### Idempotency and limitations
 
-`process-release` stores `ogGeneratedAt`, `notifiedAt` and `lastFailure` per post in `state/posts.json`. A post with `notifiedAt` is not reprocessed; a stage with its mark is skipped, so reinvoking resumes the pending stage. Each stage is retried up to `RELEASE_STAGE_MAX_ATTEMPTS` (2 by default). `lastFailure` holds stage, time, attempts and a sanitized code, never free provider text. The legacy format (a slug list) is read as processed.
+`process-release` stores `ogGeneratedAt`, `notifiedAt` and `lastFailure` per post in `state/posts.json`. A post with `notifiedAt` is not reprocessed; a stage with its mark is skipped, so reinvoking resumes the pending stage. Each stage is retried up to `RELEASE_STAGE_MAX_ATTEMPTS` (2 by default), except an incomplete notification: it is not repeated within the same invocation; reinvoke to continue. `lastFailure` holds stage, time, attempts and a sanitized code, never free provider text. The legacy format (a slug list) is read as processed.
 
-- `notify-post` does not deduplicate per recipient: if one send fails after others succeeded, the post stays without `notifiedAt` and a retry (including the internal one) resends to everyone.
+#### Per-recipient delivery
+
+`notify-post` records each post and recipient pair in the control table (no addresses: HMAC of the email; no expiry) and sends one at a time with a Resend `Idempotency-Key`. A post is identified by the host and path of its URL.
+
+| State       | Meaning                                          | Next invocation                              |
+| ----------- | ------------------------------------------------ | -------------------------------------------- |
+| `sent`      | The provider accepted the message                | Not resent                                   |
+| `rejected`  | Definite rejection (4xx) with no earlier doubt   | Retries with a new key                       |
+| `sending`   | Claimed by one run (60 s)                        | Waits; once expired, handled as `uncertain`  |
+| `uncertain` | Timeout, network error, 5xx, 408, 409 or no `id` | Within 23 h repeats the same key and message |
+| `review`    | Doubt unresolved after 23 h, or conflicting key  | Not resent; needs manual review              |
+
+Limits of the guarantee:
+
+- This is not exactly-once delivery. Deduplicating an ambiguous attempt relies on the 24 h window of [idempotency keys](https://resend.com/docs/dashboard/emails/idempotency-keys); outside it the system chooses not to resend.
+- `sent` means accepted, not delivered: bounces, suppressions and filtering happen later.
+- If title, excerpt, date or tags change between attempts of a doubtful send, the provider rejects the key and the record moves to `review`.
+- Restoring the table to an earlier point can lose marks and allow resends.
+- A permanently rejected or `review` address keeps the post incomplete until resolved. Meanwhile each release returns 500, the post keeps being sent to later subscribers, and subsequent steps of the invoking workflow depend on how it handles that failure.
+- Unsubscribing deletes the record; identifier index cleanup is best effort and an orphan object holding the address can remain in the private bucket. Storage deletion is not conditional: a one-click request concurrent with an unsubscribe and resubscribe of the same address could delete the new one.
+- Each invocation sends at most what fits its timeout (capped at 5 sends per second) and stops on provider quotas or rejected credentials; later invocations continue with what is pending.
+
 - `state/posts.json` is updated with read-modify-write and no lock: concurrent `process-release` invocations can overwrite each other. The invoking workflow must serialize publications.
 
 [HTTP implementation](../packages/runtime/src/http/router.ts) · [Tests](../test) · [Operations](operations.md)

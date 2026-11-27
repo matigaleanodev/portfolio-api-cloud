@@ -218,6 +218,7 @@ async function invokeWithRetry(
 ): Promise<void> {
   const maxAttempts = deps.maxAttempts;
   let lastError: unknown;
+  let attempts = 0;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       assertLambdaSuccess(functionName, await deps.invoke(functionName, payload));
@@ -225,6 +226,7 @@ async function invokeWithRetry(
       return;
     } catch (error) {
       lastError = error;
+      attempts = attempt;
       // El detalle (payload, trace, ARN) solo va a CloudWatch, con emails redactados.
       logError('Stage invocation failed', {
         slug,
@@ -234,12 +236,14 @@ async function invokeWithRetry(
         code: invocationFailureCode(error),
         detail: errorMessage(error, String(error)),
       });
+      // Otra corrida inmediata no cambia lo pendiente y no entra en el timeout de esta función.
+      if (invocationFailureCode(error) === 'NotificationIncompleteError') break;
     }
   }
   throw {
     slug,
     stage,
-    attempts: maxAttempts,
+    attempts,
     message: invocationFailureCode(lastError),
   } satisfies PostProcessingFailure;
 }

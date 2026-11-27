@@ -152,7 +152,11 @@ for (const scenario of scenarios)
       ...providers,
       sendEmail,
       request,
-      subscribers: () => ({ createSubscriber, deleteSubscriber }),
+      subscribers: () => ({
+        createSubscriber,
+        deleteSubscriber,
+        unsubscribeByToken: async () => 'missing' as const,
+      }),
       store,
       readParameter,
     });

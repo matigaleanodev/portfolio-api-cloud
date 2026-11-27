@@ -5,6 +5,7 @@ export const storageKeys = {
   ogPrefix: 'og/',
   subscribersPrefix: 'subscribers/',
   subscriberSuffix: '.json',
+  unsubscribeIndexPrefix: 'unsubscribe-index/',
 } as const;
 
 /** Región de firma que R2 acepta para el SDK S3. */

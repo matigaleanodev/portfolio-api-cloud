@@ -1,3 +1,4 @@
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import {
   GetObjectCommand,
@@ -21,10 +22,12 @@ const sensitive = {
   R2_SUBSCRIBERS_ACCESS_KEY_ID: 'subscribers-id',
   R2_SUBSCRIBERS_SECRET_ACCESS_KEY: 'subscribers-secret',
   RESEND_BLOG_API_KEY: 're_blog',
+  NOTIFY_LEDGER_KEY: 'l'.repeat(32),
 };
 let ssm: AnyMock;
 let s3: AnyMock;
 let lambda: AnyMock;
+let dynamo: AnyMock;
 let logs: string[];
 
 beforeEach(() => {
@@ -35,6 +38,11 @@ beforeEach(() => {
     return { Parameter: { Type: 'SecureString', Value: JSON.stringify(sensitive) } };
   });
   s3 = vi.fn(async (command: object) => {
+    if (command instanceof GetObjectCommand && command.input.Bucket === 'subscribers')
+      return {
+        Body: { transformToString: async () => '{"email":"lector@example.com"}' },
+        ETag: '"1"',
+      };
     if (command instanceof GetObjectCommand)
       throw Object.assign(new Error('missing'), { name: 'NoSuchKey' });
     if (command instanceof ListObjectsV2Command)
@@ -44,6 +52,8 @@ beforeEach(() => {
   lambda = vi.fn(async (_command: InvokeCommand) => ({
     Payload: Buffer.from(JSON.stringify({ statusCode: 200, body: '{"message":"ok"}' })),
   }));
+  dynamo = vi.fn(async (_command: object) => ({}));
+  vi.spyOn(DynamoDBClient.prototype, 'send').mockImplementation(dynamo as never);
   vi.spyOn(SSMClient.prototype, 'send').mockImplementation(ssm as never);
   vi.spyOn(S3Client.prototype, 'send').mockImplementation(s3 as never);
   vi.spyOn(LambdaClient.prototype, 'send').mockImplementation(lambda as never);
@@ -61,6 +71,7 @@ beforeEach(() => {
     SUBSCRIBERS_R2_BUCKET: 'subscribers',
     MEDIA_BASE_URL: 'https://media.example.invalid',
     BLOG_FROM_EMAIL: 'blog@example.invalid',
+    LEDGER_TABLE_NAME: 'control',
     GENERATE_OG_FUNCTION_NAME: functions.generateOg.functionName,
     NOTIFY_POST_FUNCTION_NAME: functions.notifyPost.functionName,
   }))
@@ -87,7 +98,10 @@ describe('entrypoints editoriales', () => {
         content: { posts: [{ ...manifest.content.posts[0], date: '2999-01-01' }] },
       }),
       await og({}),
-      await notify({ title: 'A', url: 'https://x.dev', date: '2999-01-01' }),
+      await notify(
+        { title: 'A', url: 'https://x.dev', date: '2999-01-01' },
+        { getRemainingTimeInMillis: () => 30_000 },
+      ),
       await knowledge({}),
     ])
       expect(response.statusCode).toBe(400);
@@ -124,7 +138,10 @@ describe('entrypoints editoriales', () => {
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response('{"id":"email_1"}', { status: 200 }));
     const { handler } = await import(`${handlers}notify-post.js`);
-    const response = await handler({ title: 'A', url: 'https://matiasgaleano.dev/blog/a' });
+    const response = await handler(
+      { title: 'A', url: 'https://matiasgaleano.dev/blog/a' },
+      { getRemainingTimeInMillis: () => 30_000 },
+    );
     expect(JSON.parse(response.body)).toMatchObject({
       message: 'Notification sent',
       recipients: 1,
@@ -134,6 +151,17 @@ describe('entrypoints editoriales', () => {
     expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).get('authorization')).toBe(
       'Bearer re_blog',
     );
+    expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).get('idempotency-key')).toMatch(
+      /^notify\/[a-f0-9]{64}\/1$/,
+    );
+    expect(fetch.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    // Consulta previa, lectura, reserva y resultado en la tabla indicada.
+    expect(dynamo.mock.calls.map(([command]) => command.input.TableName)).toEqual([
+      'control',
+      'control',
+      'control',
+      'control',
+    ]);
     expect(logs.join('\n')).not.toMatch(/lector@example\.com/);
   });
 
@@ -141,7 +169,9 @@ describe('entrypoints editoriales', () => {
     vi.stubEnv('RUNTIME_PARAMETER_NAME', '/portfolio/prod/notifications');
     vi.stubEnv('SUBSCRIBERS_R2_BUCKET', 'media');
     const { handler } = await import(`${handlers}notify-post.js`);
-    await expect(handler({ title: 'A', url: 'https://x.dev/a' })).rejects.toThrow('must differ');
+    await expect(
+      handler({ title: 'A', url: 'https://x.dev/a' }, { getRemainingTimeInMillis: () => 30_000 }),
+    ).rejects.toThrow('must differ');
     expect(s3).not.toHaveBeenCalled();
   });
 
