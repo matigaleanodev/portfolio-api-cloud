@@ -2,7 +2,7 @@
 
 [English](DESIGN.md)
 
-Este documento adapta la **revisión 1** del [sistema de diseño del portfolio](https://github.com/matigaleanodev/portfolio/blob/main/DESIGN.md) (SHA-256 del `DESIGN.md` de origen: `d06fc0d8695e17b076be5277e5cb630ad37c966d4b43a2b9a539fcf425eab397`). No es una segunda fuente de decisiones visuales: sólo indica cómo se aplica ese sistema donde los clientes de correo y un render determinista lo limitan. Ante una diferencia no listada aquí, gana el origen. Una revisión nueva del origen se adopta editando este documento; no hay paquete compartido ni sincronización automática.
+Este documento adapta la **revisión 1** del [sistema de diseño del portfolio](https://github.com/matigaleanodev/portfolio/blob/main/DESIGN.md) (SHA-256 del `DESIGN.md` de origen: `8d7145d29b373d2ec7533641507b211d6217f39325d3c50e9650d20e8c3c88cd`). No es una segunda fuente de decisiones visuales: sólo indica cómo se aplica ese sistema donde los clientes de correo y un render determinista lo limitan. Ante una diferencia no listada aquí, gana el origen. Una revisión nueva del origen se adopta editando este documento; no hay paquete compartido ni sincronización automática.
 
 Las reglas **DEBE** son criterios de aceptación; las reglas **CONVIENE** admiten un desvío registrado.
 

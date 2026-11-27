@@ -62,7 +62,7 @@ components:
 
 [Español](DESIGN.es.md)
 
-This document adapts **revision 1** of the [portfolio design system](https://github.com/matigaleanodev/portfolio/blob/main/DESIGN.md) (source `DESIGN.md` SHA-256 `d06fc0d8695e17b076be5277e5cb630ad37c966d4b43a2b9a539fcf425eab397`). It is not a second source of visual decisions: it only states how that system applies where email clients and a deterministic renderer limit it. On any difference not listed here, the source wins. A new source revision is adopted by editing this document; there is no shared package or automatic synchronization.
+This document adapts **revision 1** of the [portfolio design system](https://github.com/matigaleanodev/portfolio/blob/main/DESIGN.md) (source `DESIGN.md` SHA-256 `8d7145d29b373d2ec7533641507b211d6217f39325d3c50e9650d20e8c3c88cd`). It is not a second source of visual decisions: it only states how that system applies where email clients and a deterministic renderer limit it. On any difference not listed here, the source wins. A new source revision is adopted by editing this document; there is no shared package or automatic synchronization.
 
 **MUST** rules are acceptance criteria; **SHOULD** rules admit a recorded deviation.
 
