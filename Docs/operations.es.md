@@ -18,7 +18,7 @@ Llega como variables de entorno de cada función desde parámetros de CloudForma
 | `MEDIA_BASE_URL`, `BLOG_FROM_EMAIL`      | URL pública de medios y remitente del blog.                                     |
 | `CERTIFICATE_ARN`, `ALARM_TOPIC_ARN`     | Certificado ACM del dominio y tópico SNS de alarmas (vacíos los desactivan).    |
 
-Variables de repositorio habilitan cada workflow (`PRODUCTION_PLAN_ENABLED`, `PRODUCTION_FOUNDATION_ENABLED`, `PRODUCTION_EXECUTE_ENABLED`, `PARAMETERS_SYNC_ENABLED`, `MERGE_WORKFLOW_ENABLED`) y nombran los roles de entrega (`PRODUCTION_AWS_ROLE_ARN`, `PRODUCTION_CDK_DEPLOY_ROLE_ARN`, `PRODUCTION_EXECUTION_ROLE_ARN`). Los nombres de claves de entorno están en [configuration.ts](../packages/contracts/src/configuration.ts) y [editorial.ts](../packages/contracts/src/editorial.ts).
+Variables de repositorio habilitan cada workflow (`PRODUCTION_PLAN_ENABLED`, `PRODUCTION_FOUNDATION_ENABLED`, `PRODUCTION_EXECUTE_ENABLED`, `PARAMETERS_SYNC_ENABLED`) y nombran los roles de entrega (`PRODUCTION_AWS_ROLE_ARN`, `PRODUCTION_CDK_DEPLOY_ROLE_ARN`, `PRODUCTION_EXECUTION_ROLE_ARN`). Los nombres de claves de entorno están en [configuration.ts](../packages/contracts/src/configuration.ts) y [editorial.ts](../packages/contracts/src/editorial.ts).
 
 ## Configuración sensible
 
@@ -70,10 +70,7 @@ Los environments productivos admiten `main`; las banderas `*_ENABLED` quedan des
 
 `dev` y `main` exigen, sin excepciones: pull request, `verify` de GitHub Actions aprobado sobre una rama actualizada, conversaciones resueltas y merge commit; no admiten push directo, force push ni borrado. No se exige aprobación de otra persona.
 
-Una segunda regla restringe quién actualiza esas ramas a la cuenta propietaria:
-
-- Con la exención `exempt` para esa cuenta, se integra con el botón de merge de GitHub y se puede activar auto-merge a mano en cada pull request.
-- Mientras la exención siga en modo `pull_request`, se integra con [merge.yml](../.github/workflows/merge.yml), que exige el SHA completo revisado y usa `MERGE_USER_TOKEN` del environment `merge`.
+Una segunda regla restringe quién actualiza esas ramas a la cuenta propietaria, que tiene una exención `exempt`: se integra con el botón de merge de GitHub y se puede activar auto-merge a mano en cada pull request.
 
 Para integrar exactamente la revisión mirada:
 
