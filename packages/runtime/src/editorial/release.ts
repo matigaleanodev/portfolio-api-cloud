@@ -227,6 +227,15 @@ export function detectNewPosts(
   return manifestPosts.filter((post) => !processed.has(post.slug));
 }
 
+/** Solo se invoca si la función hija puede agotar su timeout y aún queda guardar el estado. */
+function stageFits(deps: ReleaseDependencies, stage: ReleaseStage): boolean {
+  const remaining = deps.remainingMs?.();
+  return (
+    remaining === undefined ||
+    remaining >= stageTimeoutMs[stage] + invokeOverheadMs + stateSaveReserveMs
+  );
+}
+
 async function invokeWithRetry(
   deps: ReleaseDependencies,
   functionName: string,
@@ -238,13 +247,8 @@ async function invokeWithRetry(
   let lastError: unknown;
   let attempts = 0;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    if (!stageFits(deps, stage)) break;
     const remaining = deps.remainingMs?.();
-    // Solo se invoca si la función hija puede agotar su timeout y aún queda guardar el estado.
-    if (
-      remaining !== undefined &&
-      remaining < stageTimeoutMs[stage] + invokeOverheadMs + stateSaveReserveMs
-    )
-      break;
     attempts = attempt;
     try {
       // La espera termina antes de consumir la reserva. Sin respuesta, la etapa queda sin marca.
@@ -343,7 +347,8 @@ export async function processPost(
       ogGeneratedAt: new Date().toISOString(),
       lastFailure: undefined,
     });
-    if (!nextState.notifiedAt) await checkpoint?.(nextState);
+    // Si el aviso ya no entra, la marca se guarda junto con el fallo para no gastar su reserva.
+    if (!nextState.notifiedAt && stageFits(deps, 'notify-post')) await checkpoint?.(nextState);
   }
 
   if (!nextState.notifiedAt) {

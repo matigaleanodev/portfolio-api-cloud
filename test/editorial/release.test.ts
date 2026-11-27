@@ -575,6 +575,27 @@ describe('process-release: presupuesto de tiempo', () => {
     expect(putBodies().at(-1).a.notifiedAt).toBeTypeOf('string');
   });
 
+  it('si el aviso ya no entra, guarda la OG y el fallo en una sola escritura', async () => {
+    const writesStartedWith: number[] = [];
+    send.mockImplementation(async (command: GetObjectCommand | PutObjectCommand) => {
+      if (command instanceof GetObjectCommand) throw notFound();
+      writesStartedWith.push(remaining);
+      remaining -= 10_000;
+      return {};
+    });
+    invoke.mockImplementationOnce(async () => {
+      remaining = 12_000;
+      return ok('OG image generated');
+    });
+    expect((await run(post('a'))).statusCode).toBe(500);
+    // Un guardado previo habría dejado el del fallo sin su reserva.
+    expect(writesStartedWith).toEqual([12_000]);
+    expect(putBodies().at(-1).a).toMatchObject({
+      ogGeneratedAt: expect.any(String),
+      lastFailure: { stage: 'notify-post', ...insufficient },
+    });
+  });
+
   it('un fallo al guardar el avance de la OG no impide avisar ni guardar al final', async () => {
     let writes = 0;
     send.mockImplementation(async (command: GetObjectCommand | PutObjectCommand) => {
