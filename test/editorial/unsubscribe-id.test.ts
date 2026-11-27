@@ -40,7 +40,50 @@ describe('identificador de baja', () => {
       store.ensureUnsubscribeId(email),
     ]);
     expect(first).toBe(second);
+    expect(indexKeys()).toEqual([`subscribers/unsubscribe-index/${first}.json`]);
   });
+
+  it.each(['PreconditionFailed', 'NoSuchKey'])(
+    'descarta el índice si el registro desaparece antes de publicarlo (%s)',
+    async (name) => {
+      await store.createSubscriber(email);
+      const send = storage.send.bind(storage);
+      storage.send = async (command, options) => {
+        const { IfMatch } = (command as { input: { IfMatch?: string } }).input;
+        if (IfMatch) {
+          storage.objects.delete(recordKey);
+          throw Object.assign(new Error('gone'), { name });
+        }
+        return send(command, options);
+      };
+
+      expect(await store.ensureUnsubscribeId(email)).toBeNull();
+      expect(storage.objects.size).toBe(0);
+    },
+  );
+
+  it.each([false, true])(
+    'no deja índices si se agotan los intentos (registro borrado en el último: %s)',
+    async (deleted) => {
+      await store.createSubscriber(email);
+      const send = storage.send.bind(storage);
+      let rejected = 0;
+      storage.send = async (command, options) => {
+        if ((command as { input: { IfMatch?: string } }).input.IfMatch) {
+          rejected += 1;
+          if (deleted && rejected === 3) storage.objects.delete(recordKey);
+          throw Object.assign(new Error('changed'), { name: 'PreconditionFailed' });
+        }
+        return send(command, options);
+      };
+
+      const result = store.ensureUnsubscribeId(email);
+      if (deleted) await expect(result).resolves.toBeNull();
+      else await expect(result).rejects.toThrow('kept changing');
+      expect(rejected).toBe(3);
+      expect(indexKeys()).toEqual([]);
+    },
+  );
 
   it('un alta concurrente no pisa el registro ni su identificador', async () => {
     const results = await Promise.all([

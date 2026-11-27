@@ -23,7 +23,18 @@ const dependencies = memoizeBySnapshot(
       listSubscriberEmails: () => store.listSubscriberEmails(),
       unsubscribeId: (email: string) => store.ensureUnsubscribeId(email),
       ledger: createDeliveryLedger(
-        createDynamoDeliveryStore(new DynamoDBClient({ maxAttempts: 1 }), config.ledgerTable),
+        createDynamoDeliveryStore(
+          new DynamoDBClient({
+            maxAttempts: 1,
+            requestHandler: {
+              connectionTimeout: 2_000,
+              requestTimeout: 5_000,
+              socketTimeout: 5_000,
+              throwOnRequestTimeout: true,
+            },
+          }),
+          config.ledgerTable,
+        ),
         sensitive.NOTIFY_LEDGER_KEY!,
       ),
       notify: createBlogNotifier({

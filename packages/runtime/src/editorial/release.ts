@@ -10,14 +10,21 @@ import type {
   ReleasePost,
   ReleaseStage,
 } from '@portfolio-api-cloud/contracts/editorial';
+import { functions } from '@portfolio-api-cloud/contracts/functions';
 import { storageKeys } from '@portfolio-api-cloud/contracts/storage';
 import { isPublicationDue } from '../chat/publication.js';
 import { isObjectNotFoundError, type ObjectStorageClient } from '../subscriptions/store.js';
 import { assertLambdaSuccess, invocationFailureCode, type InvokeLambda } from './invoke-lambda.js';
-import { isRecord, jsonResponse } from './lambda.js';
+import { isNonEmptyString, isRecord, jsonResponse } from './lambda.js';
 import { errorMessage, logError, logInfo } from './log.js';
 
 const legacyProcessedAt = new Date(0).toISOString();
+/** Reserva para invocar y guardar el estado después de un reintento. */
+const stateSaveMarginMs = 5_000;
+const stageTimeoutMs: Record<ReleaseStage, number> = {
+  'generate-og': functions.generateOg.timeoutSeconds * 1000,
+  'notify-post': functions.notifyPost.timeoutSeconds * 1000,
+};
 
 /**
  * `message` conserva el nombre del campo heredado pero desde 1.1.0 solo guarda un código saneado
@@ -55,6 +62,8 @@ export interface ReleaseDependencies {
   readonly generateOgFunctionName: string;
   readonly notifyPostFunctionName: string;
   readonly maxAttempts: number;
+  /** Tiempo restante de esta invocación; limita los reintentos. */
+  readonly remainingMs?: () => number;
 }
 
 type StringReadable = Readable | { transformToString?: (encoding?: string) => Promise<string> };
@@ -238,6 +247,8 @@ async function invokeWithRetry(
       });
       // Otra corrida inmediata no cambia lo pendiente y no entra en el timeout de esta función.
       if (invocationFailureCode(error) === 'NotificationIncompleteError') break;
+      // Un reintento que puede exceder el timeout propio dejaría sin guardar el estado.
+      if ((deps.remainingMs?.() ?? Infinity) < stageTimeoutMs[stage] + stateSaveMarginMs) break;
     }
   }
   throw {
@@ -317,7 +328,12 @@ export async function processPost(
       deps,
       nextState,
       deps.notifyPostFunctionName,
-      { title: post.title, url: postUrl, date: post.date },
+      {
+        title: post.title,
+        url: postUrl,
+        date: post.date,
+        ...(isNonEmptyString(post.excerpt) ? { excerpt: post.excerpt } : {}),
+      },
       'notify-post',
       post.slug,
     );
@@ -336,6 +352,7 @@ export async function processPost(
 export async function processRelease(
   event: ProcessReleaseEvent,
   resolve: () => Promise<ReleaseDependencies>,
+  options: { readonly remainingMs?: () => number } = {},
 ): Promise<LambdaResponse> {
   const manifest = event.manifest;
   if (!isReleaseManifest(manifest))
@@ -343,7 +360,7 @@ export async function processRelease(
   if (manifest.content.posts.some((post) => !isPublicationDue(post.date)))
     return jsonResponse(400, { error: 'Manifest contains invalid or future publication dates' });
 
-  const deps = await resolve();
+  const deps: ReleaseDependencies = { ...(await resolve()), ...options };
   const processedState = await loadProcessedPostsState(deps.storage, deps.bucket);
   const newPosts = detectNewPosts(manifest.content.posts, processedState);
   if (newPosts.length === 0) return jsonResponse(200, { message: 'No new posts' });

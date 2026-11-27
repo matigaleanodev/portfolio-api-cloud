@@ -104,6 +104,8 @@ Rollback:
 - Item en `review`: cambiar solo `status` y conservar `version` y el resto. Usar `sent` si Resend muestra el envío o si no se puede determinar (nunca reenvía). Usar `rejected` con `uncertain=false` únicamente con evidencia de que no existió; el item no guarda la dirección.
 - Primer despliegue del registro de envíos: publicar antes los parámetros con `NOTIFY_LEDGER_KEY` (el plan no valida su contenido) y verificar que todo post publicado figure con `notifiedAt` en `state/posts.json`, tenga o no `lastFailure`. Un post sin esa marca no tiene historial y se enviaría a todos: contrastarlo con Resend y marcarlo antes.
 - Cambio de la plantilla del aviso: desplegar sin publicaciones en curso ni envíos dudosos (`sending` o `uncertain`) dentro de las 23 h. Reintentarlos con otro mensaje los pasa a `review`.
+- Enlaces de baja con `#email=`: publicar primero el frontend que los lee y verificarlo; recién después desplegar esta plantilla. Con ella activa, no volver el frontend a una versión anterior: no precompletaría la baja y cargaría analytics con la dirección en la URL.
+- Dirección rechazada de forma permanente (`rejected`, 4xx): el post queda incompleto. Confirmar en los [registros de la API de Resend](https://resend.com/docs/dashboard/logs/introduction) que el motivo es la dirección y no el dominio, la clave o la plantilla; el item y los logs de la función solo guardan `reference`. Si es la dirección, darla de baja con la página de baja y reejecutar la publicación.
 
 No recompilar una revisión vieja ni tratar el rollback de CloudFormation como restauración de datos. Preservar la tabla, las reservas y los parámetros; no reiniciar el presupuesto para recuperar servicio.
 

@@ -84,6 +84,23 @@ const manifest = {
   content: { posts: [{ slug: 'a', title: 'A', date: '2026-03-07', canonicalPath: '/blog/a' }] },
 };
 
+const r2Limits = {
+  connectionTimeout: 2_000,
+  requestTimeout: 5_000,
+  socketTimeout: 5_000,
+  throwOnRequestTimeout: true,
+};
+/** Límites resueltos del primer cliente que envió un comando. */
+async function requestLimits(client: typeof S3Client | typeof DynamoDBClient) {
+  const send = client.prototype.send as unknown as { mock: { contexts: S3Client[] } };
+  const { configProvider } = send.mock.contexts[0]!.config.requestHandler as unknown as {
+    configProvider: Promise<Record<string, unknown>>;
+  };
+  const { connectionTimeout, requestTimeout, socketTimeout, throwOnRequestTimeout } =
+    await configProvider;
+  return { connectionTimeout, requestTimeout, socketTimeout, throwOnRequestTimeout };
+}
+
 describe('entrypoints editoriales', () => {
   it('eventos inválidos devuelven 400 sin leer SSM, R2 ni invocar', async () => {
     vi.stubEnv('RUNTIME_PARAMETER_NAME', functions.processRelease.runtimeParameter);
@@ -132,6 +149,16 @@ describe('entrypoints editoriales', () => {
     expect(ssm).toHaveBeenCalledTimes(1);
   });
 
+  it('process-release no reintenta una etapa que excede su tiempo restante', async () => {
+    vi.stubEnv('RUNTIME_PARAMETER_NAME', '/portfolio/prod/editorial');
+    lambda.mockResolvedValue({
+      Payload: Buffer.from(JSON.stringify({ statusCode: 500, body: '{}' })),
+    });
+    const { handler } = await import(`${handlers}process-release.js`);
+    await handler(manifest, { getRemainingTimeInMillis: () => 10_000 });
+    expect(lambda).toHaveBeenCalledTimes(1);
+  });
+
   it('notify-post lee /portfolio/prod/notifications, lista suscriptores y envía con Resend', async () => {
     vi.stubEnv('RUNTIME_PARAMETER_NAME', '/portfolio/prod/notifications');
     const fetch = vi
@@ -163,6 +190,19 @@ describe('entrypoints editoriales', () => {
       'control',
     ]);
     expect(logs.join('\n')).not.toMatch(/lector@example\.com/);
+    expect(await requestLimits(S3Client)).toEqual(r2Limits);
+    // Los intentos de una llamada colgada caben en la función editorial más corta.
+    const [r2] = (S3Client.prototype.send as unknown as { mock: { contexts: S3Client[] } }).mock
+      .contexts;
+    expect((await r2!.config.maxAttempts()) * r2Limits.requestTimeout).toBeLessThan(
+      functions.publishChatKnowledge.timeoutSeconds * 1000,
+    );
+    expect(await requestLimits(DynamoDBClient)).toEqual({
+      connectionTimeout: 2_000,
+      requestTimeout: 5_000,
+      socketTimeout: 5_000,
+      throwOnRequestTimeout: true,
+    });
   });
 
   it('notify-post rechaza el bucket público como bucket de suscriptores', async () => {
