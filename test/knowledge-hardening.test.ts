@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ChatKnowledgeRepository } from '../packages/runtime/src/chat/chat-knowledge.repository.js';
+import { useTestClock } from './support/clock.js';
 import { getChatKnowledgeR2Config } from '../packages/runtime/src/chat/chat.config.js';
 let directory: string;
 const config = getChatKnowledgeR2Config({
@@ -14,6 +15,7 @@ const config = getChatKnowledgeR2Config({
   CHAT_KNOWLEDGE_CACHE_TTL_MS: '1000',
 })!;
 beforeEach(async () => {
+  useTestClock();
   directory = await mkdtemp(join(tmpdir(), 'portfolio-hardened-knowledge-'));
   vi.spyOn(console, 'info').mockImplementation(() => undefined);
 });
@@ -32,7 +34,7 @@ async function writeLocal(value: unknown) {
 const remote = (payload: unknown) => ({
   Body: { transformToString: async () => JSON.stringify(payload) },
 });
-test('Dado el fallback editorial versionado, cuando se comprueba procedencia, entonces coincide con el objeto canónico y excluye posts futuros', async () => {
+test('Dado el fallback editorial versionado, cuando se comprueba procedencia, entonces coincide con el artefacto de origen y excluye posts futuros', async () => {
   const envelope = await snapshot();
   const provenance = JSON.parse(await readFile('fallback/provenance.json', 'utf8'));
   expect(envelope.contentHash).toBe(
@@ -45,9 +47,10 @@ test('Dado el fallback editorial versionado, cuando se comprueba procedencia, en
     createHash('sha256').update(JSON.stringify(envelope)).digest('hex'),
   );
   expect(envelope.knowledge.projects.map((project: { slug: string }) => project.slug)).toEqual([
-    'foodly-notes',
     'modo-playa',
+    'foodly-notes',
     'portfolio',
+    'nora',
   ]);
   expect(envelope.knowledge.posts.length).toBeGreaterThan(0);
   for (const post of envelope.knowledge.posts)

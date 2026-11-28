@@ -12,9 +12,9 @@ Si existe un workspace con AGENTS.md en los directorios padre, leerlo explícita
 
 ## Contratos
 
-- Conservar seis contratos HTTP: health, contact, chat/starters, chat y alta/baja de subscriptions, con DTOs, errores, CORS, cuotas y límites compatibles. Las variantes de mayúsculas/slash de chat las atiende api.
+- Conservar siete contratos HTTP: health, contact, chat/starters, chat, alta/baja de subscriptions y baja en un clic (GET/HEAD sin mutaciones), con DTOs, errores, CORS, cuotas y límites compatibles. Las variantes de mayúsculas/slash de chat las atiende api.
 - Conservar los eventos editoriales y claves R2 de contracts (editorial.ts, storage.ts): los invoca el workflow de publicación de portfolio.
-- Suscripciones y publicación editorial están integradas en este repositorio sobre R2; notify-post no deduplica por destinatario.
+- Suscripciones y publicación editorial están integradas en este repositorio sobre R2; notify-post deduplica por post y destinatario con un registro en la tabla de control; no rotar NOTIFY_LEDGER_KEY ni reenviar registros en review.
 - DynamoDB mantiene cuotas y reservas compartidas entre api y chat. Chat conserva FAQ/fallback y reservas monetarias previas a la IA; las FAQ no invocan modelos.
 
 ## Configuración
@@ -31,6 +31,7 @@ Si existe un workspace con AGENTS.md en los directorios padre, leerlo explícita
 
 ## Restricciones
 
+- Integrar solo por PR con el merge nativo de GitHub (ver Docs/operations). No activar auto-merge hacia main sin autorización expresa del propietario.
 - Mantener runtime separado de infraestructura y sin dependencias NestJS; no agregar dependencias de producción fuera de las listas de package.mjs y check-boundaries.
 - Conservar logical IDs y nombres físicos existentes para no reemplazar recursos.
 - No duplicar escrituras con la implementación compatible portfolio-api.

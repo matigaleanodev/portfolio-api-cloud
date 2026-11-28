@@ -2,7 +2,7 @@
 
 [Español](architecture.es.md)
 
-Cloudflare receives traffic for `api.matiasgaleano.dev`; API Gateway HTTP API splits the six operations between two HTTP functions. Four editorial functions without routes complete blog publication. All use Node.js 24 outside a VPC.
+Cloudflare receives traffic for `api.matiasgaleano.dev`; API Gateway HTTP API splits the seven operations between two HTTP functions. Four editorial functions without routes complete blog publication. All use Node.js 24 outside a VPC.
 
 ## Packages
 
@@ -48,7 +48,7 @@ A `before` that returns a response skips the handler and every `after`, so those
 
 On the custom domain the runtime requires a Cloudflare origin, the `x-portfolio-origin` secret and a valid IP before trusting `CF-Connecting-IP`; it ignores `X-Forwarded-For`. CORS is handled in the application and does not authenticate.
 
-DynamoDB uses conditional operations for quotas and transactions for AI admission; `api` and `chat` share table, prefixes and HMAC keys, so splitting functions does not duplicate quotas. Logical expiration does not depend on TTL. Conversations are not persisted.
+DynamoDB uses conditional operations for quotas and transactions for AI admission; `api` and `chat` share table, prefixes and HMAC keys, so splitting functions does not duplicate quotas. Logical expiration does not depend on TTL. `notify-post` uses the same table for its send ledger, with IAM limited to `notify#` keys and no TTL. Conversations are not persisted.
 
 Each request has up to 25 seconds, reduced according to Lambda's remaining time. Sends, subscriptions and ambiguous reservations are not retried; canceling transport does not undo accepted effects.
 
@@ -58,7 +58,7 @@ FAQs answer directly. `chat` reads from R2 the envelope published by `publish-ch
 
 Generation uses only GPT-6 Luna through Responses, with `store=false`, no tools and no retries, and requires valid pricing, session/origin allowances and a prior global monetary reservation.
 
-`process-release` reads and writes `state/posts.json` in the media bucket, synchronously invokes `generate-og` and `notify-post` with bounded retries and stores only sanitized error codes, because that bucket is public. Subscribers live in `subscribers/<email>.json` in a separate private bucket shared by the HTTP facade and `notify-post`.
+`process-release` reads and writes `state/posts.json` in the media bucket, synchronously invokes `generate-og` and `notify-post` with bounded retries and stores only sanitized error codes, because that bucket is public. Each R2 attempt bounds connection (2 s), response wait and inactivity (5 s), with at most two attempts; the DynamoDB send ledger uses the same limits without SDK retries. Subscribers live in `subscribers/<email>.json` in a separate private bucket shared by the HTTP facade and `notify-post`.
 
 ## Infrastructure and cost
 

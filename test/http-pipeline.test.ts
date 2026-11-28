@@ -5,6 +5,7 @@ import { createChatHandler } from '../packages/runtime/src/handlers/chat.js';
 import { createApplication } from '../packages/runtime/src/application.js';
 import { readConfiguration } from '../packages/runtime/src/config.js';
 import { httpEvent } from './fixtures.js';
+import { useTestClock } from './support/clock.js';
 import {
   chatEnvironment,
   managedEnvironment,
@@ -13,6 +14,7 @@ import {
   simulatedSubscribers,
 } from './support/control.js';
 
+beforeEach(() => useTestClock());
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => undefined));
 afterEach(() => {
   vi.useRealTimers();

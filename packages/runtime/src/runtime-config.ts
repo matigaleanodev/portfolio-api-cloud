@@ -85,6 +85,11 @@ export function resolveRuntimeConfiguration(
   if (contract.logicalId === functions.api.logicalId) readSubscriptionConfiguration(config);
   if (contract.requiredSecrets.includes('QUOTA_KEY_SECRET') && config.QUOTA_KEY_SECRET!.length < 32)
     throw new Error('Missing quota key secret');
+  if (
+    contract.requiredSecrets.includes('NOTIFY_LEDGER_KEY') &&
+    config.NOTIFY_LEDGER_KEY!.length < 32
+  )
+    throw new Error('Missing notification ledger key');
   // La función chat solo atiende chat: su conocimiento inválido equivale a configuración inválida.
   // En api se valida al componer chat para no afectar health, contacto ni suscripciones.
   if (contract.logicalId === functions.chat.logicalId) readChatKnowledgeConfiguration(config);

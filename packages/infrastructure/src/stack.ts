@@ -146,7 +146,7 @@ export class PortfolioApiStack extends Stack {
       );
 
     // La variante de validación reemplaza solo el código y la configuración HTTP.
-    new Editorial(this, 'Editorial', { boundary, storage });
+    new Editorial(this, 'Editorial', { boundary, storage, control });
 
     httpApi(this, {
       handler: handler.fn,

@@ -5,7 +5,12 @@ import { getChatStarters, type ChatService } from '../chat/chat.service.js';
 import { validateContact, type ContactDto } from '../contact.dto.js';
 import { health } from '../health.js';
 import { validateSubscription } from '../subscriptions/dto.js';
-import { SubscriptionError, type SubscriptionSender } from '../subscriptions/facade.js';
+import {
+  SubscriptionError,
+  type OneClickUnsubscriber,
+  type SubscriptionSender,
+} from '../subscriptions/facade.js';
+import { manualUnsubscribeUrl, readOneClickToken } from '../subscriptions/one-click.js';
 import type { HttpEvent, RouteResult } from './responses.js';
 
 export type QuotaOperation = Exclude<OperationId, 'health'>;
@@ -18,6 +23,7 @@ export interface Services {
   readonly quota: (operation: QuotaOperation) => QuotaCheck;
   readonly sendContact?: ((dto: ContactDto) => Promise<void>) | undefined;
   readonly sendSubscription?: SubscriptionSender | undefined;
+  readonly oneClickUnsubscribe?: OneClickUnsubscriber | undefined;
   readonly chat?: Pick<ChatService, 'reply'> | undefined;
 }
 
@@ -46,6 +52,17 @@ const internal: RouteResult = {
   statusCode: 500,
   body: { statusCode: 500, message: 'Internal server error' },
 };
+
+function subscriptionFailure(error: unknown): RouteResult {
+  if (!(error instanceof SubscriptionError)) return internal;
+  const names = { 400: 'Bad Request', 502: 'Bad Gateway', 503: 'Service Unavailable' };
+  return {
+    statusCode: error.statusCode,
+    body: error.message
+      ? { message: error.message, error: names[error.statusCode], statusCode: error.statusCode }
+      : { message: names[error.statusCode], statusCode: error.statusCode },
+  };
+}
 
 /** Router por regex de contracts/routes: cuota → DTO → servicio; sin coincidencia → 404. */
 export async function route(
@@ -113,14 +130,27 @@ export async function route(
         body: await services.sendSubscription(operation === 'subscribe' ? 'POST' : 'DELETE', dto),
       };
     } catch (error) {
-      if (!(error instanceof SubscriptionError)) return internal;
-      const names = { 400: 'Bad Request', 502: 'Bad Gateway', 503: 'Service Unavailable' };
+      return subscriptionFailure(error);
+    }
+  }
+
+  if (operation === 'oneClick') {
+    if (method !== 'POST') {
+      headers.location = manualUnsubscribeUrl;
+      return { statusCode: 303, body: { message: 'See Other' } };
+    }
+    const token = readOneClickToken(event);
+    if (!token)
       return {
-        statusCode: error.statusCode,
-        body: error.message
-          ? { message: error.message, error: names[error.statusCode], statusCode: error.statusCode }
-          : { message: names[error.statusCode], statusCode: error.statusCode },
+        statusCode: 400,
+        body: { message: 'Invalid unsubscribe request', error: 'Bad Request', statusCode: 400 },
       };
+    try {
+      if (!services.oneClickUnsubscribe) throw new Error('Subscription provider is not configured');
+      await services.oneClickUnsubscribe(token);
+      return { statusCode: 200, body: { message: 'Unsubscribed' } };
+    } catch (error) {
+      return subscriptionFailure(error);
     }
   }
 

@@ -1,5 +1,6 @@
 import { repositoryPath } from './support/paths.js';
 import { createApiHandler as createManagedHandler } from '../packages/runtime/src/handlers/api.js';
+import { useTestClock } from './support/clock.js';
 import {
   managedEnvironment,
   runtimeSecret,
@@ -7,7 +8,7 @@ import {
   SimulatedObjectStorage,
   simulatedSubscribers,
 } from './support/control.js';
-import { test, vi } from 'vitest';
+import { test, vi, beforeEach } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
@@ -71,6 +72,7 @@ function subscriptionEvent(method: SubscriptionMethod = 'POST', input: unknown =
   return event;
 }
 
+beforeEach(() => useTestClock());
 for (const scenario of reference.validation) {
   const given = scenario.label.startsWith('una ')
     ? 'Dada'
@@ -246,7 +248,11 @@ test('Dado un almacenamiento pendiente, cuando se envía una baja, entonces se e
         resolve = done;
       }),
   );
-  const store: SubscriberOperations = { createSubscriber: vi.fn(), deleteSubscriber };
+  const store: SubscriberOperations = {
+    createSubscriber: vi.fn(),
+    deleteSubscriber,
+    unsubscribeByToken: vi.fn(),
+  };
   const app = createApplication(cors, undefined, createSubscriptionSender(store));
   let finished = false;
   const result = app(subscriptionEvent('DELETE')).then((response) => {
@@ -321,6 +327,7 @@ test('Dado un almacenamiento que ignora el abort, cuando vence el límite, enton
   const store: SubscriberOperations = {
     createSubscriber: () => new Promise(() => undefined),
     deleteSubscriber: () => new Promise(() => undefined),
+    unsubscribeByToken: () => new Promise(() => undefined),
   };
   const response = createApplication(
     cors,

@@ -81,7 +81,7 @@ assert.throws(() => checkImport('contracts', {}, fixture, 'node:fs', false));
 assert.throws(() =>
   checkImport(
     'contracts',
-    { dependencies: { '@portfolio-api-cloud/runtime': '1.1.0' } },
+    { dependencies: { '@portfolio-api-cloud/runtime': '1.2.0' } },
     fixture,
     '@portfolio-api-cloud/runtime/handler',
     false,
@@ -91,7 +91,7 @@ assert.throws(() => checkImport('runtime', {}, fixture, 'aws-lambda', true));
 assert.throws(() =>
   checkImport(
     'runtime',
-    { dependencies: { '@portfolio-api-cloud/infrastructure': '1.1.0' } },
+    { dependencies: { '@portfolio-api-cloud/infrastructure': '1.2.0' } },
     fixture,
     '@portfolio-api-cloud/infrastructure',
     true,

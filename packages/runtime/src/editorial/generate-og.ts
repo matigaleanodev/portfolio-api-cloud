@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import type {
   GenerateOgEvent,
@@ -50,15 +51,18 @@ export async function generateOg(
     ...(input.excerpt ? { excerpt: input.excerpt } : {}),
     ...(input.date ? { date: input.date } : {}),
   });
+  // Permite cotejar el objeto publicado con el render sin cambiar claves ni la respuesta.
+  const sha256 = createHash('sha256').update(image).digest('hex');
   await deps.storage.send(
     new PutObjectCommand({
       Bucket: deps.bucket,
       Key: buildOgObjectKey(deps.ogObjectPrefix, input.slug),
       Body: image,
       ContentType: 'image/png',
+      Metadata: { sha256 },
     }),
   );
   const url = buildOgPublicUrl(deps.mediaBaseUrl, deps.ogObjectPrefix, input.slug);
-  logInfo('OG image uploaded', { slug: input.slug, url });
+  logInfo('OG image uploaded', { slug: input.slug, url, sha256 });
   return jsonResponse(200, { message: 'OG image generated', url });
 }

@@ -1,0 +1,158 @@
+import { beforeEach, describe, expect, it } from 'vitest';
+import { createSubscriberStore } from '../../packages/runtime/src/subscriptions/store.js';
+import { SimulatedObjectStorage } from '../support/control.js';
+
+const config = {
+  endpoint: 'https://r2.example.invalid',
+  bucket: 'subscribers',
+  accessKeyId: 'id',
+  secretAccessKey: 'secret',
+};
+const email = 'lector@example.com';
+const recordKey = `subscribers/subscribers/${email}.json`;
+let storage: SimulatedObjectStorage;
+let store: ReturnType<typeof createSubscriberStore>;
+const indexKeys = () => [...storage.objects.keys()].filter((key) => key.includes('index/'));
+
+beforeEach(() => {
+  storage = new SimulatedObjectStorage();
+  store = createSubscriberStore(config, storage);
+});
+
+describe('identificador de baja', () => {
+  it('es opaco, estable y conserva el registro heredado', async () => {
+    storage.objects.set(recordKey, JSON.stringify({ email, createdAt: '2026-01-01T00:00:00Z' }));
+    const id = (await store.ensureUnsubscribeId(email))!;
+    expect(id).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(await store.ensureUnsubscribeId(email)).toBe(id);
+    expect(JSON.parse(storage.objects.get(recordKey)!)).toEqual({
+      email,
+      createdAt: '2026-01-01T00:00:00Z',
+      unsubscribeId: id,
+    });
+    expect(indexKeys()).toEqual([`subscribers/unsubscribe-index/${id}.json`]);
+  });
+
+  it('dos emisores concurrentes obtienen el mismo identificador', async () => {
+    await store.createSubscriber(email);
+    const [first, second] = await Promise.all([
+      store.ensureUnsubscribeId(email),
+      store.ensureUnsubscribeId(email),
+    ]);
+    expect(first).toBe(second);
+    expect(indexKeys()).toEqual([`subscribers/unsubscribe-index/${first}.json`]);
+  });
+
+  it.each(['PreconditionFailed', 'NoSuchKey'])(
+    'descarta el índice si el registro desaparece antes de publicarlo (%s)',
+    async (name) => {
+      await store.createSubscriber(email);
+      const send = storage.send.bind(storage);
+      storage.send = async (command, options) => {
+        const { IfMatch } = (command as { input: { IfMatch?: string } }).input;
+        if (IfMatch) {
+          storage.objects.delete(recordKey);
+          throw Object.assign(new Error('gone'), { name });
+        }
+        return send(command, options);
+      };
+
+      expect(await store.ensureUnsubscribeId(email)).toBeNull();
+      expect(storage.objects.size).toBe(0);
+    },
+  );
+
+  it.each([false, true])(
+    'no deja índices si se agotan los intentos (registro borrado en el último: %s)',
+    async (deleted) => {
+      await store.createSubscriber(email);
+      const send = storage.send.bind(storage);
+      let rejected = 0;
+      storage.send = async (command, options) => {
+        if ((command as { input: { IfMatch?: string } }).input.IfMatch) {
+          rejected += 1;
+          if (deleted && rejected === 3) storage.objects.delete(recordKey);
+          throw Object.assign(new Error('changed'), { name: 'PreconditionFailed' });
+        }
+        return send(command, options);
+      };
+
+      const result = store.ensureUnsubscribeId(email);
+      if (deleted) await expect(result).resolves.toBeNull();
+      else await expect(result).rejects.toThrow('kept changing');
+      expect(rejected).toBe(3);
+      expect(indexKeys()).toEqual([]);
+    },
+  );
+
+  it('un alta concurrente no pisa el registro ni su identificador', async () => {
+    const results = await Promise.all([
+      store.createSubscriber(email),
+      store.createSubscriber(email),
+    ]);
+    expect(results.sort()).toEqual(['created', 'exists']);
+  });
+
+  it('conserva el índice si la escritura del registro se aplicó pese a un error', async () => {
+    await store.createSubscriber(email);
+    const send = storage.send.bind(storage);
+    storage.send = async (command, options) => {
+      const result = await send(command, options);
+      const { Key } = (command as { input: { Key?: string } }).input;
+      if (command.constructor.name === 'PutObjectCommand' && Key === `subscribers/${email}.json`)
+        throw new Error('connection reset');
+      return result;
+    };
+    await expect(store.ensureUnsubscribeId(email)).rejects.toThrow('connection reset');
+    storage.send = send;
+    const id = (await store.ensureUnsubscribeId(email))!;
+    expect(await store.unsubscribeByToken(id)).toBe('deleted');
+  });
+
+  it('no recrea un suscriptor inexistente', async () => {
+    expect(await store.ensureUnsubscribeId(email)).toBeNull();
+    expect(storage.objects.size).toBe(0);
+  });
+
+  it('da de baja una vez y las repeticiones no tienen efecto', async () => {
+    await store.createSubscriber(email);
+    const id = (await store.ensureUnsubscribeId(email))!;
+    expect(await store.unsubscribeByToken(id)).toBe('deleted');
+    expect(await store.unsubscribeByToken(id)).toBe('missing');
+    expect(storage.objects.size).toBe(0);
+  });
+
+  it('un identificador desconocido o manipulado no borra nada', async () => {
+    await store.createSubscriber(email);
+    const id = (await store.ensureUnsubscribeId(email))!;
+    const forged = `${id[0] === 'A' ? 'B' : 'A'}${id.slice(1)}`;
+    expect(await store.unsubscribeByToken(forged)).toBe('missing');
+    expect(await store.subscriberExists(email)).toBe(true);
+  });
+
+  it('un enlace viejo no da de baja una suscripción nueva', async () => {
+    await store.createSubscriber(email);
+    const old = (await store.ensureUnsubscribeId(email))!;
+    const staleIndex = storage.objects.get(`subscribers/unsubscribe-index/${old}.json`)!;
+    await store.deleteSubscriber(email);
+    await store.createSubscriber(email);
+    storage.objects.set(`subscribers/unsubscribe-index/${old}.json`, staleIndex);
+    expect(await store.unsubscribeByToken(old)).toBe('missing');
+    expect(await store.subscriberExists(email)).toBe(true);
+  });
+
+  it('la baja manual también elimina el índice', async () => {
+    await store.createSubscriber(email);
+    await store.ensureUnsubscribeId(email);
+    expect(await store.deleteSubscriber(email)).toBe('deleted');
+    expect(storage.objects.size).toBe(0);
+  });
+
+  it('un fallo al limpiar el índice no deshace la baja', async () => {
+    await store.createSubscriber(email);
+    await store.ensureUnsubscribeId(email);
+    storage.failOn = (name, key) => name === 'DeleteObjectCommand' && key.includes('index/');
+    expect(await store.deleteSubscriber(email)).toBe('deleted');
+    expect(await store.subscriberExists(email)).toBe(false);
+  });
+});

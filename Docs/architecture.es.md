@@ -2,7 +2,7 @@
 
 [English](architecture.md)
 
-Cloudflare recibe el tráfico de `api.matiasgaleano.dev`; API Gateway HTTP API reparte las seis operaciones entre dos funciones HTTP. Cuatro funciones editoriales sin rutas completan la publicación del blog. Todas usan Node.js 24 fuera de una VPC.
+Cloudflare recibe el tráfico de `api.matiasgaleano.dev`; API Gateway HTTP API reparte las siete operaciones entre dos funciones HTTP. Cuatro funciones editoriales sin rutas completan la publicación del blog. Todas usan Node.js 24 fuera de una VPC.
 
 ## Paquetes
 
@@ -48,7 +48,7 @@ Un `before` que devuelve respuesta omite el handler y los `after`, así que esos
 
 En el dominio custom el runtime exige origen Cloudflare, secreto `x-portfolio-origin` e IP válida antes de confiar en `CF-Connecting-IP`; ignora `X-Forwarded-For`. CORS se resuelve en la aplicación y no autentica.
 
-DynamoDB usa operaciones condicionales para cuotas y transacciones para la admisión de IA; `api` y `chat` comparten tabla, prefijos y claves HMAC, de modo que una cuota no se duplica al separar funciones. La expiración lógica no depende del TTL. Las conversaciones no se persisten.
+DynamoDB usa operaciones condicionales para cuotas y transacciones para la admisión de IA; `api` y `chat` comparten tabla, prefijos y claves HMAC, de modo que una cuota no se duplica al separar funciones. La expiración lógica no depende del TTL. `notify-post` usa la misma tabla para su registro de envíos, con IAM limitado a claves `notify#` y sin TTL. Las conversaciones no se persisten.
 
 Cada request tiene hasta 25 segundos, reducidos según el tiempo restante de Lambda. Envíos, suscripciones y reservas ambiguas no se reintentan; cancelar el transporte no deshace efectos aceptados.
 
@@ -58,7 +58,7 @@ Las FAQ responden directo. `chat` lee de R2 el envelope publicado por `publish-c
 
 La generación usa solo GPT-6 Luna por Responses, con `store=false`, sin herramientas ni reintentos, y exige tarifas vigentes, cupos por sesión/origen y reserva monetaria global previa.
 
-`process-release` lee y escribe `state/posts.json` en el bucket de medios, invoca sincrónicamente `generate-og` y `notify-post` con reintentos acotados y guarda solo códigos de error saneados, porque ese bucket es público. Los suscriptores viven en `subscribers/<email>.json` de un bucket privado distinto, compartido por la fachada HTTP y `notify-post`.
+`process-release` lee y escribe `state/posts.json` en el bucket de medios, invoca sincrónicamente `generate-og` y `notify-post` con reintentos acotados y guarda solo códigos de error saneados, porque ese bucket es público. Cada intento contra R2 limita conexión (2 s), espera de respuesta e inactividad (5 s), con dos intentos como máximo; el registro de envíos en DynamoDB usa los mismos límites sin reintentos del SDK. Los suscriptores viven en `subscribers/<email>.json` de un bucket privado distinto, compartido por la fachada HTTP y `notify-post`.
 
 ## Infraestructura y costo
 
