@@ -68,19 +68,29 @@ Los environments productivos admiten `main`; las banderas `*_ENABLED` quedan des
 
 ## Integración de pull requests
 
-`dev` y `main` exigen, sin excepciones: pull request, `verify` de GitHub Actions aprobado sobre una rama actualizada, conversaciones resueltas y merge commit; no admiten push directo, force push ni borrado. No se exige aprobación de otra persona.
+Para integrar un pull request: revisarlo, comprobar que GitHub habilita **Merge pull request** y pulsarlo. No hacen falta comandos ni ejecutar workflows.
 
-Una segunda regla restringe quién actualiza esas ramas a la cuenta propietaria, que tiene una exención `exempt`: se integra con el botón de merge de GitHub y se puede activar auto-merge a mano en cada pull request.
+Reglas de `dev` y `main`, sin bypass para nadie:
 
-Para integrar exactamente la revisión mirada:
+- Solo pull requests: sin push directo, force push ni borrado.
+- `verify` (GitHub Actions) y `CodeRabbit` aprobados sobre una rama actualizada respecto del destino.
+- Conversaciones de revisión resueltas. No se exige aprobación de otra persona.
+- Único método de integración: merge commit.
 
-```bash
-gh pr merge <numero> --merge --match-head-commit <sha-revisado>
-```
+El auto-merge es el nativo de GitHub y es opcional: se activa en cada pull request con **Enable auto-merge** y GitHub integra cuando se cumplen todas las reglas. Hacia `main` solo se activa con autorización expresa del propietario; GitHub no impone esa restricción. Integra el head que exista en ese momento, incluidos commits agregados después de activarlo.
 
-El auto-merge integra el head que exista cuando se cumplan las condiciones, incluidos commits agregados después de activarlo.
+Casos que requieren una acción adicional:
 
-Cada promoción deja en `main` un merge commit que `dev` no tiene. Antes de la siguiente, crear `fix/sync-main-<sha>` desde `main`, abrir un pull request hacia `dev` e integrarlo con merge commit. Si está atrasado, **Update branch** actualiza la rama de sincronización.
+- Rama atrasada: **Update branch**. El auto-merge no actualiza la rama; si el destino avanza mientras espera, hay que pulsarlo.
+- Check `CodeRabbit` ausente o cancelado: comentar `@coderabbitai full review` en el pull request.
+
+El check `CodeRabbit` indica que su revisión terminó, no que aprobó. También pasa cuando la omite, cuando la pausa o alcanza su límite de uso y, con la configuración predeterminada, cuando falla. Las observaciones abiertas como conversación bloquean hasta resolverlas; las incluidas solo en el cuerpo de la revisión no bloquean y el auto-merge no espera a que se lean, tampoco las de commits agregados después de activarlo. Para revisarlas antes de integrar, usar el merge manual.
+
+Integrar en `main` ejecuta la CI y no despliega: la entrega sigue el proceso de [entrega protegida](#entrega-protegida).
+
+### Sincronización de `main` hacia `dev`
+
+Cada promoción deja en `main` un merge commit que `dev` no tiene. Al terminar de integrarla, abrir desde la web un pull request con base `dev` y rama de comparación `main`, e integrarlo con el mismo botón. Si `dev` ya avanzó o hay conflictos, ese pull request no se puede actualizar porque `main` está protegida: crear desde `main` una rama `fix/sync-main-<sha>` en el selector de ramas, abrir el pull request desde ella y usar **Update branch** o **Resolve conflicts**. Si el editor web no admite el conflicto, resolverlo localmente en esa rama y subirlo; la integración sigue siendo con el botón. Mientras `dev` no contenga `main`, un pull request de `dev` a `main` no se puede integrar.
 
 ## Ingress, observabilidad y capacidad
 

@@ -56,7 +56,7 @@ Three alarms within the free tier: HTTP 5xx through a single custom metric, and 
 
 ## Delivery and recovery
 
-PRs, CI and workflow merges retain verifiable human identity. Artifacts are promoted and recovered without recompilation; planning, publishing, execution, parameter sync and runtime have separate roles. One installation retains physical names and data. The original API and EC2 allow independent recovery while available.
+Changes are integrated through PRs with GitHub's native merge, protected by CI, CodeRabbit and resolved conversations, with no bypass or custom merge workflows. Artifacts are promoted and recovered without recompilation; planning, publishing, execution, parameter sync and runtime have separate roles. One installation retains physical names and data. The original API and EC2 allow independent recovery while available.
 
 ## Testing and license
 

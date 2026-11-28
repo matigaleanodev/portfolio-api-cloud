@@ -56,7 +56,7 @@ Tres alarmas dentro de la capa gratuita: 5xx HTTP con una sola métrica personal
 
 ## Entrega y recuperación
 
-PR, CI y merges por workflow conservan identidad humana verificable. Los artifacts se promueven y recuperan sin recompilar; planificación, publicación, ejecución, sincronización de parámetros y runtime tienen roles separados. Una instalación conserva nombres físicos y datos. La API original y EC2 permiten recuperación independiente mientras estén disponibles.
+Los cambios se integran por PR con el merge nativo de GitHub, protegido por CI, CodeRabbit y conversaciones resueltas, sin bypass ni workflows propios de merge. Los artifacts se promueven y recuperan sin recompilar; planificación, publicación, ejecución, sincronización de parámetros y runtime tienen roles separados. Una instalación conserva nombres físicos y datos. La API original y EC2 permiten recuperación independiente mientras estén disponibles.
 
 ## Pruebas y licencia
 

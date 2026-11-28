@@ -68,19 +68,29 @@ Production environments admit `main`; `*_ENABLED` flags stay disabled outside th
 
 ## Pull request integration
 
-`dev` and `main` require, without exceptions: a pull request, the GitHub Actions `verify` check passing on an up-to-date branch, resolved conversations and a merge commit; they reject direct pushes, force pushes and deletion. No approval from another person is required.
+To merge a pull request: review it, check that GitHub enables **Merge pull request** and press it. No commands or workflow runs are needed.
 
-A second rule restricts who updates those branches to the owner account, which holds an `exempt` exemption: merge with the GitHub merge button; auto-merge can be enabled by hand on each pull request.
+Rules for `dev` and `main`, with no bypass for anyone:
 
-To merge exactly the reviewed revision:
+- Pull requests only: no direct pushes, force pushes or deletion.
+- `verify` (GitHub Actions) and `CodeRabbit` passing on a branch that is up to date with the target.
+- Review conversations resolved. No approval from another person is required.
+- Single merge method: merge commit.
 
-```bash
-gh pr merge <number> --merge --match-head-commit <reviewed-sha>
-```
+Auto-merge is GitHub's native feature and is optional: enable it on each pull request with **Enable auto-merge** and GitHub merges once every rule is met. Into `main` it is only enabled with the owner's explicit authorization; GitHub does not enforce that restriction. It merges whatever head exists at that point, including commits added after enabling it.
 
-Auto-merge integrates whatever head exists once the conditions are met, including commits added after enabling it.
+Cases that need an extra action:
 
-Each promotion leaves on `main` a merge commit that `dev` lacks. Before the next one, create `fix/sync-main-<sha>` from `main`, open a pull request into `dev` and merge it with a merge commit. If it is behind, **Update branch** updates the sync branch.
+- Branch behind: **Update branch**. Auto-merge does not update the branch; if the target moves while it waits, the button has to be pressed.
+- `CodeRabbit` check missing or cancelled: comment `@coderabbitai full review` on the pull request.
+
+The `CodeRabbit` check means its review finished, not that it approved. It also passes when the review is skipped, paused or rate limited and, with the default configuration, when it fails. Findings opened as conversations block until resolved; those listed only in the review body do not block, and auto-merge does not wait for them to be read, including those on commits added after enabling it. To review them before merging, merge manually.
+
+Merging into `main` runs CI and does not deploy: delivery follows the [protected delivery](#protected-delivery) process.
+
+### Synchronizing `main` into `dev`
+
+Each promotion leaves on `main` a merge commit that `dev` lacks. Once it is merged, open a pull request from the web with base `dev` and compare branch `main`, and merge it with the same button. If `dev` has already moved or there are conflicts, that pull request cannot be updated because `main` is protected: create a `fix/sync-main-<sha>` branch from `main` in the branch selector, open the pull request from it and use **Update branch** or **Resolve conflicts**. If the web editor cannot handle the conflict, resolve it locally on that branch and push; merging still uses the button. While `dev` lacks `main`, a pull request from `dev` into `main` cannot be merged.
 
 ## Ingress, observability and capacity
 
